@@ -1,0 +1,97 @@
+﻿<Window x:Class="inventory_management.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:inventory_management"
+        xmlns:vm="clr-namespace:inventory_management.ViewModels"
+        xmlns:views="clr-namespace:inventory_management.Views"
+        xmlns:converters="clr-namespace:inventory_management.Converters"
+        mc:Ignorable="d"
+        Title="{Binding Title}" Height="600" Width="1000" WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,30"/>
+
+        <!-- Main Content Area with Navigation Switcher -->
+        <ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}">
+            <ContentControl.Resources>
+                
+                <!-- If CurrentViewModel is NULL, show the Home Menu (Buttons) -->
+                <DataTemplate DataType="{x:Type vm:HomeViewModel}">
+                    <UniformGrid Columns="2" Rows="3" Margin="50">
+                        <Button Command="{Binding DataContext.NavigateToAddStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                            <StackPanel>
+                                <TextBlock Text="➕" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
+                                <TextBlock Text="Add Stock"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding DataContext.NavigateToRemoveStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                            <StackPanel>
+                                <TextBlock Text="➖" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
+                                <TextBlock Text="Remove Stock"/>
+                            </StackPanel>
+                        </Button>
+                        
+                        <Button Command="{Binding DataContext.NavigateToSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                            <StackPanel>
+                                <TextBlock Text="🔍" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
+                                <TextBlock Text="Search / Items"/>
+                            </StackPanel>
+                        </Button>
+
+                         <!-- Added Create Item Button for Phase 2 -->
+                        <Button Command="{Binding DataContext.NavigateToCreateItemCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                            <StackPanel>
+                                <TextBlock Text="🆕" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
+                                <TextBlock Text="New Item"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding DataContext.NavigateToReportsCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                            <StackPanel>
+                                <TextBlock Text="📊" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
+                                <TextBlock Text="Reports"/>
+                            </StackPanel>
+                        </Button>
+                    </UniformGrid>
+                </DataTemplate>
+
+                <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+                    <views:LoginView/>
+                </DataTemplate>
+
+                <!-- Phase 2: Create Item View -->
+                <DataTemplate DataType="{x:Type vm:ItemCreationViewModel}">
+                    <views:ItemCreationView/>
+                </DataTemplate>
+
+                <!-- Phase 3: Add/Remove Stock Views -->
+                <DataTemplate DataType="{x:Type vm:AddStockViewModel}">
+                    <views:AddStockView/>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vm:RemoveStockViewModel}">
+                    <views:RemoveStockView/>
+                </DataTemplate>
+
+                <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
+                    <views:ReportsView/>
+                </DataTemplate>
+
+                <!-- Future Views will be added here -->
+
+            </ContentControl.Resources>
+        </ContentControl>
+
+        <!-- Home Button (Only visible when navigating) -->
+        <Button Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,0,0,0"
+                Command="{Binding GoHomeCommand}" 
+                Visibility="{Binding CurrentViewModel, Converter={x:Static converters:NotHomeViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}"
+                Content="🏠 Home" Padding="10,5"/>
+
+    </Grid>
+</Window>
