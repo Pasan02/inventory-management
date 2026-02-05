@@ -103,7 +103,8 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            MessageBox.Show("Navigate to Search / Items (Phase 2/3)");
+            CurrentViewModel = _serviceProvider.GetRequiredService<SearchItemsViewModel>();
+            Title = "Search / Items";
         }
 
         [RelayCommand]

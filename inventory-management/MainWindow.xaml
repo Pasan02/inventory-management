@@ -78,6 +78,10 @@
                     <views:RemoveStockView/>
                 </DataTemplate>
 
+                <DataTemplate DataType="{x:Type vm:SearchItemsViewModel}">
+                    <views:SearchItemsView/>
+                </DataTemplate>
+
                 <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
                     <views:ReportsView/>
                 </DataTemplate>

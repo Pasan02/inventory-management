@@ -93,6 +93,66 @@ namespace inventory_management.Services
             };
         }
 
+        public async Task<AdminResetResult> TryResetAdminAsync()
+        {
+            var availability = await _availabilityService.GetStatusAsync();
+            if (!availability.IsAvailable)
+            {
+                return new AdminResetResult();
+            }
+
+            var password = Environment.GetEnvironmentVariable("INVENTORY_ADMIN_PASSWORD");
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return new AdminResetResult();
+            }
+
+            var username = Environment.GetEnvironmentVariable("INVENTORY_ADMIN_USERNAME");
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                username = "admin";
+            }
+
+            var normalized = username.Trim();
+            var account = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Username == normalized);
+
+            var hashResult = PasswordHasher.HashPassword(password);
+            var created = false;
+
+            if (account == null)
+            {
+                account = new UserAccount
+                {
+                    Username = normalized,
+                    PasswordHash = hashResult.Hash,
+                    PasswordSalt = hashResult.Salt,
+                    IsActive = true,
+                    CreatedUtc = DateTime.UtcNow
+                };
+
+                _context.UserAccounts.Add(account);
+                created = true;
+            }
+            else
+            {
+                account.PasswordHash = hashResult.Hash;
+                account.PasswordSalt = hashResult.Salt;
+                account.IsActive = true;
+                _context.UserAccounts.Update(account);
+            }
+
+            await _context.SaveChangesAsync();
+            await WriteAuditAsync(account.Id, true, created ? "Admin account created." : "Admin password reset.");
+
+            return new AdminResetResult
+            {
+                Changed = true,
+                Created = created,
+                Username = account.Username,
+                TemporaryPassword = password
+            };
+        }
+
         private async Task WriteAuditAsync(int? userId, bool success, string? reason)
         {
             var audit = new UserLoginAudit

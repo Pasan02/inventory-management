@@ -69,6 +69,13 @@ namespace inventory_management.ViewModels
 
         public ObservableCollection<PartType> PartTypes { get; } = new();
 
+        private string _newPartTypeName = string.Empty;
+        public string NewPartTypeName
+        {
+            get => _newPartTypeName;
+            set => SetProperty(ref _newPartTypeName, value);
+        }
+
         private PartType? _selectedPartType;
         public PartType? SelectedPartType
         {
@@ -78,6 +85,13 @@ namespace inventory_management.ViewModels
 
 
         public ObservableCollection<VehicleManufacturer> Manufacturers { get; } = new();
+
+        private string _newManufacturerName = string.Empty;
+        public string NewManufacturerName
+        {
+            get => _newManufacturerName;
+            set => SetProperty(ref _newManufacturerName, value);
+        }
 
         private VehicleManufacturer? _selectedManufacturer;
         public VehicleManufacturer? SelectedManufacturer
@@ -93,6 +107,20 @@ namespace inventory_management.ViewModels
         }
 
         public ObservableCollection<VehicleModel> Models { get; } = new();
+
+        private string _newModelName = string.Empty;
+        public string NewModelName
+        {
+            get => _newModelName;
+            set => SetProperty(ref _newModelName, value);
+        }
+
+        private string _newModelYearRange = string.Empty;
+        public string NewModelYearRange
+        {
+            get => _newModelYearRange;
+            set => SetProperty(ref _newModelYearRange, value);
+        }
         
         private VehicleModel? _selectedModel;
         public VehicleModel? SelectedModel
@@ -176,6 +204,115 @@ namespace inventory_management.ViewModels
                 var models = _context.Models.Where(m => m.VehicleManufacturerId == value.Id).ToList();
                 foreach (var m in models) Models.Add(m);
             }
+        }
+
+        [RelayCommand]
+        private async Task AddPartType()
+        {
+            if (string.IsNullOrWhiteSpace(NewPartTypeName))
+            {
+                StatusMessage = "Part type name is required.";
+                return;
+            }
+
+            var availability = await _availabilityService.GetStatusAsync();
+            if (!availability.IsAvailable)
+            {
+                StatusMessage = availability.Message;
+                return;
+            }
+
+            var name = NewPartTypeName.Trim();
+            if (await _context.PartTypes.AnyAsync(p => p.Name == name))
+            {
+                StatusMessage = "Part type already exists.";
+                return;
+            }
+
+            var partType = new PartType { Name = name };
+            _context.PartTypes.Add(partType);
+            await _context.SaveChangesAsync();
+
+            PartTypes.Add(partType);
+            NewPartTypeName = string.Empty;
+            StatusMessage = "Part type added.";
+        }
+
+        [RelayCommand]
+        private async Task AddManufacturer()
+        {
+            if (string.IsNullOrWhiteSpace(NewManufacturerName))
+            {
+                StatusMessage = "Manufacturer name is required.";
+                return;
+            }
+
+            var availability = await _availabilityService.GetStatusAsync();
+            if (!availability.IsAvailable)
+            {
+                StatusMessage = availability.Message;
+                return;
+            }
+
+            var name = NewManufacturerName.Trim();
+            if (await _context.Manufacturers.AnyAsync(m => m.Name == name))
+            {
+                StatusMessage = "Manufacturer already exists.";
+                return;
+            }
+
+            var manufacturer = new VehicleManufacturer { Name = name };
+            _context.Manufacturers.Add(manufacturer);
+            await _context.SaveChangesAsync();
+
+            Manufacturers.Add(manufacturer);
+            NewManufacturerName = string.Empty;
+            StatusMessage = "Manufacturer added.";
+        }
+
+        [RelayCommand]
+        private async Task AddModel()
+        {
+            if (SelectedManufacturer == null)
+            {
+                StatusMessage = "Select a manufacturer for the model.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(NewModelName))
+            {
+                StatusMessage = "Model name is required.";
+                return;
+            }
+
+            var availability = await _availabilityService.GetStatusAsync();
+            if (!availability.IsAvailable)
+            {
+                StatusMessage = availability.Message;
+                return;
+            }
+
+            var name = NewModelName.Trim();
+            if (await _context.Models.AnyAsync(m => m.VehicleManufacturerId == SelectedManufacturer.Id && m.Name == name))
+            {
+                StatusMessage = "Model already exists for this manufacturer.";
+                return;
+            }
+
+            var model = new VehicleModel
+            {
+                VehicleManufacturerId = SelectedManufacturer.Id,
+                Name = name,
+                YearRange = string.IsNullOrWhiteSpace(NewModelYearRange) ? null : NewModelYearRange.Trim()
+            };
+
+            _context.Models.Add(model);
+            await _context.SaveChangesAsync();
+
+            Models.Add(model);
+            NewModelName = string.Empty;
+            NewModelYearRange = string.Empty;
+            StatusMessage = "Model added.";
         }
 
         [RelayCommand]

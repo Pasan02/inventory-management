@@ -7,6 +7,7 @@ namespace inventory_management.Services
     {
         Task<LoginResult> LoginAsync(string username, string password);
         Task<DefaultAdminResult> EnsureDefaultAdminAsync();
+        Task<AdminResetResult> TryResetAdminAsync();
     }
 
     public class LoginResult
@@ -18,6 +19,14 @@ namespace inventory_management.Services
 
     public class DefaultAdminResult
     {
+        public bool Created { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string TemporaryPassword { get; set; } = string.Empty;
+    }
+
+    public class AdminResetResult
+    {
+        public bool Changed { get; set; }
         public bool Created { get; set; }
         public string Username { get; set; } = string.Empty;
         public string TemporaryPassword { get; set; } = string.Empty;

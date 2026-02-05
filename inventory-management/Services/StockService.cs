@@ -2,7 +2,9 @@ using inventory_management.Data;
 using inventory_management.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace inventory_management.Services
@@ -42,6 +44,26 @@ namespace inventory_management.Services
                 .ThenInclude(m => m.Manufacturer)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(i => i.Barcode == normalized);
+        }
+
+        public async Task<IReadOnlyList<Item>> GetItemsAsync()
+        {
+            var availability = await _availabilityService.GetStatusAsync();
+            if (!availability.IsAvailable)
+            {
+                return Array.Empty<Item>();
+            }
+
+            return await _context.Items
+                .Include(i => i.Stock)
+                .Include(i => i.Rack)
+                .Include(i => i.PartType)
+                .Include(i => i.PartBrand)
+                .Include(i => i.VehicleModel)
+                .ThenInclude(m => m.Manufacturer)
+                .AsNoTracking()
+                .OrderBy(i => i.Barcode)
+                .ToListAsync();
         }
 
         public async Task<StockOperationResult> AddStockAsync(string barcode, int quantity)
