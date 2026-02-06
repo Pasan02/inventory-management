@@ -54,7 +54,8 @@ namespace inventory_management.ViewModels.Search
                     PartTypeId = g.Key.PartTypeId,
                     Name = g.Key.Name,
                     ItemCount = g.Count(),
-                    Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0)
+                    Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0),
+                    ImagePath = g.Select(i => i.PartType.ImagePath).FirstOrDefault()
                 })
                 .OrderBy(r => r.Name)
                 .ToListAsync();

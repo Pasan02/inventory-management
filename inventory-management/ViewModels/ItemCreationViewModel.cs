@@ -12,6 +12,7 @@ using System.IO;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Win32;
 
 namespace inventory_management.ViewModels
 {
@@ -30,11 +31,41 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _selectedBarcode, value);
         }
 
+        [RelayCommand]
+        private void BrowsePartTypeImage()
+        {
+            var relativePath = TryPickImage("part-types", "part-type");
+            if (!string.IsNullOrWhiteSpace(relativePath))
+            {
+                NewPartTypeImagePath = relativePath;
+            }
+        }
+
         private ImageSource? _barcodeImage;
         public ImageSource? BarcodeImage
         {
             get => _barcodeImage;
             set => SetProperty(ref _barcodeImage, value);
+        }
+
+        [RelayCommand]
+        private void BrowseManufacturerLogo()
+        {
+            var relativePath = TryPickImage("manufacturers", "manufacturer");
+            if (!string.IsNullOrWhiteSpace(relativePath))
+            {
+                NewManufacturerLogoPath = relativePath;
+            }
+        }
+
+        [RelayCommand]
+        private void BrowseItemImage()
+        {
+            var relativePath = TryPickImage("items", "item");
+            if (!string.IsNullOrWhiteSpace(relativePath))
+            {
+                ImagePath = relativePath;
+            }
         }
 
         private string _description = string.Empty;
@@ -76,6 +107,13 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _newPartTypeName, value);
         }
 
+        private string _newPartTypeImagePath = string.Empty;
+        public string NewPartTypeImagePath
+        {
+            get => _newPartTypeImagePath;
+            set => SetProperty(ref _newPartTypeImagePath, value);
+        }
+
         private PartType? _selectedPartType;
         public PartType? SelectedPartType
         {
@@ -91,6 +129,13 @@ namespace inventory_management.ViewModels
         {
             get => _newManufacturerName;
             set => SetProperty(ref _newManufacturerName, value);
+        }
+
+        private string _newManufacturerLogoPath = string.Empty;
+        public string NewManufacturerLogoPath
+        {
+            get => _newManufacturerLogoPath;
+            set => SetProperty(ref _newManufacturerLogoPath, value);
         }
 
         private VehicleManufacturer? _selectedManufacturer;
@@ -229,12 +274,17 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            var partType = new PartType { Name = name };
+            var partType = new PartType
+            {
+                Name = name,
+                ImagePath = string.IsNullOrWhiteSpace(NewPartTypeImagePath) ? null : NewPartTypeImagePath.Trim()
+            };
             _context.PartTypes.Add(partType);
             await _context.SaveChangesAsync();
 
             PartTypes.Add(partType);
             NewPartTypeName = string.Empty;
+            NewPartTypeImagePath = string.Empty;
             StatusMessage = "Part type added.";
         }
 
@@ -261,12 +311,17 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            var manufacturer = new VehicleManufacturer { Name = name };
+            var manufacturer = new VehicleManufacturer
+            {
+                Name = name,
+                LogoPath = string.IsNullOrWhiteSpace(NewManufacturerLogoPath) ? null : NewManufacturerLogoPath.Trim()
+            };
             _context.Manufacturers.Add(manufacturer);
             await _context.SaveChangesAsync();
 
             Manufacturers.Add(manufacturer);
             NewManufacturerName = string.Empty;
+            NewManufacturerLogoPath = string.Empty;
             StatusMessage = "Manufacturer added.";
         }
 
@@ -341,7 +396,8 @@ namespace inventory_management.ViewModels
                     Description = Description,
                     LowStockThreshold = LowStockThreshold,
                     RackId = SelectedRack?.Id,
-                    Barcode = "TEMP-" + Guid.NewGuid().ToString().Substring(0,8) 
+                    Barcode = "TEMP-" + Guid.NewGuid().ToString().Substring(0,8),
+                    ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath.Trim()
                 };
 
                 _context.Items.Add(newItem);
@@ -399,6 +455,32 @@ namespace inventory_management.ViewModels
             if (SelectedModel == null) { StatusMessage = "Model required"; return false; }
             if (string.IsNullOrWhiteSpace(CountryOfOrigin)) { StatusMessage = "Country required"; return false; }
             return true;
+        }
+
+        private string? TryPickImage(string subfolder, string prefix)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.gif",
+                CheckFileExists = true
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return null;
+            }
+
+            var assetsRoot = AssetPathService.BasePath;
+            Directory.CreateDirectory(Path.Combine(assetsRoot, subfolder));
+
+            var extension = Path.GetExtension(dialog.FileName);
+            var fileName = $"{prefix}-{Guid.NewGuid():N}{extension}";
+            var relativePath = Path.Combine(subfolder, fileName);
+            var destination = Path.Combine(assetsRoot, relativePath);
+
+            File.Copy(dialog.FileName, destination, true);
+
+            return relativePath;
         }
     }
 }

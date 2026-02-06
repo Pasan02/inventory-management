@@ -60,7 +60,8 @@ namespace inventory_management.ViewModels.Search
                     ManufacturerId = g.Key.VehicleManufacturerId,
                     Name = g.Key.Name,
                     ItemCount = g.Count(),
-                    Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0)
+                    Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0),
+                    LogoPath = g.Select(i => i.VehicleModel.Manufacturer.LogoPath).FirstOrDefault()
                 })
                 .OrderBy(r => r.Name)
                 .ToListAsync();

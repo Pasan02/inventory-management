@@ -22,16 +22,26 @@
                 
                 <TextBlock Text="Part Type"/>
                 <ComboBox ItemsSource="{Binding PartTypes}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedPartType}" Margin="0,0,0,10"/>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBox Width="200" Text="{Binding NewPartTypeName}" Margin="0,0,10,0"/>
-                    <Button Content="Add Part Type" Command="{Binding AddPartTypeCommand}" Padding="10,4"/>
+                <StackPanel Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBox Width="200" Text="{Binding NewPartTypeName}" Margin="0,0,10,0"/>
+                        <Button Content="Select Image" Command="{Binding BrowsePartTypeImageCommand}" Padding="10,4" Margin="0,0,10,0"/>
+                        <Button Content="Add Part Type" Command="{Binding AddPartTypeCommand}" Padding="10,4"/>
+                    </StackPanel>
+                    <TextBlock Text="Part Type Image (relative path)"/>
+                    <TextBox Width="320" Text="{Binding NewPartTypeImagePath}" Margin="0,0,0,0"/>
                 </StackPanel>
 
                 <TextBlock Text="Manufacturer"/>
                 <ComboBox ItemsSource="{Binding Manufacturers}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedManufacturer}" Margin="0,0,0,10"/>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBox Width="200" Text="{Binding NewManufacturerName}" Margin="0,0,10,0"/>
-                    <Button Content="Add Manufacturer" Command="{Binding AddManufacturerCommand}" Padding="10,4"/>
+                <StackPanel Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBox Width="200" Text="{Binding NewManufacturerName}" Margin="0,0,10,0"/>
+                        <Button Content="Select Logo" Command="{Binding BrowseManufacturerLogoCommand}" Padding="10,4" Margin="0,0,10,0"/>
+                        <Button Content="Add Manufacturer" Command="{Binding AddManufacturerCommand}" Padding="10,4"/>
+                    </StackPanel>
+                    <TextBlock Text="Manufacturer Logo (relative path)"/>
+                    <TextBox Width="320" Text="{Binding NewManufacturerLogoPath}" Margin="0,0,0,0"/>
                 </StackPanel>
 
                 <TextBlock Text="Vehicle Model"/>
@@ -50,6 +60,12 @@
 
                 <TextBlock Text="Description / Notes"/>
                 <TextBox Text="{Binding Description}" Height="60" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Item Image"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <TextBox Width="240" Text="{Binding ImagePath}" Margin="0,0,10,0"/>
+                    <Button Content="Select Image" Command="{Binding BrowseItemImageCommand}" Padding="10,4"/>
+                </StackPanel>
 
                 <TextBlock Text="Rack Location"/>
                 <ComboBox ItemsSource="{Binding Racks}" DisplayMemberPath="LocationCode" SelectedItem="{Binding SelectedRack}" Margin="0,0,0,10"/>

@@ -138,7 +138,6 @@ namespace inventory_management.Services
                 account.PasswordHash = hashResult.Hash;
                 account.PasswordSalt = hashResult.Salt;
                 account.IsActive = true;
-                _context.UserAccounts.Update(account);
             }
 
             await _context.SaveChangesAsync();

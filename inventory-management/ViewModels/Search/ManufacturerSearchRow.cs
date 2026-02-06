@@ -6,5 +6,6 @@ namespace inventory_management.ViewModels.Search
         public string Name { get; set; } = string.Empty;
         public int ItemCount { get; set; }
         public int Quantity { get; set; }
+        public string? LogoPath { get; set; }
     }
 }

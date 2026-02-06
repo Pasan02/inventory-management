@@ -14,5 +14,9 @@ namespace inventory_management.Data.Entities
         [Column("name")]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty; // e.g., Toyota, Ford
+
+        [Column("logo_path")]
+        [MaxLength(260)]
+        public string? LogoPath { get; set; }
     }
 }

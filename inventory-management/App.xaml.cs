@@ -60,9 +60,12 @@ namespace inventory_management
 
             using (var scope = AppHost.Services.CreateScope())
             {
+                AssetPathService.EnsureInitialized();
+
                 var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
                 await dbContext.Database.MigrateAsync();
                 await EnsurePlaceholderDataAsync(dbContext);
+                await EnsureIdentitySequencesAsync(dbContext);
 
                 var integrityCheck = scope.ServiceProvider.GetRequiredService<IIntegrityCheckService>();
                 var integrityResult = await integrityCheck.RunAsync();
@@ -186,6 +189,28 @@ namespace inventory_management
                 context.Transactions.Add(transaction);
 
                 await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task EnsureIdentitySequencesAsync(InventoryDbContext context)
+        {
+            var statements = new[]
+            {
+                "SELECT setval(pg_get_serial_sequence('part_types','id'), COALESCE((SELECT MAX(id) FROM part_types), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('part_brands','id'), COALESCE((SELECT MAX(id) FROM part_brands), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('vehicle_manufacturers','id'), COALESCE((SELECT MAX(id) FROM vehicle_manufacturers), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('vehicle_models','id'), COALESCE((SELECT MAX(id) FROM vehicle_models), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('racks','id'), COALESCE((SELECT MAX(id) FROM racks), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('items','id'), COALESCE((SELECT MAX(id) FROM items), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('stock','id'), COALESCE((SELECT MAX(id) FROM stock), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('stock_transactions','id'), COALESCE((SELECT MAX(id) FROM stock_transactions), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('user_accounts','id'), COALESCE((SELECT MAX(id) FROM user_accounts), 1), true);",
+                "SELECT setval(pg_get_serial_sequence('user_login_audits','id'), COALESCE((SELECT MAX(id) FROM user_login_audits), 1), true);"
+            };
+
+            foreach (var sql in statements)
+            {
+                await context.Database.ExecuteSqlRawAsync(sql);
             }
         }
     }

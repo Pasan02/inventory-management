@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:inventory_management.Converters"
              mc:Ignorable="d">
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -12,17 +13,47 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Button Content="? Back" Command="{Binding BackCommand}" Padding="8,4" Width="90"/>
-        <TextBlock Grid.Row="1" Text="{Binding Manufacturer.Name, StringFormat=Models for {0}}" FontSize="18" FontWeight="Bold" Margin="0,10,0,10"/>
+        <StackPanel Orientation="Horizontal">
+            <Button Content="? Back" Command="{Binding BackCommand}" Padding="8,4" Width="90"/>
+            <TextBlock Text="{Binding Manufacturer.Name, StringFormat=Models for {0}}" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
 
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Models}" AutoGenerateColumns="False" IsReadOnly="True">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Model" Binding="{Binding Name}" Width="200"/>
-                <DataGridTextColumn Header="Years" Binding="{Binding YearRange}" Width="120"/>
-                <DataGridTextColumn Header="Items" Binding="{Binding ItemCount}" Width="80"/>
-                <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="80"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,10">
+            <TextBlock Text="Search" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <TextBox Width="240" Text="{Binding SearchText}" Margin="0,0,10,0"/>
+            <Button Content="Refresh" Command="{Binding LoadModelsCommand}" Padding="10,4"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="2">
+            <ItemsControl ItemsSource="{Binding ModelsView}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Margin="6" Padding="10" Width="260">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <Image Width="40" Height="40" Margin="0,0,8,0" Source="{Binding PartTypeImagePath, Converter={x:Static converters:RelativeAssetPathToImageSourceConverter.Instance}}"/>
+                                    <Image Width="40" Height="40" Margin="0,0,8,0" Source="{Binding ManufacturerLogoPath, Converter={x:Static converters:RelativeAssetPathToImageSourceConverter.Instance}}"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding YearRange}" FontSize="11" Foreground="Gray"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding Quantity, StringFormat=Available Units: {0}}" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding Brands, StringFormat=Brand: {0}}" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding Racks, StringFormat=Rack: {0}}" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding CountriesOfOrigin, StringFormat=Origin: {0}}" Margin="0,0,0,4"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
 
         <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" Margin="0,10,0,0"/>
     </Grid>

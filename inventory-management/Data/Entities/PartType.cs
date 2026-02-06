@@ -14,5 +14,9 @@ namespace inventory_management.Data.Entities
         [Column("name")]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty; // e.g., Compressor, Condenser
+
+        [Column("image_path")]
+        [MaxLength(260)]
+        public string? ImagePath { get; set; }
     }
 }
