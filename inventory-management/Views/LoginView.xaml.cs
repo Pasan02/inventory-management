@@ -17,5 +17,17 @@ namespace inventory_management.Views
                 viewModel.Password = passwordBox.Password;
             }
         }
+
+        private void TogglePasswordVisibility(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DataContext is LoginViewModel viewModel)
+            {
+                viewModel.IsPasswordVisible = !viewModel.IsPasswordVisible;
+                if (!viewModel.IsPasswordVisible)
+                {
+                    PasswordInput.Password = viewModel.Password;
+                }
+            }
+        }
     }
 }

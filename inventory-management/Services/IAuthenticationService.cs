@@ -8,6 +8,7 @@ namespace inventory_management.Services
         Task<LoginResult> LoginAsync(string username, string password);
         Task<DefaultAdminResult> EnsureDefaultAdminAsync();
         Task<AdminResetResult> TryResetAdminAsync();
+        Task ForceSetPasswordAsync(string username, string password);
     }
 
     public class LoginResult

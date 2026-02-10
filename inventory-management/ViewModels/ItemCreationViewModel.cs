@@ -3,6 +3,7 @@ using System.Windows;
 using inventory_management.Data;
 using inventory_management.Data.Entities;
 using inventory_management.Services;
+using inventory_management.Views;
 using Microsoft.EntityFrameworkCore;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -118,7 +119,16 @@ namespace inventory_management.ViewModels
         public PartType? SelectedPartType
         {
             get => _selectedPartType;
-            set => SetProperty(ref _selectedPartType, value);
+            set
+            {
+                if (value?.Id == -1)
+                {
+                    OnPropertyChanged(nameof(SelectedPartType));
+                    Application.Current.Dispatcher.InvokeAsync(HandleAddPartType);
+                    return; 
+                }
+                SetProperty(ref _selectedPartType, value);
+            }
         }
 
 
@@ -144,6 +154,13 @@ namespace inventory_management.ViewModels
             get => _selectedManufacturer;
             set 
             {
+                if (value?.Id == -1)
+                {
+                    OnPropertyChanged(nameof(SelectedManufacturer));
+                    Application.Current.Dispatcher.InvokeAsync(HandleAddManufacturer);
+                    return;
+                }
+
                 if (SetProperty(ref _selectedManufacturer, value))
                 {
                     OnSelectedManufacturerChanged(value);
@@ -171,7 +188,16 @@ namespace inventory_management.ViewModels
         public VehicleModel? SelectedModel
         {
             get => _selectedModel;
-            set => SetProperty(ref _selectedModel, value);
+            set
+            {
+                if (value?.Id == -1)
+                {
+                    OnPropertyChanged(nameof(SelectedModel));
+                    Application.Current.Dispatcher.InvokeAsync(HandleAddModel);
+                    return;
+                }
+                SetProperty(ref _selectedModel, value);
+            }
         }
 
         public ObservableCollection<PartBrand> Brands { get; } = new();
@@ -180,7 +206,16 @@ namespace inventory_management.ViewModels
         public PartBrand? SelectedBrand
         {
             get => _selectedBrand;
-            set => SetProperty(ref _selectedBrand, value);
+            set
+            {
+                if (value?.Id == -1)
+                {
+                    OnPropertyChanged(nameof(SelectedBrand));
+                    Application.Current.Dispatcher.InvokeAsync(HandleAddBrand);
+                    return;
+                }
+                SetProperty(ref _selectedBrand, value);
+            }
         }
         
         public ObservableCollection<Rack> Racks { get; } = new();
@@ -189,7 +224,16 @@ namespace inventory_management.ViewModels
         public Rack? SelectedRack
         {
             get => _selectedRack;
-            set => SetProperty(ref _selectedRack, value);
+            set
+            {
+                if (value?.Id == -1)
+                {
+                    OnPropertyChanged(nameof(SelectedRack));
+                    Application.Current.Dispatcher.InvokeAsync(HandleAddRack);
+                    return;
+                }
+                SetProperty(ref _selectedRack, value);
+            }
         }
 
         // --- UI State ---
@@ -223,15 +267,19 @@ namespace inventory_management.ViewModels
                 // Load lookups
                 var types = await _context.PartTypes.ToListAsync();
                 foreach (var t in types) PartTypes.Add(t);
+                PartTypes.Add(new PartType { Id = -1, Name = "+ Add New Part Type..." });
 
                 var brands = await _context.PartBrands.ToListAsync();
                 foreach (var b in brands) Brands.Add(b);
+                Brands.Add(new PartBrand { Id = -1, Name = "+ Add New Brand..." });
 
                 var manufacturers = await _context.Manufacturers.ToListAsync();
                 foreach (var m in manufacturers) Manufacturers.Add(m);
+                Manufacturers.Add(new VehicleManufacturer { Id = -1, Name = "+ Add New Manufacturer..." });
 
                 var racks = await _context.Racks.ToListAsync();
                 foreach (var r in racks) Racks.Add(r);
+                Racks.Add(new Rack { Id = -1, LocationCode = "+ Add New Rack..." });
 
             }
             catch (Exception ex)
@@ -244,10 +292,11 @@ namespace inventory_management.ViewModels
         {
             Models.Clear();
             SelectedModel = null;
-            if (value != null)
+            if (value != null && value.Id != -1)
             {
                 var models = _context.Models.Where(m => m.VehicleManufacturerId == value.Id).ToList();
                 foreach (var m in models) Models.Add(m);
+                Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
             }
         }
 
@@ -422,10 +471,17 @@ namespace inventory_management.ViewModels
                 BarcodeImage = BytesToImage(bytes);
 
                 StatusMessage = $"Item Saved! Barcode: {newItem.Barcode}";
+
+                MessageBox.Show(Application.Current.MainWindow, 
+                    $"Item Saved Successfully!{Environment.NewLine}Barcode: {newItem.Barcode}", 
+                    "Success", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error saving: {ex.Message}";
+                MessageBox.Show(Application.Current.MainWindow, $"Error saving item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -449,11 +505,36 @@ namespace inventory_management.ViewModels
 
         private bool ValidateForm()
         {
-            if (SelectedPartType == null) { StatusMessage = "Part Type required"; return false; }
-            if (SelectedBrand == null) { StatusMessage = "Brand required"; return false; }
-            if (SelectedManufacturer == null) { StatusMessage = "Manufacturer required"; return false; }
-            if (SelectedModel == null) { StatusMessage = "Model required"; return false; }
-            if (string.IsNullOrWhiteSpace(CountryOfOrigin)) { StatusMessage = "Country required"; return false; }
+            if (SelectedPartType == null) 
+            { 
+                StatusMessage = string.Empty; // Clear text message, handled by dialog or validation visual 
+                MessageBox.Show(Application.Current.MainWindow, "Part Type is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false; 
+            }
+            if (SelectedBrand == null) 
+            { 
+                StatusMessage = string.Empty;
+                MessageBox.Show(Application.Current.MainWindow, "Brand is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false; 
+            }
+            if (SelectedManufacturer == null) 
+            { 
+                StatusMessage = string.Empty;
+                MessageBox.Show(Application.Current.MainWindow, "Manufacturer is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false; 
+            }
+            if (SelectedModel == null) 
+            { 
+                StatusMessage = string.Empty;
+                MessageBox.Show(Application.Current.MainWindow, "Model is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false; 
+            }
+            if (string.IsNullOrWhiteSpace(CountryOfOrigin)) 
+            { 
+                StatusMessage = string.Empty;
+                MessageBox.Show(Application.Current.MainWindow, "Country of Origin is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false; 
+            }
             return true;
         }
 
@@ -481,6 +562,177 @@ namespace inventory_management.ViewModels
             File.Copy(dialog.FileName, destination, true);
 
             return relativePath;
+        }
+
+        private async void HandleAddPartType()
+        {
+            var dialog = new SimpleInputDialog("Add Part Type", "Enter new part type name:");
+            dialog.Owner = Application.Current.MainWindow;
+            if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.InputValue))
+            {
+                try 
+                {
+                    var name = dialog.InputValue.Trim();
+                    if (PartTypes.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        StatusMessage = "Part Type already exists.";
+                        MessageBox.Show(Application.Current.MainWindow, "Part Type already exists.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    var newItem = new PartType { Name = name };
+                    _context.PartTypes.Add(newItem);
+                    await _context.SaveChangesAsync();
+
+                    PartTypes.Insert(PartTypes.Count - 1, newItem);
+                    SelectedPartType = newItem;
+                    StatusMessage = "Added new Part Type.";
+                    MessageBox.Show(Application.Current.MainWindow, "Part Type added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error adding Part Type: {ex.Message}";
+                    MessageBox.Show(Application.Current.MainWindow, $"Error adding Part Type: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void HandleAddManufacturer()
+        {
+            var dialog = new SimpleInputDialog("Add Manufacturer", "Enter new manufacturer name:");
+            dialog.Owner = Application.Current.MainWindow;
+            if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.InputValue))
+            {
+                try
+                {
+                    var name = dialog.InputValue.Trim();
+                    if (Manufacturers.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        StatusMessage = "Manufacturer already exists.";
+                        MessageBox.Show(Application.Current.MainWindow, "Manufacturer already exists.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    var newItem = new VehicleManufacturer { Name = name };
+                    _context.Manufacturers.Add(newItem);
+                    await _context.SaveChangesAsync();
+
+                    Manufacturers.Insert(Manufacturers.Count - 1, newItem);
+                    SelectedManufacturer = newItem;
+                    StatusMessage = "Added new Manufacturer.";
+                    MessageBox.Show(Application.Current.MainWindow, "Manufacturer added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error adding Manufacturer: {ex.Message}";
+                    MessageBox.Show(Application.Current.MainWindow, $"Error adding Manufacturer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void HandleAddBrand()
+        {
+            var dialog = new SimpleInputDialog("Add Brand", "Enter new brand name:");
+            dialog.Owner = Application.Current.MainWindow;
+            if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.InputValue))
+            {
+                try
+                {
+                    var name = dialog.InputValue.Trim();
+                    if (Brands.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        StatusMessage = "Brand already exists.";
+                        MessageBox.Show(Application.Current.MainWindow, "Brand already exists.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    var newItem = new PartBrand { Name = name };
+                    _context.PartBrands.Add(newItem);
+                    await _context.SaveChangesAsync();
+
+                    Brands.Insert(Brands.Count - 1, newItem);
+                    SelectedBrand = newItem;
+                    StatusMessage = "Added new Brand.";
+                    MessageBox.Show(Application.Current.MainWindow, "Brand added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error adding Brand: {ex.Message}";
+                    MessageBox.Show(Application.Current.MainWindow, $"Error adding Brand: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void HandleAddRack()
+        {
+            var dialog = new SimpleInputDialog("Add Rack", "Enter new rack location code:");
+            dialog.Owner = Application.Current.MainWindow;
+            if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.InputValue))
+            {
+                try
+                {
+                    var code = dialog.InputValue.Trim();
+                    if (Racks.Any(x => x.LocationCode.Equals(code, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        StatusMessage = "Rack already exists.";
+                        MessageBox.Show(Application.Current.MainWindow, "Rack already exists.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    var newItem = new Rack { LocationCode = code };
+                    _context.Racks.Add(newItem);
+                    await _context.SaveChangesAsync();
+
+                    Racks.Insert(Racks.Count - 1, newItem);
+                    SelectedRack = newItem;
+                    StatusMessage = "Added new Rack.";
+                    MessageBox.Show(Application.Current.MainWindow, "Rack added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error adding Rack: {ex.Message}";
+                    MessageBox.Show(Application.Current.MainWindow, $"Error adding Rack: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void HandleAddModel()
+        {
+            if (SelectedManufacturer == null) return;
+
+            var dialog = new SimpleInputDialog("Add Model", $"Enter new model name for {SelectedManufacturer.Name}:");
+            dialog.Owner = Application.Current.MainWindow;
+            if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.InputValue))
+            {
+                try
+                {
+                    var name = dialog.InputValue.Trim();
+                    if (Models.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        StatusMessage = "Model already exists.";
+                        MessageBox.Show(Application.Current.MainWindow, "Model already exists for this manufacturer.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    var newItem = new VehicleModel 
+                    { 
+                        Name = name, 
+                        VehicleManufacturerId = SelectedManufacturer.Id
+                    };
+                    _context.Models.Add(newItem);
+                    await _context.SaveChangesAsync();
+
+                    Models.Insert(Models.Count - 1, newItem);
+                    SelectedModel = newItem;
+                    StatusMessage = "Added new Model.";
+                    MessageBox.Show(Application.Current.MainWindow, "Vehicle Model added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                   StatusMessage = $"Error adding Model: {ex.Message}";
+                   MessageBox.Show(Application.Current.MainWindow, $"Error adding Model: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
     }
 }

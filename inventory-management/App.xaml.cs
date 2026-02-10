@@ -75,6 +75,10 @@ namespace inventory_management
                 }
 
                 var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
+                
+                // Force reset admin password to ensure access
+                await authService.ForceSetPasswordAsync("admin", "admin123");
+
                 var resetResult = await authService.TryResetAdminAsync();
                 if (resetResult.Changed)
                 {

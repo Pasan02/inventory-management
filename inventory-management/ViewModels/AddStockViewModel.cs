@@ -5,6 +5,7 @@ using inventory_management.Services;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace inventory_management.ViewModels
 {
@@ -127,6 +128,7 @@ namespace inventory_management.ViewModels
             if (Quantity <= 0)
             {
                 StatusMessage = "Quantity must be greater than zero.";
+                MessageBox.Show(Application.Current.MainWindow, "Quantity must be greater than zero.", "Invalid Quantity", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -134,6 +136,7 @@ namespace inventory_management.ViewModels
             if (item == null)
             {
                 StatusMessage = "Item not found.";
+                MessageBox.Show(Application.Current.MainWindow, "Item not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 CurrentItem = null;
                 CurrentQuantity = 0;
                 return;
@@ -146,6 +149,11 @@ namespace inventory_management.ViewModels
             if (result.Success)
             {
                 CurrentQuantity = result.NewQuantity;
+                MessageBox.Show(Application.Current.MainWindow, $"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show(Application.Current.MainWindow, $"Failed to add stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -169,6 +177,7 @@ namespace inventory_management.ViewModels
             if (item == null)
             {
                 StatusMessage = "Item not found.";
+                MessageBox.Show(Application.Current.MainWindow, "Item not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 CurrentItem = null;
                 CurrentQuantity = 0;
                 return;
@@ -181,6 +190,11 @@ namespace inventory_management.ViewModels
             if (result.Success)
             {
                 CurrentQuantity = result.NewQuantity;
+                MessageBox.Show(Application.Current.MainWindow, $"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                 MessageBox.Show(Application.Current.MainWindow, $"Failed to add stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
