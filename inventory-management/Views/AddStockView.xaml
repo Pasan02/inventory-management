@@ -18,23 +18,24 @@
 
         <TextBlock Text="Add Stock" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
 
-        <StackPanel Grid.Row="1" Margin="0,0,20,0">
-            <TextBlock Text="Select Item"/>
-            <ComboBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Margin="0,0,0,10"/>
+        <StackPanel Grid.Row="1" Margin="0,0,40,0">
+            <TextBlock Text="Search Item by Barcode" FontSize="24"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Height="50" FontSize="20"/>
+            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Height="150" Margin="0,0,0,20" FontSize="20"/>
 
-            <TextBlock Text="Scan / Enter Barcode"/>
-            <TextBox Text="{Binding BarcodeInput}" Margin="0,0,0,10">
+            <TextBlock Text="Scan / Enter Barcode" FontSize="24"/>
+            <TextBox Text="{Binding BarcodeInput}" Margin="0,0,0,20" Height="50" FontSize="20">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter" Command="{Binding ScanAddCommand}"/>
                 </TextBox.InputBindings>
             </TextBox>
 
-            <Button Command="{Binding LookupItemCommand}" Content="Load Item Details" Height="Auto" Margin="0,0,0,20"/>
+            <Button Command="{Binding LookupItemCommand}" Content="Load Item Details" Height="60" Margin="0,0,0,30" FontSize="24"/>
 
-            <TextBlock Text="Quantity to Add"/>
-            <TextBox Text="{Binding Quantity}" Margin="0,0,0,20"/>
+            <TextBlock Text="Quantity to Add" FontSize="24"/>
+            <TextBox Text="{Binding Quantity}" Margin="0,0,0,30" Height="50" FontSize="24"/>
 
-            <Button Command="{Binding AddStockCommand}" Content="Add Stock" Height="50" FontSize="20" FontWeight="Bold"/>
+            <Button Command="{Binding AddStockCommand}" Content="Add Stock" Height="80" FontSize="32" FontWeight="Bold"/>
 
         </StackPanel>
 

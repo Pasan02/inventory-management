@@ -7,12 +7,29 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
+using System.Collections.Generic; // Added
+using System; // Added
+
 namespace inventory_management.ViewModels
 {
     public partial class AddStockViewModel : ViewModelBase
     {
         private readonly IStockService _stockService;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly List<Item> _allItems = new();
+
+        private string _searchText = string.Empty;
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (SetProperty(ref _searchText, value))
+                {
+                    FilterItems();
+                }
+            }
+        }
 
         private string _barcodeInput = string.Empty;
         public string BarcodeInput
@@ -34,7 +51,7 @@ namespace inventory_management.ViewModels
                     BarcodeInput = value.Barcode;
                     CurrentItem = value;
                     CurrentQuantity = value.Stock?.Quantity ?? 0;
-                    StatusMessage = "Item selected.";
+                    StatusMessage = "Ready";
                 }
             }
         }
@@ -83,17 +100,48 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            Items.Clear();
+            _allItems.Clear();
             var items = await _stockService.GetItemsAsync();
             foreach (var item in items)
             {
-                Items.Add(item);
+                _allItems.Add(item);
             }
+            FilterItems();
+        }
 
-            if (Items.Count == 0)
+        private void FilterItems()
+        {
+            Items.Clear();
+            if (string.IsNullOrWhiteSpace(SearchText))
             {
-                StatusMessage = "No items found.";
+                foreach(var item in _allItems) Items.Add(item);
             }
+            else
+            {
+                var lower = SearchText.ToLower();
+                foreach(var item in _allItems.Where(i => i.Barcode.ToLower().Contains(lower)))
+                {
+                    Items.Add(item);
+                }
+            }
+        }
+
+        private void ClearInputs()
+        {
+            BarcodeInput = string.Empty;
+            SearchText = string.Empty;
+            Quantity = 1;
+            StatusMessage = "Ready";
+            SelectedItem = null;
+            CurrentItem = null;
+            CurrentQuantity = 0;
+            FilterItems();
+        }
+
+        [RelayCommand]
+        private void LoadItemsCommand()
+        {
+            LoadItems();
         }
 
         [RelayCommand]
@@ -144,15 +192,15 @@ namespace inventory_management.ViewModels
 
             CurrentItem = item;
             var result = await _stockService.AddStockAsync(item.Barcode, Quantity);
-            StatusMessage = result.Message;
 
             if (result.Success)
             {
-                CurrentQuantity = result.NewQuantity;
                 MessageBox.Show(Application.Current.MainWindow, $"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ClearInputs();
             }
             else
             {
+                StatusMessage = result.Message;
                 MessageBox.Show(Application.Current.MainWindow, $"Failed to add stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -185,15 +233,15 @@ namespace inventory_management.ViewModels
 
             CurrentItem = item;
             var result = await _stockService.AddStockAsync(item.Barcode, 1);
-            StatusMessage = result.Message;
 
             if (result.Success)
             {
-                CurrentQuantity = result.NewQuantity;
                 MessageBox.Show(Application.Current.MainWindow, $"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ClearInputs();
             }
             else
             {
+                 StatusMessage = result.Message;
                  MessageBox.Show(Application.Current.MainWindow, $"Failed to add stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

@@ -8,38 +8,40 @@
              d:DesignHeight="600" d:DesignWidth="800">
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="2*"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="0*"/>
+            <ColumnDefinition Width="244*"/>
+            <ColumnDefinition Width="263*"/>
+            <ColumnDefinition Width="253*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Remove Stock" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
+        <TextBlock Text="Remove Stock" FontSize="20" FontWeight="Bold" Grid.ColumnSpan="3"/>
 
-        <StackPanel Grid.Row="1" Margin="0,0,20,0">
-            <TextBlock Text="Select Item"/>
-            <ComboBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Margin="0,0,0,10"/>
+        <StackPanel Grid.Row="1" Margin="0,0,40,0" Grid.ColumnSpan="3">
+            <TextBlock Text="Search Item by Barcode" FontSize="24"/>
+            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Height="50" FontSize="20"/>
+            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Height="150" Margin="0,0,0,20" FontSize="20"/>
 
-            <TextBlock Text="Scan / Enter Barcode"/>
-            <TextBox Text="{Binding BarcodeInput}" Margin="0,0,0,10">
+            <TextBlock Text="Selected Barcode" FontSize="24"/>
+            <TextBox Text="{Binding BarcodeInput}" Margin="0,0,0,20" Height="50" FontSize="20">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter" Command="{Binding ScanRemoveCommand}"/>
                 </TextBox.InputBindings>
             </TextBox>
 
-            <Button Command="{Binding LookupItemCommand}" Content="Load Item Details" Height="Auto" Margin="0,0,0,20"/>
+            <Button Command="{Binding LookupItemCommand}" Content="Load Item Details" Height="60" Margin="0,0,0,30" FontSize="24"/>
 
-            <TextBlock Text="Quantity to Remove"/>
-            <TextBox Text="{Binding Quantity}" Margin="0,0,0,20"/>
+            <TextBlock Text="Quantity to Remove" FontSize="24"/>
+            <TextBox Text="{Binding Quantity}" Margin="0,0,0,30" Height="50" FontSize="24"/>
 
-            <Button Command="{Binding RemoveStockCommand}" Content="Remove Stock" Height="40" FontSize="16"/>
+            <Button Command="{Binding RemoveStockCommand}" Content="Remove Stock" Height="80" FontSize="32" FontWeight="Bold"/>
 
-            <TextBlock Text="{Binding StatusMessage}" Foreground="Red" Margin="0,20,0,0" TextWrapping="Wrap"/>
         </StackPanel>
 
-        <Border Grid.Column="1" Grid.Row="1" Padding="10" BorderBrush="#DDD" BorderThickness="1"
+        <Border Grid.Column="3" Grid.Row="1" Padding="10" BorderBrush="#DDD" BorderThickness="1"
                 Visibility="{Binding CurrentItem, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}">
             <StackPanel>
                 <TextBlock Text="Item Details" FontWeight="Bold" Margin="0,0,0,10"/>
