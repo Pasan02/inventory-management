@@ -8,5 +8,7 @@ namespace inventory_management.Views
         {
             InitializeComponent();
         }
+
+        
     }
 }
