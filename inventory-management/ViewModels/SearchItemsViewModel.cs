@@ -27,6 +27,37 @@ namespace inventory_management.ViewModels
             _currentStep = CreatePartsStep();
         }
 
+        /// <summary>
+        /// Handles hierarchical back navigation within the search pages.
+        /// Returns true if navigated back within search hierarchy, false if at root (Parts page).
+        /// </summary>
+        public bool GoBack()
+        {
+            // If we're on the Models page, go back to Manufacturers
+            if (CurrentStep is SearchModelsViewModel)
+            {
+                if (_selectedPart != null)
+                {
+                    CurrentStep = CreateManufacturersStep(_selectedPart);
+                    return true;
+                }
+            }
+            // If we're on the Manufacturers page, go back to Parts
+            else if (CurrentStep is SearchManufacturersViewModel)
+            {
+                CurrentStep = CreatePartsStep();
+                _selectedPart = null;
+                return true;
+            }
+            // If we're on the Parts page, return false to indicate we should go to home
+            else if (CurrentStep is SearchPartsViewModel)
+            {
+                return false;
+            }
+
+            return false;
+        }
+
         [RelayCommand]
         private void Refresh()
         {
@@ -70,3 +101,4 @@ namespace inventory_management.ViewModels
         }
     }
 }
+

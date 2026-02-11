@@ -2,13 +2,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using inventory_management.Data.Entities;
 using inventory_management.Services;
+using inventory_management.Views;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-
-using System.Collections.Generic; // Added
-using System; // Added
+using System.Collections.Generic;
+using System;
 
 namespace inventory_management.ViewModels
 {
@@ -176,7 +176,7 @@ namespace inventory_management.ViewModels
             if (Quantity <= 0)
             {
                 StatusMessage = "Quantity must be greater than zero.";
-                MessageBox.Show(Application.Current.MainWindow, "Quantity must be greater than zero.", "Invalid Quantity", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Quantity must be greater than zero.", "Invalid Quantity");
                 return;
             }
 
@@ -184,7 +184,7 @@ namespace inventory_management.ViewModels
             if (item == null)
             {
                 StatusMessage = "Item not found.";
-                MessageBox.Show(Application.Current.MainWindow, "Item not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError("Item not found.", "Error");
                 CurrentItem = null;
                 CurrentQuantity = 0;
                 return;
@@ -195,13 +195,13 @@ namespace inventory_management.ViewModels
 
             if (result.Success)
             {
-                MessageBox.Show(Application.Current.MainWindow, $"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageDialog.ShowSuccess($"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success");
                 ClearInputs();
             }
             else
             {
                 StatusMessage = result.Message;
-                MessageBox.Show(Application.Current.MainWindow, $"Failed to add stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError($"Failed to add stock: {result.Message}", "Error");
             }
         }
 
@@ -225,7 +225,7 @@ namespace inventory_management.ViewModels
             if (item == null)
             {
                 StatusMessage = "Item not found.";
-                MessageBox.Show(Application.Current.MainWindow, "Item not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError("Item not found.", "Error");
                 CurrentItem = null;
                 CurrentQuantity = 0;
                 return;
@@ -236,13 +236,13 @@ namespace inventory_management.ViewModels
 
             if (result.Success)
             {
-                MessageBox.Show(Application.Current.MainWindow, $"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageDialog.ShowSuccess($"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success");
                 ClearInputs();
             }
             else
             {
                  StatusMessage = result.Message;
-                 MessageBox.Show(Application.Current.MainWindow, $"Failed to add stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                 ModernMessageDialog.ShowError($"Failed to add stock: {result.Message}", "Error");
             }
         }
     }

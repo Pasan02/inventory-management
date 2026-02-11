@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using inventory_management.Services;
+using inventory_management.Views;
 using System;
 using System.Threading.Tasks;
 using System.Windows;
@@ -49,6 +50,7 @@ namespace inventory_management.ViewModels
         public void Reset()
         {
             StatusMessage = "Enter credentials.";
+            Username = string.Empty;
             Password = string.Empty;
             IsPasswordVisible = false;
         }
@@ -62,7 +64,7 @@ namespace inventory_management.ViewModels
             if (string.IsNullOrWhiteSpace(Username) && string.IsNullOrWhiteSpace(Password))
             {
                 StatusMessage = "Login failed: Username and Password required.";
-                MessageBox.Show(Application.Current.MainWindow, "Login failed: Username and Password required.", "Login Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError("Login failed: Username and Password required.", "Login Failed");
                 return;
             }
 
@@ -74,24 +76,14 @@ namespace inventory_management.ViewModels
             if (result.Success)
             {
                 StatusMessage = "Login successful.";
-                MessageBox.Show(Application.Current.MainWindow, "Login successful.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                ModernMessageDialog.ShowSuccess("Login successful!", "Success");
                 Password = string.Empty;
                 LoginSucceeded?.Invoke();
             }
             else
             {
-                // If both are potentially wrong (e.g. user exists but pass wrong, or user doesn't exist), 
-                // the service now returns specific messages.
-                // However, user asked: "if both are incorrect login failed"
-                // Logic: 
-                // 1. If username doesn't exist -> Service returns "Your username is incorrect."
-                // 2. If username exists but password wrong -> Service returns "Your password is incorrect."
-                // 3. If "both are incorrect" -> This is logically implied if the user types a wrong username AND a wrong password. 
-                //    Since we check username first, we'll see "Your username is incorrect".
-                //    If the user meant "If I type a random username AND random password", then "Username is incorrect" is the technically correct first error.
-                
                 StatusMessage = result.Message;
-                MessageBox.Show(Application.Current.MainWindow, result.Message, "Login Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError(result.Message, "Login Failed");
             }
         }
     }

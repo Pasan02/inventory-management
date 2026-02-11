@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using inventory_management.Views;
 using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,17 @@ namespace inventory_management.ViewModels
                 return;
             }
 
+            // Check if we're in the search hierarchy and need to go back one step
+            if (CurrentViewModel is SearchItemsViewModel searchViewModel)
+            {
+                if (searchViewModel.GoBack())
+                {
+                    // Successfully navigated back within search hierarchy
+                    return;
+                }
+            }
+
+            // Otherwise go to home
             CurrentViewModel = _serviceProvider.GetRequiredService<HomeViewModel>();
             Title = "Vehicle A/C Inventory System";
         }
@@ -123,12 +135,11 @@ namespace inventory_management.ViewModels
         [RelayCommand]
         private void Logout()
         {
-            var result = MessageBox.Show(Application.Current.MainWindow, 
-                                         "Are you sure you want to sign out?", 
-                                         "Confirm Sign Out", 
-                                         MessageBoxButton.YesNo, 
-                                         MessageBoxImage.Question);
-            if (result == MessageBoxResult.Yes)
+            var result = ModernMessageDialog.ShowQuestion(
+                "Are you sure you want to sign out?", 
+                "Confirm Sign Out");
+                
+            if (result == true)
             {
                 _loginViewModel.Reset();
                 IsAuthenticated = false;

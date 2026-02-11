@@ -112,7 +112,7 @@
                     <TextBlock Text="Low Stock Threshold"/>
                     <TextBox Text="{Binding LowStockThreshold}"/>
 
-                    <Button Command="{Binding SaveItemCommand}" Content="SAVE ITEM" Height="80" FontSize="32" FontWeight="Bold" Background="#007ACC" Foreground="White" Margin="0,20,0,50"/>
+                    <Button Command="{Binding SaveItemCommand}" Content="SAVE ITEM" Height="80" FontSize="32" FontWeight="Bold" Margin="0,20,0,50"/>
 
                 </StackPanel>
             </ScrollViewer>
