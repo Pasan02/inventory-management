@@ -116,7 +116,7 @@
             <!-- Refresh Button (Reports Only) -->
             <Button Command="{Binding CurrentViewModel.LoadReportsCommand}" 
                     Visibility="{Binding CurrentViewModel, Converter={x:Static converters:ReportsViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}"
-                    Margin="20,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
+                    Margin="5,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
                 <StackPanel Orientation="Horizontal">
                     <Viewbox Width="20" Height="20" Margin="0,0,5,0">
                         <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" Fill="Black"/>
@@ -128,7 +128,7 @@
              <!-- Refresh Button (Add Stock) -->
             <Button Command="{Binding CurrentViewModel.LoadItemsCommandCommand}" 
                     Visibility="{Binding CurrentViewModel, Converter={x:Static converters:AddStockViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}"
-                    Margin="20,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
+                    Margin="5,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
                 <StackPanel Orientation="Horizontal">
                     <Viewbox Width="20" Height="20" Margin="0,0,5,0">
                         <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" Fill="Black"/>
@@ -140,7 +140,7 @@
             <!-- Refresh Button (Remove Stock) -->
             <Button Command="{Binding CurrentViewModel.LoadItemsCommandCommand}" 
                     Visibility="{Binding CurrentViewModel, Converter={x:Static converters:RemoveStockViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}"
-                    Margin="20,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
+                    Margin="5,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
                 <StackPanel Orientation="Horizontal">
                     <Viewbox Width="20" Height="20" Margin="0,0,5,0">
                         <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" Fill="Black"/>
@@ -152,7 +152,19 @@
             <!-- Refresh Button (Item Creation) -->
             <Button Command="{Binding CurrentViewModel.LoadReferenceDataCommand}" 
                     Visibility="{Binding CurrentViewModel, Converter={x:Static converters:ItemCreationViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}"
-                    Margin="20,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
+                    Margin="5,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
+                <StackPanel Orientation="Horizontal">
+                    <Viewbox Width="20" Height="20" Margin="0,0,5,0">
+                        <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" Fill="Black"/>
+                    </Viewbox>
+                    <TextBlock Text="Refresh" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Refresh Button (Search Items) -->
+            <Button Command="{Binding CurrentViewModel.RefreshCommand}" 
+                    Visibility="{Binding CurrentViewModel, Converter={x:Static converters:SearchItemsViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}"
+                    Margin="5,0,0,0" Padding="10,5" MinWidth="80" MinHeight="34">
                 <StackPanel Orientation="Horizontal">
                     <Viewbox Width="20" Height="20" Margin="0,0,5,0">
                         <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" Fill="Black"/>

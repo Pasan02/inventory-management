@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using inventory_management.Data;
 using inventory_management.Services;
 using inventory_management.ViewModels.Search;
@@ -24,6 +25,23 @@ namespace inventory_management.ViewModels
             _context = context;
             _availabilityService = availabilityService;
             _currentStep = CreatePartsStep();
+        }
+
+        [RelayCommand]
+        private void Refresh()
+        {
+            if (CurrentStep is SearchPartsViewModel partsVm)
+            {
+                partsVm.LoadPartsCommand.Execute(null);
+            }
+            else if (CurrentStep is SearchManufacturersViewModel manufacturersVm)
+            {
+                manufacturersVm.LoadManufacturersCommand.Execute(null);
+            }
+            else if (CurrentStep is SearchModelsViewModel modelsVm)
+            {
+                modelsVm.LoadModelsCommand.Execute(null);
+            }
         }
 
         private ViewModelBase CreatePartsStep()

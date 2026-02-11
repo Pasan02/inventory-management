@@ -8,19 +8,13 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-            <Button Content="? Back" Command="{Binding DataContext.GoHomeCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="10,5" Width="100" Height="34" Margin="0,0,10,0"/>
-            <Button Content="?? Refresh" Command="{Binding LoadPartsCommand}" Padding="10,5" Width="100" Height="34"/>
-        </StackPanel>
+        <TextBlock Grid.Row="0" Text="Select Part Type" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
 
-        <TextBlock Grid.Row="1" Text="Select Part Type" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-
-        <ScrollViewer Grid.Row="2">
+        <ScrollViewer Grid.Row="1">
             <ItemsControl ItemsSource="{Binding Parts}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -43,6 +37,6 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" Margin="0,10,0,0"/>
+        <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Margin="0,10,0,0"/>
     </Grid>
 </UserControl>
