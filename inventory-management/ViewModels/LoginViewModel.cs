@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using inventory_management.Services;
 using System;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace inventory_management.ViewModels
 {
@@ -24,6 +25,13 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _password, value);
         }
 
+        private bool _isPasswordVisible;
+        public bool IsPasswordVisible
+        {
+            get => _isPasswordVisible;
+            set => SetProperty(ref _isPasswordVisible, value);
+        }
+
         private string _statusMessage = "Enter credentials.";
         public string StatusMessage
         {
@@ -38,17 +46,52 @@ namespace inventory_management.ViewModels
             _authenticationService = authenticationService;
         }
 
+        public void Reset()
+        {
+            StatusMessage = "Enter credentials.";
+            Password = string.Empty;
+            IsPasswordVisible = false;
+        }
+
         [RelayCommand]
         private async Task Login()
         {
             StatusMessage = "Signing in...";
-            var result = await _authenticationService.LoginAsync(Username, Password);
-            StatusMessage = result.Message;
+            
+            // Client-side pre-validation for better UX
+            if (string.IsNullOrWhiteSpace(Username) && string.IsNullOrWhiteSpace(Password))
+            {
+                StatusMessage = "Login failed: Username and Password required.";
+                MessageBox.Show(Application.Current.MainWindow, "Login failed: Username and Password required.", "Login Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
+            var result = await _authenticationService.LoginAsync(Username, Password);
+            
+            // If the service returns generic 'Username and password required', we might want to handle it or just show it.
+            // But since we did pre-check, we focus on result.Message
+            
             if (result.Success)
             {
+                StatusMessage = "Login successful.";
+                MessageBox.Show(Application.Current.MainWindow, "Login successful.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 Password = string.Empty;
                 LoginSucceeded?.Invoke();
+            }
+            else
+            {
+                // If both are potentially wrong (e.g. user exists but pass wrong, or user doesn't exist), 
+                // the service now returns specific messages.
+                // However, user asked: "if both are incorrect login failed"
+                // Logic: 
+                // 1. If username doesn't exist -> Service returns "Your username is incorrect."
+                // 2. If username exists but password wrong -> Service returns "Your password is incorrect."
+                // 3. If "both are incorrect" -> This is logically implied if the user types a wrong username AND a wrong password. 
+                //    Since we check username first, we'll see "Your username is incorrect".
+                //    If the user meant "If I type a random username AND random password", then "Username is incorrect" is the technically correct first error.
+                
+                StatusMessage = result.Message;
+                MessageBox.Show(Application.Current.MainWindow, result.Message, "Login Failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

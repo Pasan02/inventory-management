@@ -5,6 +5,7 @@ using inventory_management.Services;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace inventory_management.ViewModels
 {
@@ -146,6 +147,11 @@ namespace inventory_management.ViewModels
             if (result.Success)
             {
                 CurrentQuantity = result.NewQuantity;
+                MessageBox.Show(Application.Current.MainWindow, $"Removed {Quantity} unit(s) successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show(Application.Current.MainWindow, $"Failed to remove stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -181,6 +187,11 @@ namespace inventory_management.ViewModels
             if (result.Success)
             {
                 CurrentQuantity = result.NewQuantity;
+                MessageBox.Show(Application.Current.MainWindow, $"Removed 1 unit successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show(Application.Current.MainWindow, $"Failed to remove stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

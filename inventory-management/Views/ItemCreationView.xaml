@@ -14,78 +14,126 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Text="Add New Item" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
+        <TextBlock Text="Add New Item" FontSize="36" FontWeight="Bold" Margin="0,0,0,30"/>
         
         <!-- Form -->
-        <ScrollViewer Grid.Row="1">
-            <StackPanel MaxWidth="600" HorizontalAlignment="Left">
+        <!-- Fixed Panel for Barcode (Top-Right, aligned with start of form content) - Outside ScrollViewer to prevent scrolling -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Scrollable Form Area -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,30,0">
+                    
+                    <TextBlock Text="Part Type"/>
+                    <ComboBox ItemsSource="{Binding PartTypes}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedPartType}"/>
+                    
+                    <!-- Quick Add Part Type -->
+                    <Border Background="#F0F0F0" Padding="15" Margin="0,0,0,20" CornerRadius="5">
+                        <StackPanel>
+                             <TextBlock Text="Quick Add Part Type" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                             <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding NewPartTypeName}" Margin="0,0,10,0"/>
+                                <Button Grid.Column="1" Content="Pick Image" Command="{Binding BrowsePartTypeImageCommand}" Margin="0,0,10,15"/>
+                                <Button Grid.Column="2" Content="Add" Command="{Binding AddPartTypeCommand}" FontWeight="Bold" Width="100"/>
+                             </Grid>
+                             <TextBlock Text="Image Path:" FontSize="16"/>
+                             <TextBox Text="{Binding NewPartTypeImagePath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Manufacturer"/>
+                    <ComboBox ItemsSource="{Binding Manufacturers}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedManufacturer}"/>
+                    
+                    <!-- Quick Add Manufacturer -->
+                    <Border Background="#F0F0F0" Padding="15" Margin="0,0,0,20" CornerRadius="5">
+                        <StackPanel>
+                             <TextBlock Text="Quick Add Manufacturer" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                             <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding NewManufacturerName}" Margin="0,0,10,0"/>
+                                <Button Grid.Column="1" Content="Pick Logo" Command="{Binding BrowseManufacturerLogoCommand}" Margin="0,0,10,15"/>
+                                <Button Grid.Column="2" Content="Add" Command="{Binding AddManufacturerCommand}" FontWeight="Bold" Width="100"/>
+                             </Grid>
+                             <TextBlock Text="Logo Path:" FontSize="16"/>
+                             <TextBox Text="{Binding NewManufacturerLogoPath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+
+
+                    <TextBlock Text="Vehicle Model"/>
+                    <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedModel}"/>
+                    
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Text="{Binding NewModelName}" Margin="0,0,10,0" ToolTip="New Model Name"/>
+                        <TextBox Grid.Column="1" Text="{Binding NewModelYearRange}" Margin="0,0,10,0" ToolTip="Year Range"/>
+                        <Button Grid.Column="2" Content="Add Model" Command="{Binding AddModelCommand}" Width="150"/>
+                    </Grid>
+
+                    <TextBlock Text="Brand"/>
+                    <ComboBox ItemsSource="{Binding Brands}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedBrand}"/>
+
+                    <TextBlock Text="Country of Origin"/>
+                    <TextBox Text="{Binding CountryOfOrigin}"/>
+
+                    <TextBlock Text="Description / Notes"/>
+                    <TextBox Text="{Binding Description}" Height="100" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+
+                    <TextBlock Text="Item Image"/>
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding ImagePath}" Margin="0,0,10,0"/>
+                        <Button Grid.Column="1" Content="Browse..." Command="{Binding BrowseItemImageCommand}" Width="120"/>
+                    </Grid>
+
+                    <TextBlock Text="Rack Location"/>
+                    <ComboBox ItemsSource="{Binding Racks}" DisplayMemberPath="LocationCode" SelectedItem="{Binding SelectedRack}"/>
+
+                    <TextBlock Text="Low Stock Threshold"/>
+                    <TextBox Text="{Binding LowStockThreshold}"/>
+
+                    <Button Command="{Binding SaveItemCommand}" Content="SAVE ITEM" Height="80" FontSize="32" FontWeight="Bold" Background="#007ACC" Foreground="White" Margin="0,20,0,50"/>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Fixed Right Column: Result / Barcode / Preview -->
+            <!-- Using VerticalAlignment="Top" and Margin matches the top of scroll view content -->
+            <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Top"> 
+                <Border Background="White" Padding="15" CornerRadius="8" Width="300" HorizontalAlignment="Left" MinHeight="150">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.15"/>
+                    </Border.Effect>
+                    <StackPanel>
+                        <TextBlock Text="Generated Barcode" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,15" FontSize="18"/>
+                        <Image Source="{Binding BarcodeImage}" Height="80" Stretch="Uniform" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding SelectedBarcode}" HorizontalAlignment="Center" FontSize="20" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
                 
-                <TextBlock Text="Part Type"/>
-                <ComboBox ItemsSource="{Binding PartTypes}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedPartType}" Margin="0,0,0,10"/>
-                <StackPanel Margin="0,0,0,10">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                        <TextBox Width="200" Text="{Binding NewPartTypeName}" Margin="0,0,10,0"/>
-                        <Button Content="Select Image" Command="{Binding BrowsePartTypeImageCommand}" Padding="10,4" Margin="0,0,10,0"/>
-                        <Button Content="Add Part Type" Command="{Binding AddPartTypeCommand}" Padding="10,4"/>
-                    </StackPanel>
-                    <TextBlock Text="Part Type Image (relative path)"/>
-                    <TextBox Width="320" Text="{Binding NewPartTypeImagePath}" Margin="0,0,0,0"/>
-                </StackPanel>
-
-                <TextBlock Text="Manufacturer"/>
-                <ComboBox ItemsSource="{Binding Manufacturers}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedManufacturer}" Margin="0,0,0,10"/>
-                <StackPanel Margin="0,0,0,10">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                        <TextBox Width="200" Text="{Binding NewManufacturerName}" Margin="0,0,10,0"/>
-                        <Button Content="Select Logo" Command="{Binding BrowseManufacturerLogoCommand}" Padding="10,4" Margin="0,0,10,0"/>
-                        <Button Content="Add Manufacturer" Command="{Binding AddManufacturerCommand}" Padding="10,4"/>
-                    </StackPanel>
-                    <TextBlock Text="Manufacturer Logo (relative path)"/>
-                    <TextBox Width="320" Text="{Binding NewManufacturerLogoPath}" Margin="0,0,0,0"/>
-                </StackPanel>
-
-                <TextBlock Text="Vehicle Model"/>
-                <ComboBox ItemsSource="{Binding Models}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedModel}" Margin="0,0,0,10"/>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBox Width="180" Text="{Binding NewModelName}" Margin="0,0,10,0"/>
-                    <TextBox Width="120" Text="{Binding NewModelYearRange}" Margin="0,0,10,0"/>
-                    <Button Content="Add Model" Command="{Binding AddModelCommand}" Padding="10,4"/>
-                </StackPanel>
-
-                <TextBlock Text="Brand"/>
-                <ComboBox ItemsSource="{Binding Brands}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedBrand}" Margin="0,0,0,10"/>
-
-                <TextBlock Text="Country of Origin"/>
-                <TextBox Text="{Binding CountryOfOrigin}" Margin="0,0,0,10"/>
-
-                <TextBlock Text="Description / Notes"/>
-                <TextBox Text="{Binding Description}" Height="60" TextWrapping="Wrap" Margin="0,0,0,10"/>
-
-                <TextBlock Text="Item Image"/>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <TextBox Width="240" Text="{Binding ImagePath}" Margin="0,0,10,0"/>
-                    <Button Content="Select Image" Command="{Binding BrowseItemImageCommand}" Padding="10,4"/>
-                </StackPanel>
-
-                <TextBlock Text="Rack Location"/>
-                <ComboBox ItemsSource="{Binding Racks}" DisplayMemberPath="LocationCode" SelectedItem="{Binding SelectedRack}" Margin="0,0,0,10"/>
-
-                <TextBlock Text="Low Stock Threshold"/>
-                <TextBox Text="{Binding LowStockThreshold}" Margin="0,0,0,20"/>
-
-                <Button Command="{Binding SaveItemCommand}" Content="Save &amp; Generate Barcode" Height="40" FontSize="16"/>
-
+                <TextBlock Text="{Binding StatusMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,20,0,0" FontSize="16" FontWeight="Bold" HorizontalAlignment="Left" Width="300"/>
             </StackPanel>
-        </ScrollViewer>
-
-        <!-- Result / Barcode Display -->
-        <StackPanel Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Top" Width="300" Margin="20,0,0,0">
-            <TextBlock Text="Generated Barcode" FontWeight="Bold" Margin="0,0,0,10"/>
-            <Image Source="{Binding BarcodeImage}" Height="100" Stretch="Uniform"/>
-            <TextBlock Text="{Binding SelectedBarcode}" HorizontalAlignment="Center" FontSize="16" Margin="0,5,0,0"/>
-            
-            <TextBlock Text="{Binding StatusMessage}" Foreground="Red" TextWrapping="Wrap" Margin="0,20,0,0" FontSize="14"/>
-        </StackPanel>
+        </Grid>
         
         <!-- Navigation Footer can be in Main View or here -->
     </Grid>

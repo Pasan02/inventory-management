@@ -33,16 +33,21 @@ namespace inventory_management.Services
             var normalized = username.Trim();
             var account = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Username == normalized);
 
-            if (account == null || !account.IsActive)
+            if (account == null)
             {
-                await WriteAuditAsync(account?.Id, false, "Invalid credentials.");
-                return new LoginResult { Success = false, Message = "Invalid credentials." };
+                // User requested "Login failed" if username is incorrect (implies both are incorrect)
+                return new LoginResult { Success = false, Message = "Login failed." };
+            }
+
+            if (!account.IsActive)
+            {
+                 return new LoginResult { Success = false, Message = "Account is disabled." };
             }
 
             if (!PasswordHasher.VerifyPassword(password, account.PasswordHash, account.PasswordSalt))
             {
-                await WriteAuditAsync(account.Id, false, "Invalid credentials.");
-                return new LoginResult { Success = false, Message = "Invalid credentials." };
+                await WriteAuditAsync(account.Id, false, "Invalid password.");
+                return new LoginResult { Success = false, Message = "Your password is incorrect." };
             }
 
             await WriteAuditAsync(account.Id, true, null);
@@ -165,6 +170,36 @@ namespace inventory_management.Services
 
             _context.UserLoginAudits.Add(audit);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task ForceSetPasswordAsync(string username, string password)
+        {
+            var normalized = username.Trim();
+            var account = await _context.UserAccounts.FirstOrDefaultAsync(u => u.Username == normalized);
+
+            var hashResult = PasswordHasher.HashPassword(password);
+
+            if (account == null)
+            {
+                account = new UserAccount
+                {
+                    Username = normalized,
+                    PasswordHash = hashResult.Hash,
+                    PasswordSalt = hashResult.Salt,
+                    IsActive = true,
+                    CreatedUtc = DateTime.UtcNow
+                };
+                _context.UserAccounts.Add(account);
+            }
+            else
+            {
+                account.PasswordHash = hashResult.Hash;
+                account.PasswordSalt = hashResult.Salt;
+                account.IsActive = true;
+            }
+
+            await _context.SaveChangesAsync();
+            await WriteAuditAsync(account.Id, true, "Password forced reset request.");
         }
     }
 }

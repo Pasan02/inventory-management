@@ -3,7 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:inventory_management.Converters"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -11,18 +15,37 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="1" Padding="30" BorderThickness="1" BorderBrush="Gray" CornerRadius="6" HorizontalAlignment="Center" Width="360">
+        <Border Grid.Row="1" Width="600" Style="{StaticResource CardBorderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center">
             <StackPanel>
-                <TextBlock Text="Login" FontSize="20" FontWeight="Bold" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+                <TextBlock Text="Alpha Motors Inventory" FontSize="40" FontWeight="Bold" Margin="0,0,0,30" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
 
-                <TextBlock Text="Username"/>
-                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,12"/>
+                <TextBlock Text="Username" Margin="0,0,0,10"/>
+                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBlock Text="Password"/>
-                <PasswordBox x:Name="PasswordInput" PasswordChanged="OnPasswordChanged" Margin="0,4,0,12"/>
+                <TextBlock Text="Password" Margin="0,0,0,10"/>
+                <Grid Margin="0,0,0,30">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <Button Content="Sign In" Command="{Binding LoginCommand}" Padding="10,4"/>
-                <TextBlock Text="{Binding StatusMessage}" Margin="0,12,0,0"/>
+                    <PasswordBox x:Name="PasswordInput" PasswordChanged="OnPasswordChanged" 
+                         Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+
+                    <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" 
+                         Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                    <Button Grid.Column="1" Width="60" Height="50" Margin="15,0,0,15" Padding="0" Click="TogglePasswordVisibility">
+                        <Viewbox Width="35" Height="25">
+                            <Path Data="M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z" 
+                                  Fill="Black"/>
+                        </Viewbox>
+                    </Button>
+                </Grid>
+
+                <Button Content="Sign In" Command="{Binding LoginCommand}" Height="70" FontSize="30" FontWeight="Bold"/>
+                
+                <!-- Status TextBlock removed as requested -->
             </StackPanel>
         </Border>
     </Grid>

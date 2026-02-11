@@ -120,6 +120,23 @@ namespace inventory_management.ViewModels
             Title = "Reports";
         }
 
+        [RelayCommand]
+        private void Logout()
+        {
+            var result = MessageBox.Show(Application.Current.MainWindow, 
+                                         "Are you sure you want to sign out?", 
+                                         "Confirm Sign Out", 
+                                         MessageBoxButton.YesNo, 
+                                         MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                _loginViewModel.Reset();
+                IsAuthenticated = false;
+                CurrentViewModel = _loginViewModel;
+                Title = "Sign In";
+            }
+        }
+
         private void OnLoginSucceeded()
         {
             IsAuthenticated = true;

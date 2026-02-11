@@ -29,7 +29,7 @@
                 </TextBox.InputBindings>
             </TextBox>
 
-            <Button Command="{Binding LookupItemCommand}" Content="Load Item" Height="32" Margin="0,0,0,20"/>
+            <Button Command="{Binding LookupItemCommand}" Content="Load Item Details" Height="Auto" Margin="0,0,0,20"/>
 
             <TextBlock Text="Quantity to Remove"/>
             <TextBox Text="{Binding Quantity}" Margin="0,0,0,20"/>

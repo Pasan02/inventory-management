@@ -8,14 +8,15 @@
         xmlns:views="clr-namespace:inventory_management.Views"
         xmlns:converters="clr-namespace:inventory_management.Converters"
         mc:Ignorable="d"
-        Title="{Binding Title}" Height="600" Width="1000" WindowStartupLocation="CenterScreen">
-    <Grid Margin="20">
+        Title="{Binding Title}" WindowState="Maximized" WindowStartupLocation="CenterScreen">
+    <Grid Margin="30">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,30"/>
+        <!-- Header Title - Removing as requested to clean up UI (LoginView has its own header) -->
+        <!-- <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,30"/> -->
 
         <!-- Main Content Area with Navigation Switcher -->
         <ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}">
@@ -24,38 +25,45 @@
                 <!-- If CurrentViewModel is NULL, show the Home Menu (Buttons) -->
                 <DataTemplate DataType="{x:Type vm:HomeViewModel}">
                     <UniformGrid Columns="2" Rows="3" Margin="50">
-                        <Button Command="{Binding DataContext.NavigateToAddStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                        <Button Command="{Binding DataContext.NavigateToAddStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
                             <StackPanel>
-                                <TextBlock Text="➕" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
-                                <TextBlock Text="Add Stock"/>
+                                <TextBlock Text="➕" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
+                                <TextBlock Text="Add Stock" FontSize="32" FontWeight="Bold"/>
                             </StackPanel>
                         </Button>
-                        <Button Command="{Binding DataContext.NavigateToRemoveStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                        <Button Command="{Binding DataContext.NavigateToRemoveStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
                             <StackPanel>
-                                <TextBlock Text="➖" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
-                                <TextBlock Text="Remove Stock"/>
+                                <TextBlock Text="➖" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
+                                <TextBlock Text="Remove Stock" FontSize="32" FontWeight="Bold"/>
                             </StackPanel>
                         </Button>
                         
-                        <Button Command="{Binding DataContext.NavigateToSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                        <Button Command="{Binding DataContext.NavigateToSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
                             <StackPanel>
-                                <TextBlock Text="🔍" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
-                                <TextBlock Text="Search / Items"/>
+                                <TextBlock Text="🔍" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
+                                <TextBlock Text="Search / Items" FontSize="32" FontWeight="Bold"/>
                             </StackPanel>
                         </Button>
 
                          <!-- Added Create Item Button for Phase 2 -->
-                        <Button Command="{Binding DataContext.NavigateToCreateItemCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                        <Button Command="{Binding DataContext.NavigateToCreateItemCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
                             <StackPanel>
-                                <TextBlock Text="🆕" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
-                                <TextBlock Text="New Item"/>
+                                <TextBlock Text="🆕" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
+                                <TextBlock Text="New Item" FontSize="32" FontWeight="Bold"/>
                             </StackPanel>
                         </Button>
 
-                        <Button Command="{Binding DataContext.NavigateToReportsCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="10" FontSize="18">
+                        <Button Command="{Binding DataContext.NavigateToReportsCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
                             <StackPanel>
-                                <TextBlock Text="📊" HorizontalAlignment="Center" FontSize="32" Margin="0,0,0,5"/>
-                                <TextBlock Text="Reports"/>
+                                <TextBlock Text="📊" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
+                                <TextBlock Text="Reports" FontSize="32" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding DataContext.LogoutCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
+                            <StackPanel>
+                                <TextBlock Text="🔙" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
+                                <TextBlock Text="Sign Out" FontSize="32" FontWeight="Bold"/>
                             </StackPanel>
                         </Button>
                     </UniformGrid>
@@ -91,11 +99,18 @@
             </ContentControl.Resources>
         </ContentControl>
 
-        <!-- Home Button (Only visible when navigating) -->
+        <!-- Home / Back Button (Only visible when navigating) -->
         <Button Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,0,0,0"
                 Command="{Binding GoHomeCommand}" 
                 Visibility="{Binding CurrentViewModel, Converter={x:Static converters:NotHomeViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}"
-                Content="🏠 Home" Padding="10,5"/>
+                Padding="10,5">
+            <StackPanel Orientation="Horizontal">
+                <Viewbox Width="24" Height="24" Margin="0,0,5,0">
+                    <Path Data="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" Fill="Black"/>
+                </Viewbox>
+                <TextBlock Text="Back"/>
+            </StackPanel>
+        </Button>
 
     </Grid>
 </Window>
