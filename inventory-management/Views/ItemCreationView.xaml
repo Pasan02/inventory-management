@@ -43,7 +43,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox Text="{Binding NewPartTypeName}" Margin="0,0,10,0"/>
                                 <Button Grid.Column="1" Content="Pick Image" Command="{Binding BrowsePartTypeImageCommand}" Margin="0,0,10,15"/>
-                                <Button Grid.Column="2" Content="Add" Command="{Binding AddPartTypeCommand}" FontWeight="Bold" Width="100" Margin="5,0,5,15"/>
+                                <Button Grid.Column="2" Content="Add" Command="{Binding AddPartTypeCommand}" FontWeight="Bold" Width="100" Margin="5,5,5,15"/>
                             </Grid>
                             <TextBlock Text="Image Path:" FontSize="16"/>
                             <TextBox Text="{Binding NewPartTypeImagePath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
