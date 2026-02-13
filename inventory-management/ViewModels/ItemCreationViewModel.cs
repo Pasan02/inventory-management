@@ -469,6 +469,33 @@ namespace inventory_management.ViewModels
         }
 
         [RelayCommand]
+        private void Reset()
+        {
+            // Clear all form fields
+            SelectedPartType = null;
+            SelectedBrand = null;
+            SelectedManufacturer = null;
+            SelectedModel = null;
+            SelectedRack = null;
+            
+            CountryOfOrigin = string.Empty;
+            Description = string.Empty;
+            ImagePath = string.Empty;
+            LowStockThreshold = 5;
+            
+            NewPartTypeName = string.Empty;
+            NewPartTypeImagePath = string.Empty;
+            NewManufacturerName = string.Empty;
+            NewManufacturerLogoPath = string.Empty;
+            NewModelName = string.Empty;
+            NewModelYearRange = string.Empty;
+            
+            SelectedBarcode = string.Empty;
+            BarcodeImage = null;
+            StatusMessage = string.Empty;
+        }
+
+        [RelayCommand]
         private async Task SaveItem()
         {
             if (!ValidateForm()) return;
