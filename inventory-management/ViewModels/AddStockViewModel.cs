@@ -35,7 +35,13 @@ namespace inventory_management.ViewModels
         public string BarcodeInput
         {
             get => _barcodeInput;
-            set => SetProperty(ref _barcodeInput, value);
+            set
+            {
+                if (SetProperty(ref _barcodeInput, value))
+                {
+                    _ = LoadItemByBarcodeInput();
+                }
+            }
         }
 
         public ObservableCollection<Item> Items { get; } = new();
@@ -128,7 +134,8 @@ namespace inventory_management.ViewModels
 
         private void ClearInputs()
         {
-            BarcodeInput = string.Empty;
+            _barcodeInput = string.Empty;
+            OnPropertyChanged(nameof(BarcodeInput));
             SearchText = string.Empty;
             Quantity = 1;
             StatusMessage = "Ready";
@@ -144,9 +151,16 @@ namespace inventory_management.ViewModels
             LoadItems();
         }
 
-        [RelayCommand]
-        private async Task LookupItem()
+        private async Task LoadItemByBarcodeInput()
         {
+            if (string.IsNullOrWhiteSpace(BarcodeInput))
+            {
+                CurrentItem = null;
+                CurrentQuantity = 0;
+                StatusMessage = "Ready";
+                return;
+            }
+
             var availability = await _availabilityService.GetStatusAsync();
             if (!availability.IsAvailable)
             {
@@ -157,7 +171,7 @@ namespace inventory_management.ViewModels
             }
 
             StatusMessage = "Searching...";
-            CurrentItem = await _stockService.FindItemByBarcodeAsync(BarcodeInput);
+            CurrentItem = await _stockService.FindItemByBarcodeOrNameAsync(BarcodeInput);
 
             if (CurrentItem == null)
             {
@@ -168,6 +182,12 @@ namespace inventory_management.ViewModels
 
             CurrentQuantity = CurrentItem.Stock?.Quantity ?? 0;
             StatusMessage = "Item loaded.";
+        }
+
+        [RelayCommand]
+        private void Reset()
+        {
+            ClearInputs();
         }
 
         [RelayCommand]

@@ -32,7 +32,15 @@
             <TextBlock Text="Quantity to Remove" FontSize="24"/>
             <TextBox Text="{Binding Quantity}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center"/>
 
-            <Button Command="{Binding RemoveStockCommand}" Content="Remove Stock" Height="70" FontSize="32" FontWeight="Bold"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Command="{Binding ResetCommand}" Content="Reset" Height="70" FontSize="28" FontWeight="Bold" Background="Black" Foreground="White"/>
+                <Button Grid.Column="2" Command="{Binding RemoveStockCommand}" Content="Remove Stock" Height="70" FontSize="28" FontWeight="Bold"/>
+            </Grid>
 
         </StackPanel>
 

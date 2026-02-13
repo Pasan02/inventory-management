@@ -46,6 +46,40 @@ namespace inventory_management.Services
                 .FirstOrDefaultAsync(i => i.Barcode == normalized);
         }
 
+        public async Task<Item?> FindItemByBarcodeOrNameAsync(string searchText)
+        {
+            var availability = await _availabilityService.GetStatusAsync();
+            if (!availability.IsAvailable)
+            {
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                return null;
+            }
+
+            var normalized = searchText.Trim().ToLower();
+
+            return await _context.Items
+                .Include(i => i.Stock)
+                .Include(i => i.Rack)
+                .Include(i => i.PartType)
+                .Include(i => i.PartBrand)
+                .Include(i => i.VehicleModel)
+                .ThenInclude(m => m.Manufacturer)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => 
+                    i.Barcode.ToLower() == normalized ||
+                    i.PartType.Name.ToLower().Contains(normalized) ||
+                    i.PartBrand.Name.ToLower().Contains(normalized) ||
+                    i.VehicleModel.Name.ToLower().Contains(normalized) ||
+                    i.VehicleModel.Manufacturer.Name.ToLower().Contains(normalized) ||
+                    (i.PartType.Name + " " + i.PartBrand.Name).ToLower().Contains(normalized) ||
+                    (i.PartType.Name + " " + i.VehicleModel.Name).ToLower().Contains(normalized) ||
+                    (i.PartBrand.Name + " " + i.VehicleModel.Name).ToLower().Contains(normalized));
+        }
+
         public async Task<IReadOnlyList<Item>> GetItemsAsync()
         {
             var availability = await _availabilityService.GetStatusAsync();

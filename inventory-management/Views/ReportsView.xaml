@@ -22,11 +22,15 @@
                           IsReadOnly="True"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
-                          GridLinesVisibility="Vertical"
+                          GridLinesVisibility="All"
                           VerticalGridLinesBrush="#E0E0E0"
+                          HorizontalGridLinesBrush="#E0E0E0"
                           ColumnHeaderHeight="50"
                           MinRowHeight="45"
-                          CanUserResizeColumns="True">
+                          CanUserResizeColumns="True"
+                          Background="White"
+                          RowBackground="White"
+                          AlternatingRowBackground="White">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Barcode" Binding="{Binding Barcode}" Width="SizeToHeader" MinWidth="150">
                             <DataGridTextColumn.ElementStyle>
@@ -172,11 +176,15 @@
                           IsReadOnly="True"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
-                          GridLinesVisibility="Vertical"
+                          GridLinesVisibility="All"
                           VerticalGridLinesBrush="#E0E0E0"
+                          HorizontalGridLinesBrush="#E0E0E0"
                           ColumnHeaderHeight="50"
                           MinRowHeight="45"
-                          CanUserResizeColumns="True">
+                          CanUserResizeColumns="True"
+                          Background="White"
+                          RowBackground="White"
+                          AlternatingRowBackground="White">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Barcode" Binding="{Binding Barcode}" Width="SizeToHeader" MinWidth="150">
                             <DataGridTextColumn.ElementStyle>
@@ -322,11 +330,15 @@
                           IsReadOnly="True"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
-                          GridLinesVisibility="Vertical"
+                          GridLinesVisibility="All"
                           VerticalGridLinesBrush="#E0E0E0"
+                          HorizontalGridLinesBrush="#E0E0E0"
                           ColumnHeaderHeight="50"
                           MinRowHeight="45"
-                          CanUserResizeColumns="True">
+                          CanUserResizeColumns="True"
+                          Background="White"
+                          RowBackground="White"
+                          AlternatingRowBackground="White">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Time" Binding="{Binding Timestamp}" Width="SizeToHeader" MinWidth="200">
                             <DataGridTextColumn.ElementStyle>
