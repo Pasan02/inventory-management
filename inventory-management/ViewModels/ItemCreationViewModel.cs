@@ -34,12 +34,72 @@ namespace inventory_management.ViewModels
         }
 
         [RelayCommand]
-        private void BrowsePartTypeImage()
+        private async Task BrowsePartTypeImage()
         {
-            var relativePath = TryPickImage("part-types", "part-type");
-            if (!string.IsNullOrWhiteSpace(relativePath))
+            // Check if a part type is selected
+            if (SelectedPartType == null || SelectedPartType.Id == -1)
             {
-                NewPartTypeImagePath = relativePath;
+                StatusMessage = "Please select a part type first.";
+                MessageBox.Show(Application.Current.MainWindow, "Please select a part type first.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.gif",
+                CheckFileExists = true
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                var availability = await _availabilityService.GetStatusAsync();
+                if (!availability.IsAvailable)
+                {
+                    StatusMessage = availability.Message;
+                    return;
+                }
+
+                StatusMessage = "Saving image...";
+
+                // Read the image bytes
+                byte[] imageBytes = File.ReadAllBytes(dialog.FileName);
+
+                // Copy the file to assets folder
+                var assetsRoot = AssetPathService.BasePath;
+                Directory.CreateDirectory(Path.Combine(assetsRoot, "part-types"));
+
+                var extension = Path.GetExtension(dialog.FileName);
+                var fileName = $"part-type-{Guid.NewGuid():N}{extension}";
+                var relativePath = Path.Combine("part-types", fileName);
+                var destination = Path.Combine(assetsRoot, relativePath);
+
+                File.Copy(dialog.FileName, destination, true);
+
+                // Update the database
+                var partType = await _context.PartTypes.FindAsync(SelectedPartType.Id);
+                if (partType != null)
+                {
+                    partType.ImagePath = relativePath;
+                    partType.Image = imageBytes;
+                    await _context.SaveChangesAsync();
+
+                    // Update the selected item
+                    SelectedPartType.ImagePath = relativePath;
+                    SelectedPartType.Image = imageBytes;
+
+                    StatusMessage = "Image saved successfully.";
+                    MessageBox.Show(Application.Current.MainWindow, "Image saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error saving image: {ex.Message}";
+                MessageBox.Show(Application.Current.MainWindow, $"Error saving image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -51,12 +111,72 @@ namespace inventory_management.ViewModels
         }
 
         [RelayCommand]
-        private void BrowseManufacturerLogo()
+        private async Task BrowseManufacturerLogo()
         {
-            var relativePath = TryPickImage("manufacturers", "manufacturer");
-            if (!string.IsNullOrWhiteSpace(relativePath))
+            // Check if a manufacturer is selected
+            if (SelectedManufacturer == null || SelectedManufacturer.Id == -1)
             {
-                NewManufacturerLogoPath = relativePath;
+                StatusMessage = "Please select a manufacturer first.";
+                MessageBox.Show(Application.Current.MainWindow, "Please select a manufacturer first.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.gif",
+                CheckFileExists = true
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                var availability = await _availabilityService.GetStatusAsync();
+                if (!availability.IsAvailable)
+                {
+                    StatusMessage = availability.Message;
+                    return;
+                }
+
+                StatusMessage = "Saving logo...";
+
+                // Read the image bytes
+                byte[] logoBytes = File.ReadAllBytes(dialog.FileName);
+
+                // Copy the file to assets folder
+                var assetsRoot = AssetPathService.BasePath;
+                Directory.CreateDirectory(Path.Combine(assetsRoot, "manufacturers"));
+
+                var extension = Path.GetExtension(dialog.FileName);
+                var fileName = $"manufacturer-{Guid.NewGuid():N}{extension}";
+                var relativePath = Path.Combine("manufacturers", fileName);
+                var destination = Path.Combine(assetsRoot, relativePath);
+
+                File.Copy(dialog.FileName, destination, true);
+
+                // Update the database
+                var manufacturer = await _context.Manufacturers.FindAsync(SelectedManufacturer.Id);
+                if (manufacturer != null)
+                {
+                    manufacturer.LogoPath = relativePath;
+                    manufacturer.Logo = logoBytes;
+                    await _context.SaveChangesAsync();
+
+                    // Update the selected item
+                    SelectedManufacturer.LogoPath = relativePath;
+                    SelectedManufacturer.Logo = logoBytes;
+
+                    StatusMessage = "Logo saved successfully.";
+                    MessageBox.Show(Application.Current.MainWindow, "Logo saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error saving logo: {ex.Message}";
+                MessageBox.Show(Application.Current.MainWindow, $"Error saving logo: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -102,20 +222,6 @@ namespace inventory_management.ViewModels
 
         public ObservableCollection<PartType> PartTypes { get; } = new();
 
-        private string _newPartTypeName = string.Empty;
-        public string NewPartTypeName
-        {
-            get => _newPartTypeName;
-            set => SetProperty(ref _newPartTypeName, value);
-        }
-
-        private string _newPartTypeImagePath = string.Empty;
-        public string NewPartTypeImagePath
-        {
-            get => _newPartTypeImagePath;
-            set => SetProperty(ref _newPartTypeImagePath, value);
-        }
-
         private PartType? _selectedPartType;
         public PartType? SelectedPartType
         {
@@ -135,20 +241,6 @@ namespace inventory_management.ViewModels
 
 
         public ObservableCollection<VehicleManufacturer> Manufacturers { get; } = new();
-
-        private string _newManufacturerName = string.Empty;
-        public string NewManufacturerName
-        {
-            get => _newManufacturerName;
-            set => SetProperty(ref _newManufacturerName, value);
-        }
-
-        private string _newManufacturerLogoPath = string.Empty;
-        public string NewManufacturerLogoPath
-        {
-            get => _newManufacturerLogoPath;
-            set => SetProperty(ref _newManufacturerLogoPath, value);
-        }
 
         private VehicleManufacturer? _selectedManufacturer;
         public VehicleManufacturer? SelectedManufacturer
@@ -330,100 +422,6 @@ namespace inventory_management.ViewModels
         }
 
         [RelayCommand]
-        private async Task AddPartType()
-        {
-            if (string.IsNullOrWhiteSpace(NewPartTypeName))
-            {
-                StatusMessage = "Part type name is required.";
-                return;
-            }
-
-            var availability = await _availabilityService.GetStatusAsync();
-            if (!availability.IsAvailable)
-            {
-                StatusMessage = availability.Message;
-                return;
-            }
-
-            var name = NewPartTypeName.Trim();
-            if (await _context.PartTypes.AnyAsync(p => p.Name == name))
-            {
-                StatusMessage = "Part type already exists.";
-                return;
-            }
-
-            var partType = new PartType
-            {
-                Name = name,
-                ImagePath = string.IsNullOrWhiteSpace(NewPartTypeImagePath) ? null : NewPartTypeImagePath.Trim(),
-                Image = GetImageBytes(NewPartTypeImagePath)
-            };
-            _context.PartTypes.Add(partType);
-            await _context.SaveChangesAsync();
-
-            PartTypes.Add(partType);
-            NewPartTypeName = string.Empty;
-            NewPartTypeImagePath = string.Empty;
-            StatusMessage = "Part type added.";
-        }
-
-        [RelayCommand]
-        private async Task AddManufacturer()
-        {
-            if (string.IsNullOrWhiteSpace(NewManufacturerName))
-            {
-                StatusMessage = "Manufacturer name is required.";
-                return;
-            }
-
-            var availability = await _availabilityService.GetStatusAsync();
-            if (!availability.IsAvailable)
-            {
-                StatusMessage = availability.Message;
-                return;
-            }
-
-            var name = NewManufacturerName.Trim();
-            if (await _context.Manufacturers.AnyAsync(m => m.Name == name))
-            {
-                StatusMessage = "Manufacturer already exists.";
-                return;
-            }
-
-            var manufacturer = new VehicleManufacturer
-            {
-                Name = name,
-                LogoPath = string.IsNullOrWhiteSpace(NewManufacturerLogoPath) ? null : NewManufacturerLogoPath.Trim(),
-                Logo = GetImageBytes(NewManufacturerLogoPath)
-            };
-            _context.Manufacturers.Add(manufacturer);
-            await _context.SaveChangesAsync();
-
-            Manufacturers.Add(manufacturer);
-            NewManufacturerName = string.Empty;
-            NewManufacturerLogoPath = string.Empty;
-            StatusMessage = "Manufacturer added.";
-        }
-
-        private byte[]? GetImageBytes(string? relativePath)
-        {
-            if (string.IsNullOrWhiteSpace(relativePath)) return null;
-            try
-            {
-                var fullPath = Path.Combine(AssetPathService.BasePath, relativePath);
-                if (File.Exists(fullPath))
-                {
-                    return File.ReadAllBytes(fullPath);
-                }
-            }
-            catch
-            {
-                // Ignore errors reading file
-            }
-            return null;
-        }
-
-        [RelayCommand]
         private async Task AddModel()
         {
             if (SelectedManufacturer == null)
@@ -483,10 +481,6 @@ namespace inventory_management.ViewModels
             ImagePath = string.Empty;
             LowStockThreshold = 5;
             
-            NewPartTypeName = string.Empty;
-            NewPartTypeImagePath = string.Empty;
-            NewManufacturerName = string.Empty;
-            NewManufacturerLogoPath = string.Empty;
             NewModelName = string.Empty;
             NewModelYearRange = string.Empty;
             
