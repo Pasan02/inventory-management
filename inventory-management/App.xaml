@@ -18,6 +18,14 @@
         <SolidColorBrush x:Key="TextSecondaryColor" Color="#64748B"/>
         <SolidColorBrush x:Key="CardShadowColor" Color="#94A3B8"/>
 
+        <Style TargetType="FrameworkElement">
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="UseLayoutRounding" Value="True"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale"/>
+            <Setter Property="TextOptions.TextHintingMode" Value="Fixed"/>
+        </Style>
+
         <!-- Modern TextBlock Styles -->
         <Style TargetType="TextBlock">
             <Setter Property="FontSize" Value="24"/>
