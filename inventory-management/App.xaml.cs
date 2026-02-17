@@ -60,36 +60,64 @@ namespace inventory_management
 
             using (var scope = AppHost.Services.CreateScope())
             {
-                AssetPathService.EnsureInitialized();
-
-                var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
-                await dbContext.Database.MigrateAsync();
-                await EnsurePlaceholderDataAsync(dbContext);
-                await EnsureIdentitySequencesAsync(dbContext);
-
-                var integrityCheck = scope.ServiceProvider.GetRequiredService<IIntegrityCheckService>();
-                var integrityResult = await integrityCheck.RunAsync();
-                if (!integrityResult.IsHealthy)
+                try
                 {
-                    MessageBox.Show(string.Join(Environment.NewLine, integrityResult.Issues), "Integrity Check Warning");
+                    AssetPathService.EnsureInitialized();
+
+                    var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+                    
+                    // Check database connection
+                    var canConnect = await dbContext.Database.CanConnectAsync();
+                    if (!canConnect)
+                    {
+                        MessageBox.Show(
+                            "Cannot connect to the database. Please ensure PostgreSQL is running and the connection settings in appsettings.json are correct.\\n\\n" +
+                            "Expected connection: Host=localhost;Database=inventory_ac_db;Username=postgres;Password=2003",
+                            "Database Connection Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                        Current.Shutdown();
+                        return;
+                    }
+                    
+                    await dbContext.Database.MigrateAsync();
+                    await EnsurePlaceholderDataAsync(dbContext);
+                    await EnsureIdentitySequencesAsync(dbContext);
+
+                    var integrityCheck = scope.ServiceProvider.GetRequiredService<IIntegrityCheckService>();
+                    var integrityResult = await integrityCheck.RunAsync();
+                    if (!integrityResult.IsHealthy)
+                    {
+                        MessageBox.Show(string.Join(Environment.NewLine, integrityResult.Issues), "Integrity Check Warning");
+                    }
+
+                    var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
+                    
+                    // Force reset admin password to ensure access
+                    await authService.ForceSetPasswordAsync("admin", "admin123");
+
+                    var resetResult = await authService.TryResetAdminAsync();
+                    if (resetResult.Changed)
+                    {
+                        var action = resetResult.Created ? "created" : "reset";
+                        MessageBox.Show($"Admin account {action}. Username: {resetResult.Username}. Temporary password: {resetResult.TemporaryPassword}", "Admin Account Updated");
+                    }
+
+                    var adminResult = await authService.EnsureDefaultAdminAsync();
+                    if (adminResult.Created)
+                    {
+                        MessageBox.Show($"Default admin created. Username: {adminResult.Username}. Temporary password: {adminResult.TemporaryPassword}", "Admin Account Created");
+                    }
                 }
-
-                var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
-                
-                // Force reset admin password to ensure access
-                await authService.ForceSetPasswordAsync("admin", "admin123");
-
-                var resetResult = await authService.TryResetAdminAsync();
-                if (resetResult.Changed)
+                catch (Exception ex)
                 {
-                    var action = resetResult.Created ? "created" : "reset";
-                    MessageBox.Show($"Admin account {action}. Username: {resetResult.Username}. Temporary password: {resetResult.TemporaryPassword}", "Admin Account Updated");
-                }
-
-                var adminResult = await authService.EnsureDefaultAdminAsync();
-                if (adminResult.Created)
-                {
-                    MessageBox.Show($"Default admin created. Username: {adminResult.Username}. Temporary password: {adminResult.TemporaryPassword}", "Admin Account Created");
+                    MessageBox.Show(
+                        $"Failed to initialize application:\\n\\n{ex.Message}\\n\\n{ex.InnerException?.Message}\\n\\nPlease check your database connection and try again.",
+                        "Application Startup Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    Current.Shutdown();
+                    return;
                 }
             }
 

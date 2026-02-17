@@ -7,5 +7,6 @@ namespace inventory_management.ViewModels.Search
         public int ItemCount { get; set; }
         public int Quantity { get; set; }
         public string? ImagePath { get; set; }
+        public byte[]? Image { get; set; }
     }
 }

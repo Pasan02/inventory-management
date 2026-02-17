@@ -19,12 +19,54 @@ namespace inventory_management.ViewModels
         }
 
         private PartTypeSearchRow? _selectedPart;
+        private ManufacturerSearchRow? _selectedManufacturer;
 
         public SearchItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService)
         {
             _context = context;
             _availabilityService = availabilityService;
             _currentStep = CreatePartsStep();
+        }
+
+        /// <summary>
+        /// Handles hierarchical back navigation within the search pages.
+        /// Returns true if navigated back within search hierarchy, false if at root (Parts page).
+        /// </summary>
+        public bool GoBack()
+        {
+            // If we're on All Items page, go back to Models
+            if (CurrentStep is SearchAllItemsViewModel)
+            {
+                if (_selectedPart != null && _selectedManufacturer != null)
+                {
+                    CurrentStep = CreateModelsStep(_selectedPart, _selectedManufacturer);
+                    return true;
+                }
+            }
+            // If we're on the Models page, go back to Manufacturers
+            else if (CurrentStep is SearchModelsViewModel)
+            {
+                if (_selectedPart != null)
+                {
+                    CurrentStep = CreateManufacturersStep(_selectedPart);
+                    _selectedManufacturer = null;
+                    return true;
+                }
+            }
+            // If we're on the Manufacturers page, go back to Parts
+            else if (CurrentStep is SearchManufacturersViewModel)
+            {
+                CurrentStep = CreatePartsStep();
+                _selectedPart = null;
+                return true;
+            }
+            // If we're on the Parts page, return false to indicate we should go to home
+            else if (CurrentStep is SearchPartsViewModel)
+            {
+                return false;
+            }
+
+            return false;
         }
 
         [RelayCommand]
@@ -42,6 +84,10 @@ namespace inventory_management.ViewModels
             {
                 modelsVm.LoadModelsCommand.Execute(null);
             }
+            else if (CurrentStep is SearchAllItemsViewModel itemsVm)
+            {
+                itemsVm.LoadItemsCommand.Execute(null);
+            }
         }
 
         private ViewModelBase CreatePartsStep()
@@ -57,6 +103,7 @@ namespace inventory_management.ViewModels
         {
             return new SearchManufacturersViewModel(_context, _availabilityService, part, manufacturer =>
             {
+                _selectedManufacturer = manufacturer;
                 CurrentStep = CreateModelsStep(part, manufacturer);
             }, () => CurrentStep = CreatePartsStep());
         }
@@ -66,7 +113,19 @@ namespace inventory_management.ViewModels
             return new SearchModelsViewModel(_context, _availabilityService, part, manufacturer, () =>
             {
                 CurrentStep = CreateManufacturersStep(part);
+            }, () => 
+            {
+                CurrentStep = CreateAllItemsStep(part, manufacturer);
+            });
+        }
+
+        private ViewModelBase CreateAllItemsStep(PartTypeSearchRow part, ManufacturerSearchRow manufacturer)
+        {
+            return new SearchAllItemsViewModel(_context, _availabilityService, part, manufacturer, () =>
+            {
+                CurrentStep = CreateModelsStep(part, manufacturer);
             });
         }
     }
 }
+

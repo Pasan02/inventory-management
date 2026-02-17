@@ -7,5 +7,6 @@ namespace inventory_management.ViewModels.Search
         public int ItemCount { get; set; }
         public int Quantity { get; set; }
         public string? LogoPath { get; set; }
+        public byte[]? Logo { get; set; }
     }
 }

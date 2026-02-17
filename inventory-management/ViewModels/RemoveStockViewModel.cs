@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using inventory_management.Data.Entities;
 using inventory_management.Services;
+using inventory_management.Views;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,7 +36,13 @@ namespace inventory_management.ViewModels
         public string BarcodeInput
         {
             get => _barcodeInput;
-            set => SetProperty(ref _barcodeInput, value);
+            set
+            {
+                if (SetProperty(ref _barcodeInput, value))
+                {
+                    _ = LoadItemByBarcodeInput();
+                }
+            }
         }
 
         public ObservableCollection<Item> Items { get; } = new();
@@ -132,7 +139,8 @@ namespace inventory_management.ViewModels
 
         private void ClearInputs()
         {
-            BarcodeInput = string.Empty;
+            _barcodeInput = string.Empty;
+            OnPropertyChanged(nameof(BarcodeInput));
             SearchText = string.Empty;
             Quantity = 1;
             StatusMessage = "Ready";
@@ -149,9 +157,16 @@ namespace inventory_management.ViewModels
             LoadItems();
         }
 
-        [RelayCommand]
-        private async Task LookupItem()
+        private async Task LoadItemByBarcodeInput()
         {
+            if (string.IsNullOrWhiteSpace(BarcodeInput))
+            {
+                CurrentItem = null;
+                CurrentQuantity = 0;
+                StatusMessage = "Ready";
+                return;
+            }
+
             var availability = await _availabilityService.GetStatusAsync();
             if (!availability.IsAvailable)
             {
@@ -162,7 +177,7 @@ namespace inventory_management.ViewModels
             }
 
             StatusMessage = "Searching...";
-            CurrentItem = await _stockService.FindItemByBarcodeAsync(BarcodeInput);
+            CurrentItem = await _stockService.FindItemByBarcodeOrNameAsync(BarcodeInput);
 
             if (CurrentItem == null)
             {
@@ -176,11 +191,18 @@ namespace inventory_management.ViewModels
         }
 
         [RelayCommand]
+        private void Reset()
+        {
+            ClearInputs();
+        }
+
+        [RelayCommand]
         private async Task RemoveStock()
         {
             if (Quantity <= 0)
             {
                 StatusMessage = "Quantity must be greater than zero.";
+                ModernMessageDialog.ShowWarning("Quantity must be greater than zero.", "Invalid Quantity");
                 return;
             }
 
@@ -188,6 +210,7 @@ namespace inventory_management.ViewModels
             if (item == null)
             {
                 StatusMessage = "Item not found.";
+                ModernMessageDialog.ShowError("Item not found.", "Error");
                 CurrentItem = null;
                 CurrentQuantity = 0;
                 return;
@@ -198,15 +221,22 @@ namespace inventory_management.ViewModels
 
             if (result.Success)
             {
-                MessageBox.Show(Application.Current.MainWindow, $"Removed {Quantity} unit(s) successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                ClearInputs();
-                // Refresh items to update stock in list if displayed?
-                // For now, ClearInputs resets UI.
+                ModernMessageDialog.ShowSuccess($"Stock removed successfully.\nNew Quantity: {result.NewQuantity}", "Success");
+                
+                // Refresh the current item to show updated stock
+                var updatedItem = await _stockService.FindItemByBarcodeAsync(item.Barcode);
+                if (updatedItem != null)
+                {
+                    CurrentItem = updatedItem;
+                    CurrentQuantity = updatedItem.Stock?.Quantity ?? 0;
+                }
+                
+                Quantity = 1;
             }
             else
             {
                 StatusMessage = result.Message;
-                MessageBox.Show(Application.Current.MainWindow, $"Failed to remove stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError($"Failed to remove stock: {result.Message}", "Error");
             }
         }
 
@@ -230,6 +260,7 @@ namespace inventory_management.ViewModels
             if (item == null)
             {
                 StatusMessage = "Item not found.";
+                ModernMessageDialog.ShowError("Item not found.", "Error");
                 CurrentItem = null;
                 CurrentQuantity = 0;
                 return;
@@ -240,13 +271,22 @@ namespace inventory_management.ViewModels
 
             if (result.Success)
             {
-                MessageBox.Show(Application.Current.MainWindow, $"Removed 1 unit successfully.\nNew Quantity: {result.NewQuantity}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                ClearInputs();
+                ModernMessageDialog.ShowSuccess($"Stock removed successfully.\nNew Quantity: {result.NewQuantity}", "Success");
+                
+                // Refresh the current item to show updated stock
+                var updatedItem = await _stockService.FindItemByBarcodeAsync(item.Barcode);
+                if (updatedItem != null)
+                {
+                    CurrentItem = updatedItem;
+                    CurrentQuantity = updatedItem.Stock?.Quantity ?? 0;
+                }
+                
+                Quantity = 1;
             }
             else
             {
-                StatusMessage = result.Message;
-                MessageBox.Show(Application.Current.MainWindow, $"Failed to remove stock: {result.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                 StatusMessage = result.Message;
+                 ModernMessageDialog.ShowError($"Failed to remove stock: {result.Message}", "Error");
             }
         }
     }

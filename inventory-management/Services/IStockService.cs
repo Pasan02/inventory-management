@@ -8,6 +8,7 @@ namespace inventory_management.Services
     {
         Task<IReadOnlyList<Item>> GetItemsAsync();
         Task<Item?> FindItemByBarcodeAsync(string barcode);
+        Task<Item?> FindItemByBarcodeOrNameAsync(string searchText);
         Task<StockOperationResult> AddStockAsync(string barcode, int quantity);
         Task<StockOperationResult> RemoveStockAsync(string barcode, int quantity);
     }

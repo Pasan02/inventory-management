@@ -18,5 +18,13 @@ namespace inventory_management.Data.Entities
         [Column("image_path")]
         [MaxLength(260)]
         public string? ImagePath { get; set; }
+
+        [Column("image")]
+        public byte[]? Image { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

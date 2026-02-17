@@ -8,65 +8,307 @@
         xmlns:views="clr-namespace:inventory_management.Views"
         xmlns:converters="clr-namespace:inventory_management.Converters"
         mc:Ignorable="d"
-        Title="{Binding Title}" WindowState="Maximized" WindowStartupLocation="CenterScreen">
+        Title="{Binding Title}" 
+        WindowState="Maximized" 
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundColor}"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="Grayscale"
+        TextOptions.TextHintingMode="Fixed">
     <Grid Margin="30">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Title - Removing as requested to clean up UI (LoginView has its own header) -->
-        <!-- <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,30"/> -->
+        <!-- Modern Navigation Buttons -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,20">
+            <!-- Back Button -->
+            <Border Background="{StaticResource SurfaceColor}"
+                    CornerRadius="10"
+                    Padding="0"
+                    Visibility="{Binding CurrentViewModel, Converter={x:Static converters:NotHomeViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Button Command="{Binding GoHomeCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Padding="16,10" 
+                        Margin="0"
+                        MinWidth="100" 
+                        MinHeight="44">
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="20" Height="20" Margin="0,0,8,0">
+                            <Path Data="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" 
+                                  Fill="Black"/>
+                        </Viewbox>
+                        <TextBlock Text="Back" VerticalAlignment="Center" FontSize="18"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+
+            <!-- Refresh Button (Reports) -->
+            <Border Background="{StaticResource SurfaceColor}"
+                    CornerRadius="10"
+                    Padding="0"
+                    Margin="10,0,0,0"
+                    Visibility="{Binding CurrentViewModel, Converter={x:Static converters:ReportsViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Button Command="{Binding CurrentViewModel.LoadReportsCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Padding="16,10" 
+                        Margin="0"
+                        MinWidth="100" 
+                        MinHeight="44">
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="20" Height="20" Margin="0,0,8,0">
+                            <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" 
+                                  Fill="Black"/>
+                        </Viewbox>
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="18"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+
+            <!-- Refresh Button (Add Stock) -->
+            <Border Background="{StaticResource SurfaceColor}"
+                    CornerRadius="10"
+                    Padding="0"
+                    Margin="10,0,0,0"
+                    Visibility="{Binding CurrentViewModel, Converter={x:Static converters:AddStockViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Button Command="{Binding CurrentViewModel.LoadItemsCommandCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Padding="16,10" 
+                        Margin="0"
+                        MinWidth="100" 
+                        MinHeight="44">
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="20" Height="20" Margin="0,0,8,0">
+                            <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" 
+                                  Fill="Black"/>
+                        </Viewbox>
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="18"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+
+            <!-- Refresh Button (Remove Stock) -->
+            <Border Background="{StaticResource SurfaceColor}"
+                    CornerRadius="10"
+                    Padding="0"
+                    Margin="10,0,0,0"
+                    Visibility="{Binding CurrentViewModel, Converter={x:Static converters:RemoveStockViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Button Command="{Binding CurrentViewModel.LoadItemsCommandCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Padding="16,10" 
+                        Margin="0"
+                        MinWidth="100" 
+                        MinHeight="44">
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="20" Height="20" Margin="0,0,8,0">
+                            <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" 
+                                  Fill="Black"/>
+                        </Viewbox>
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="18"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+
+            <!-- Refresh Button (Item Creation) -->
+            <Border Background="{StaticResource SurfaceColor}"
+                    CornerRadius="10"
+                    Padding="0"
+                    Margin="10,0,0,0"
+                    Visibility="{Binding CurrentViewModel, Converter={x:Static converters:ItemCreationViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Button Command="{Binding CurrentViewModel.LoadReferenceDataCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Padding="16,10" 
+                        Margin="0"
+                        MinWidth="100" 
+                        MinHeight="44">
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="20" Height="20" Margin="0,0,8,0">
+                            <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" 
+                                  Fill="Black"/>
+                        </Viewbox>
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="18"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+
+            <!-- Refresh Button (Search Items) -->
+            <Border Background="{StaticResource SurfaceColor}"
+                    CornerRadius="10"
+                    Padding="0"
+                    Margin="10,0,0,0"
+                    Visibility="{Binding CurrentViewModel, Converter={x:Static converters:SearchItemsViewModelToVisibilityConverter.Instance}, FallbackValue=Collapsed}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.1"/>
+                </Border.Effect>
+                <Button Command="{Binding CurrentViewModel.RefreshCommand}" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Padding="16,10" 
+                        Margin="0"
+                        MinWidth="100" 
+                        MinHeight="44">
+                    <StackPanel Orientation="Horizontal">
+                        <Viewbox Width="20" Height="20" Margin="0,0,8,0">
+                            <Path Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" 
+                                  Fill="Black"/>
+                        </Viewbox>
+                        <TextBlock Text="Refresh" VerticalAlignment="Center" FontSize="18"/>
+                    </StackPanel>
+                </Button>
+            </Border>
+        </StackPanel>
 
         <!-- Main Content Area with Navigation Switcher -->
         <ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}">
             <ContentControl.Resources>
                 
-                <!-- If CurrentViewModel is NULL, show the Home Menu (Buttons) -->
+                <!-- Home Menu -->
                 <DataTemplate DataType="{x:Type vm:HomeViewModel}">
-                    <UniformGrid Columns="2" Rows="3" Margin="50">
-                        <Button Command="{Binding DataContext.NavigateToAddStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
-                            <StackPanel>
-                                <TextBlock Text="➕" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
-                                <TextBlock Text="Add Stock" FontSize="32" FontWeight="Bold"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding DataContext.NavigateToRemoveStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
-                            <StackPanel>
-                                <TextBlock Text="➖" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
-                                <TextBlock Text="Remove Stock" FontSize="32" FontWeight="Bold"/>
-                            </StackPanel>
-                        </Button>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
                         
-                        <Button Command="{Binding DataContext.NavigateToSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
+                        <!-- Welcome Header -->
+                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,30" Padding="24">
                             <StackPanel>
-                                <TextBlock Text="🔍" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
-                                <TextBlock Text="Search / Items" FontSize="32" FontWeight="Bold"/>
+                                <TextBlock Text="Vehicle A/C Inventory System" 
+                                         FontSize="36" 
+                                         FontWeight="Bold" 
+                                         Foreground="{StaticResource PrimaryColor}"/>
+                                <TextBlock Text="Select an action below to get started" 
+                                         FontSize="20" 
+                                         Foreground="{StaticResource TextSecondaryColor}"
+                                         Margin="0,8,0,0"/>
                             </StackPanel>
-                        </Button>
+                        </Border>
 
-                         <!-- Added Create Item Button for Phase 2 -->
-                        <Button Command="{Binding DataContext.NavigateToCreateItemCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
-                            <StackPanel>
-                                <TextBlock Text="🆕" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
-                                <TextBlock Text="New Item" FontSize="32" FontWeight="Bold"/>
-                            </StackPanel>
-                        </Button>
+                        <UniformGrid Grid.Row="1" Columns="3" Rows="2" Margin="0">
+                            <!-- Add Stock Button -->
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                <Button Command="{Binding DataContext.NavigateToAddStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        Background="#10B981"
+                                        Margin="0" Padding="20">
+                                    <StackPanel>
+                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="White"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="Add Stock" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="Increase inventory quantities" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
 
-                        <Button Command="{Binding DataContext.NavigateToReportsCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
-                            <StackPanel>
-                                <TextBlock Text="📊" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
-                                <TextBlock Text="Reports" FontSize="32" FontWeight="Bold"/>
-                            </StackPanel>
-                        </Button>
+                            <!-- Remove Stock Button -->
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                <Button Command="{Binding DataContext.NavigateToRemoveStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        Background="#EF4444"
+                                        Margin="0" Padding="20">
+                                    <StackPanel>
+                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M19,13H5V11H19V13Z" Fill="White"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="Remove Stock" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="Decrease inventory quantities" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+                            
+                            <!-- Search Button -->
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                <Button Command="{Binding DataContext.NavigateToSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        Background="#2563EB"
+                                        Margin="0" Padding="20">
+                                    <StackPanel>
+                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" 
+                                                      Fill="White"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="Search / Items" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="Find and view inventory" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
 
-                        <Button Command="{Binding DataContext.LogoutCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="20">
-                            <StackPanel>
-                                <TextBlock Text="🔙" HorizontalAlignment="Center" FontSize="64" Margin="0,0,0,10"/>
-                                <TextBlock Text="Sign Out" FontSize="32" FontWeight="Bold"/>
-                            </StackPanel>
-                        </Button>
-                    </UniformGrid>
+                            <!-- New Item Button -->
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                <Button Command="{Binding DataContext.NavigateToCreateItemCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        Background="#8B5CF6"
+                                        Margin="0" Padding="20">
+                                    <StackPanel>
+                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M12,2L14,8L20,10L14,12L12,18L10,12L4,10L10,8L12,2M12,12.5A1.5,1.5 0 0,1 13.5,14A1.5,1.5 0 0,1 12,15.5A1.5,1.5 0 0,1 10.5,14A1.5,1.5 0 0,1 12,12.5Z" 
+                                                      Fill="White"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="New Item" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="Add new inventory item" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+
+                            <!-- Reports Button -->
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                <Button Command="{Binding DataContext.NavigateToReportsCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        Background="#F59E0B"
+                                        Margin="0" Padding="20">
+                                    <StackPanel>
+                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.11 3.89,21 5,21H19C20.11,21 21,20.11 21,19V5C21,3.89 20.11,3 19,3M9,17H7V10H9V17M13,17H11V7H13V17M17,17H15V13H17V17Z" 
+                                                      Fill="White"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="Reports" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="View analytics and reports" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+
+                            <!-- Sign Out Button -->
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                <Button Command="{Binding DataContext.LogoutCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        Background="#64748B"
+                                        Margin="0" Padding="20">
+                                    <StackPanel>
+                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z" 
+                                                      Fill="White"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="Sign Out" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="Log out of your account" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+                        </UniformGrid>
+                    </Grid>
                 </DataTemplate>
 
                 <DataTemplate DataType="{x:Type vm:LoginViewModel}">
@@ -82,6 +324,7 @@
                 <DataTemplate DataType="{x:Type vm:AddStockViewModel}">
                     <views:AddStockView/>
                 </DataTemplate>
+                
                 <DataTemplate DataType="{x:Type vm:RemoveStockViewModel}">
                     <views:RemoveStockView/>
                 </DataTemplate>

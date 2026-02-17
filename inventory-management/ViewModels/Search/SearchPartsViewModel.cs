@@ -34,20 +34,37 @@ namespace inventory_management.ViewModels.Search
         [RelayCommand]
         private async Task LoadPartsAsync()
         {
-            var availability = await _availabilityService.GetStatusAsync();
-            if (!availability.IsAvailable)
+            try
             {
-                StatusMessage = availability.Message;
-                return;
-            }
+                var availability = await _availabilityService.GetStatusAsync();
+                if (!availability.IsAvailable)
+                {
+                    StatusMessage = availability.Message;
+                    return;
+                }
 
-            StatusMessage = "Loading parts...";
-            Parts.Clear();
+                StatusMessage = "Loading parts...";
+                Parts.Clear();
 
-            var rows = await _context.Items
-                .Include(i => i.PartType)
-                .Include(i => i.Stock)
-                .AsNoTracking()
+                // Load all part types that have items
+                var partTypeIds = await _context.Items
+                    .Select(i => i.PartTypeId)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (var partTypeId in partTypeIds)
+                {
+                    // Get part type info
+                    var partType = await _context.PartTypes
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(pt => pt.Id == partTypeId);
+
+                    if (partType == null) continue;
+
+                    // Count items and calculate quantity
+                    var items = await _context.Items
+                        .Include(i => i.Stock)
+                        .AsNoTracking()
                 .GroupBy(i => new { i.PartTypeId, i.PartType.Name })
                 .Select(g => new PartTypeSearchRow
                 {
@@ -58,14 +75,35 @@ namespace inventory_management.ViewModels.Search
                     ImagePath = g.Select(i => i.PartType.ImagePath).FirstOrDefault()
                 })
                 .OrderBy(r => r.Name)
-                .ToListAsync();
+                        .ToListAsync();
 
-            foreach (var row in rows)
-            {
-                Parts.Add(row);
+                    var row = new PartTypeSearchRow
+                    {
+                        PartTypeId = partTypeId,
+                        Name = partType.Name,
+                        ItemCount = items.Count,
+                        Quantity = items.Sum(i => i.Stock?.Quantity ?? 0),
+                        ImagePath = partType.ImagePath,
+                        Image = partType.Image
+                    };
+
+                    Parts.Add(row);
+                }
+
+                // Sort by name
+                var sorted = Parts.OrderBy(p => p.Name).ToList();
+                Parts.Clear();
+                foreach (var part in sorted)
+                {
+                    Parts.Add(part);
+                }
+
+                StatusMessage = Parts.Count == 0 ? "No parts found." : $"{Parts.Count} parts available.";
             }
-
-            StatusMessage = Parts.Count == 0 ? "No parts found." : $"{Parts.Count} parts available.";
+            catch (System.Exception ex)
+            {
+                StatusMessage = $"Error loading parts: {ex.Message}";
+            }
         }
 
         [RelayCommand]

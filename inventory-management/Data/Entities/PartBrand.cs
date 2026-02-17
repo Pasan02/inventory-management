@@ -14,5 +14,10 @@ namespace inventory_management.Data.Entities
         [Column("name")]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty; // e.g., Denso, Bosch
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

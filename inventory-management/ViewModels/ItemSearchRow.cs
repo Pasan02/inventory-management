@@ -1,3 +1,5 @@
+using System.Windows.Controls;
+
 namespace inventory_management.ViewModels
 {
     public class ItemSearchRow
@@ -10,5 +12,7 @@ namespace inventory_management.ViewModels
         public string Model { get; set; } = string.Empty;
         public string Rack { get; set; } = string.Empty;
         public int Quantity { get; set; }
+        public string Origin { get; set; } = string.Empty;
+        public string? ImagePath { get; set; }
     }
 }

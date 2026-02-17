@@ -18,5 +18,13 @@ namespace inventory_management.Data.Entities
         [Column("logo_path")]
         [MaxLength(260)]
         public string? LogoPath { get; set; }
+
+        [Column("logo")]
+        public byte[]? Logo { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

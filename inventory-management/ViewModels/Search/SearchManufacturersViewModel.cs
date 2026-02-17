@@ -38,40 +38,73 @@ namespace inventory_management.ViewModels.Search
         [RelayCommand]
         private async Task LoadManufacturersAsync()
         {
-            var availability = await _availabilityService.GetStatusAsync();
-            if (!availability.IsAvailable)
+            try
             {
-                StatusMessage = availability.Message;
-                return;
-            }
+                var availability = await _availabilityService.GetStatusAsync();
+                if (!availability.IsAvailable)
+                {
+                    StatusMessage = availability.Message;
+                    return;
+                }
 
-            StatusMessage = "Loading manufacturers...";
-            Manufacturers.Clear();
+                StatusMessage = "Loading manufacturers...";
+                Manufacturers.Clear();
 
-            var rows = await _context.Items
-                .Include(i => i.VehicleModel)
+                // Get manufacturer IDs that have items with this part type
+                var manufacturerIds = await _context.Items
+                    .Include(i => i.VehicleModel)
                 .ThenInclude(m => m.Manufacturer)
                 .Include(i => i.Stock)
-                .AsNoTracking()
-                .Where(i => i.PartTypeId == Part.PartTypeId)
-                .GroupBy(i => new { i.VehicleModel.VehicleManufacturerId, i.VehicleModel.Manufacturer.Name })
-                .Select(g => new ManufacturerSearchRow
+                    .AsNoTracking()
+                    .Where(i => i.PartTypeId == Part.PartTypeId)
+                    .Select(i => i.VehicleModel.VehicleManufacturerId)
+                    .Distinct()
+                    .ToListAsync();
+
+                foreach (var manufacturerId in manufacturerIds)
                 {
-                    ManufacturerId = g.Key.VehicleManufacturerId,
-                    Name = g.Key.Name,
-                    ItemCount = g.Count(),
-                    Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0),
-                    LogoPath = g.Select(i => i.VehicleModel.Manufacturer.LogoPath).FirstOrDefault()
-                })
-                .OrderBy(r => r.Name)
-                .ToListAsync();
+                    // Get manufacturer info
+                    var manufacturer = await _context.Manufacturers
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(m => m.Id == manufacturerId);
 
-            foreach (var row in rows)
-            {
-                Manufacturers.Add(row);
+                    if (manufacturer == null) continue;
+
+                    // Count items and calculate quantity
+                    var items = await _context.Items
+                        .Include(i => i.VehicleModel)
+                        .Include(i => i.Stock)
+                        .AsNoTracking()
+                        .Where(i => i.PartTypeId == Part.PartTypeId && i.VehicleModel.VehicleManufacturerId == manufacturerId)
+                        .ToListAsync();
+
+                    var row = new ManufacturerSearchRow
+                    {
+                        ManufacturerId = manufacturerId,
+                        Name = manufacturer.Name,
+                        ItemCount = items.Count,
+                        Quantity = items.Sum(i => i.Stock?.Quantity ?? 0),
+                        LogoPath = manufacturer.LogoPath,
+                        Logo = manufacturer.Logo
+                    };
+
+                    Manufacturers.Add(row);
+                }
+
+                // Sort by name
+                var sorted = Manufacturers.OrderBy(m => m.Name).ToList();
+                Manufacturers.Clear();
+                foreach (var mfr in sorted)
+                {
+                    Manufacturers.Add(mfr);
+                }
+
+                StatusMessage = Manufacturers.Count == 0 ? "No manufacturers found." : $"{Manufacturers.Count} manufacturers available.";
             }
-
-            StatusMessage = Manufacturers.Count == 0 ? "No manufacturers found." : $"{Manufacturers.Count} manufacturers available.";
+            catch (System.Exception ex)
+            {
+                StatusMessage = $"Error loading manufacturers: {ex.Message}";
+            }
         }
 
         [RelayCommand]

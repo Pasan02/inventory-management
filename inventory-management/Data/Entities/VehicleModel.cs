@@ -24,5 +24,10 @@ namespace inventory_management.Data.Entities
         [Column("year_range")]
         [MaxLength(50)]
         public string? YearRange { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

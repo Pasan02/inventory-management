@@ -5,38 +5,135 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:converters="clr-namespace:inventory_management.Converters"
              mc:Ignorable="d">
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Border Style="{StaticResource CardBorderStyle}" Margin="20">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="{Binding Part.Name, StringFormat=Manufacturers for {0}}" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                <TextBlock Text="Select Manufacturer for" 
+                           FontSize="28" 
+                           FontWeight="Bold" 
+                           Foreground="{StaticResource TextPrimaryColor}"
+                           Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding Part.Name}" 
+                           FontSize="28" 
+                           FontWeight="Bold" 
+                           Foreground="{StaticResource TextPrimaryColor}"/>
+            </StackPanel>
 
-        <ScrollViewer Grid.Row="1">
-            <ItemsControl ItemsSource="{Binding Manufacturers}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel />
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="6" Margin="6" Padding="10" Width="240">
-                            <StackPanel>
-                                <Image Width="48" Height="48" Margin="0,0,0,8" Source="{Binding LogoPath, Converter={x:Static converters:RelativeAssetPathToImageSourceConverter.Instance}}"/>
-                                <TextBlock Text="{Binding Name}" FontWeight="Bold" Margin="0,0,0,6"/>
-                                <TextBlock Text="{Binding ItemCount, StringFormat=Items: {0}}" Margin="0,0,0,4"/>
-                                <TextBlock Text="{Binding Quantity, StringFormat=Qty: {0}}" Margin="0,0,0,10"/>
-                                <Button Content="View" Command="{Binding DataContext.SelectManufacturerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" Padding="6,2"/>
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.Resources>
+                    <Style x:Key="ModernScrollThumb" TargetType="Thumb">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Thumb">
+                                    <Border x:Name="ThumbBorder" Background="#CBD5E1" CornerRadius="4"/>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ThumbBorder" Property="Background" Value="#94A3B8"/>
+                                        </Trigger>
+                                        <Trigger Property="IsDragging" Value="True">
+                                            <Setter TargetName="ThumbBorder" Property="Background" Value="#64748B"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style TargetType="ScrollBar">
+                        <Setter Property="Width" Value="10"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ScrollBar">
+                                    <Grid Background="{TemplateBinding Background}" Width="{TemplateBinding Width}">
+                                        <Track x:Name="PART_Track" IsDirectionReversed="true">
+                                            <Track.DecreaseRepeatButton>
+                                                <RepeatButton Command="ScrollBar.LineUpCommand" Opacity="0" IsHitTestVisible="False"/>
+                                            </Track.DecreaseRepeatButton>
+                                            <Track.Thumb>
+                                                <Thumb Style="{StaticResource ModernScrollThumb}"/>
+                                            </Track.Thumb>
+                                            <Track.IncreaseRepeatButton>
+                                                <RepeatButton Command="ScrollBar.LineDownCommand" Opacity="0" IsHitTestVisible="False"/>
+                                            </Track.IncreaseRepeatButton>
+                                        </Track>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ScrollViewer.Resources>
+                <ItemsControl ItemsSource="{Binding Manufacturers}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource SurfaceColor}"
+                                    CornerRadius="12"
+                                    Padding="16"
+                                    BorderBrush="{StaticResource BorderColor}"
+                                    BorderThickness="1"
+                                    Margin="8" 
+                                    Width="300"
+                                    Cursor="Hand">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="{Binding Source={StaticResource CardShadowColor}, Path=Color}" 
+                                                    BlurRadius="12" 
+                                                    ShadowDepth="0" 
+                                                    Opacity="0.1"/>
+                                </Border.Effect>
+                                <Border.InputBindings>
+                                    <MouseBinding Command="{Binding DataContext.SelectManufacturerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                                CommandParameter="{Binding}" 
+                                                MouseAction="LeftClick"/>
+                                </Border.InputBindings>
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="BorderBrush" Value="{StaticResource PrimaryColor}"/>
+                                                <Setter Property="BorderThickness" Value="2"/>
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#2563EB" BlurRadius="16" ShadowDepth="0" Opacity="0.25"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel>
+                                    <Image Width="260" 
+                                           Height="140" 
+                                           Stretch="UniformToFill"
+                                           Margin="0,0,0,12" 
+                                           Source="{Binding Logo, Converter={x:Static converters:ByteArrayToImageConverter.Instance}}"/>
+                                    <TextBlock Text="{Binding Name}" 
+                                               FontWeight="SemiBold" 
+                                               FontSize="22"
+                                               Foreground="{StaticResource TextPrimaryColor}"
+                                               TextAlignment="Center"
+                                               Margin="0,0,0,8"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
-        <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" Margin="0,10,0,0"/>
-    </Grid>
+            <TextBlock Grid.Row="2" 
+                       Text="{Binding StatusMessage}" 
+                       Foreground="{StaticResource TextSecondaryColor}"
+                       FontSize="18"
+                       Margin="0,20,0,0"/>
+        </Grid>
+    </Border>
 </UserControl>

@@ -14,5 +14,10 @@ namespace inventory_management.Data.Entities
         [Column("location_code")]
         [MaxLength(50)]
         public string LocationCode { get; set; } = string.Empty; // e.g., A-01, B-05
+
+        public override string ToString()
+        {
+            return LocationCode;
+        }
     }
 }
