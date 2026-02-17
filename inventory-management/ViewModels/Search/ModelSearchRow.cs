@@ -10,6 +10,7 @@ namespace inventory_management.ViewModels.Search
         public string Brands { get; set; } = string.Empty;
         public string Racks { get; set; } = string.Empty;
         public string CountriesOfOrigin { get; set; } = string.Empty;
+        public string? ItemImagePath { get; set; }
         public string? PartTypeImagePath { get; set; }
         public string? ManufacturerLogoPath { get; set; }
     }

@@ -10,6 +10,7 @@
     <!-- Modern ComboBox Style with rounded corners -->
     <Style TargetType="ComboBox">
         <EventSetter Event="PreviewMouseWheel" Handler="ComboBox_PreviewMouseWheel"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
@@ -44,10 +45,21 @@
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
                                     ClickMode="Press"
                                     Background="Transparent"
+                                    BorderBrush="Transparent"
                                     BorderThickness="0"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch"
-                                    Cursor="Hand"/>
+                                    Cursor="Hand"
+                                    OverridesDefaultStyle="True"
+                                    FocusVisualStyle="{x:Null}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="{TemplateBinding Background}" 
+                                            BorderBrush="{TemplateBinding BorderBrush}" 
+                                            BorderThickness="{TemplateBinding BorderThickness}"/>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
                         <Popup x:Name="PART_Popup" 
                                AllowsTransparency="True" 
                                Placement="Bottom" 
@@ -83,8 +95,26 @@
         <Setter Property="Background" Value="White"/>
         <Setter Property="BorderBrush" Value="#CCCCCC"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="Padding" Value="8,4"/>
         <Setter Property="FontSize" Value="18"/>
+        <Setter Property="MinHeight" Value="44"/>
+    </Style>
+    <Style TargetType="TextBox">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="Margin" Value="0,4,0,10"/>
+    </Style>
+    <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
+        <Setter Property="Margin" Value="0,8,0,4"/>
+    </Style>
+    <Style x:Key="FormButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="MinHeight" Value="36"/>
     </Style>
 </UserControl.Resources>
 <Grid Margin="20">
@@ -105,7 +135,7 @@
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,30,0">
 
-                    <TextBlock Text="Part Type"/>
+                    <TextBlock Text="Part Type" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -116,19 +146,19 @@
                                   DisplayMemberPath="Name" 
                                   SelectedItem="{Binding SelectedPartType}"
                                   IsEditable="False"
-                                  MinHeight="60"
-                                  Margin="0,0,10,0"/>
+                                  MinHeight="44"
+                                  Margin="0,4,10,0"/>
                         <Button Grid.Column="1" 
                                 Content="Add Image" 
                                 Command="{Binding BrowsePartTypeImageCommand}" 
+                                Style="{StaticResource FormButtonStyle}"
                                 Width="120" 
-                                Height="60" 
-                                FontSize="14" 
+                                Height="36" 
                                 ToolTip="Add or update image for selected part type"/>
                     </Grid>
 
-                    <TextBlock Text="Manufacturer"/>
-                    <Grid Margin="0,0,0,20">
+                    <TextBlock Text="Manufacturer" Style="{StaticResource FieldLabelStyle}"/>
+                    <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -138,28 +168,28 @@
                                   DisplayMemberPath="Name" 
                                   SelectedItem="{Binding SelectedManufacturer}"
                                   IsEditable="False"
-                                  MinHeight="60"
-                                  Margin="0,0,10,0"/>
+                                  MinHeight="44"
+                                  Margin="0,4,10,0"/>
                         <Button Grid.Column="1" 
                                 Content="Add Logo" 
                                 Command="{Binding BrowseManufacturerLogoCommand}" 
+                                Style="{StaticResource FormButtonStyle}"
                                 Width="120" 
-                                Height="60" 
-                                FontSize="14" 
+                                Height="36" 
                                 ToolTip="Add or update logo for selected manufacturer"/>
                     </Grid>
 
 
-                    <TextBlock Text="Vehicle Model"/>
+                    <TextBlock Text="Vehicle Model" Style="{StaticResource FieldLabelStyle}"/>
                     <ComboBox ItemsSource="{Binding Models}" 
                               DisplayMemberPath="Name" 
                               SelectedItem="{Binding SelectedModel}"
                               IsEditable="False"
-                              MinHeight="60"
-                              Margin="0,0,0,10"/>
+                              MinHeight="44"
+                              Margin="0,4,0,10"/>
 
-                    <TextBlock Text="Year Range"/>
-                    <Grid Margin="0,0,0,20">
+                    <TextBlock Text="Year Range" Style="{StaticResource FieldLabelStyle}"/>
+                    <Grid Margin="0,0,0,5">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="10"/>
@@ -168,44 +198,44 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
-                        <TextBox Grid.Column="0" Text="{Binding NewModelName}" Height="50" FontSize="18" VerticalContentAlignment="Center" Padding="10"/>
-                        <TextBox Grid.Column="2" Text="{Binding NewModelYearRange}" Height="50" FontSize="18" VerticalContentAlignment="Center" Padding="10"/>
-                        <Button Grid.Column="4" Content="Add Model" Command="{Binding AddModelCommand}" Width="120" Height="50" FontSize="16" Padding="5,0"/>
+                        <TextBox Grid.Column="0" Text="{Binding NewModelName}" Height="40" VerticalContentAlignment="Center"/>
+                        <TextBox Grid.Column="2" Text="{Binding NewModelYearRange}" Height="40" VerticalContentAlignment="Center"/>
+                        <Button Grid.Column="4" Content="Add Model" Command="{Binding AddModelCommand}" Style="{StaticResource FormButtonStyle}" Width="120" Height="36" Padding="0"/>
                     </Grid>
 
-                    <TextBlock Text="Brand"/>
+                    <TextBlock Text="Brand" Style="{StaticResource FieldLabelStyle}"/>
                     <ComboBox ItemsSource="{Binding Brands}" 
                               DisplayMemberPath="Name" 
                               SelectedItem="{Binding SelectedBrand}"
                               IsEditable="False"
-                              MinHeight="60"
-                              Margin="0,0,0,10"/>
+                              MinHeight="44"
+                              Margin="0,4,0,10"/>
 
-                    <TextBlock Text="Country of Origin"/>
+                    <TextBlock Text="Country of Origin" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding CountryOfOrigin}"/>
 
-                    <TextBlock Text="Description / Notes"/>
+                    <TextBlock Text="Description / Notes" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding Description}" Height="100" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
 
-                    <TextBlock Text="Item Image"/>
+                    <TextBlock Text="Item Image" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox Text="{Binding ImagePath}" Margin="0,0,10,0" Height="40" FontSize="16" VerticalContentAlignment="Center"/>
-                        <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseItemImageCommand}" Width="100" Height="40" FontSize="14" Padding="5,0"/>
+                        <TextBox Text="{Binding ImagePath}" Margin="0,0,10,0" Height="36" VerticalContentAlignment="Center"/>
+                        <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseItemImageCommand}" Style="{StaticResource FormButtonStyle}" Width="100" Height="36" Padding="5,0"/>
                     </Grid>
 
-                    <TextBlock Text="Rack Location"/>
+                    <TextBlock Text="Rack Location" Style="{StaticResource FieldLabelStyle}"/>
                     <ComboBox ItemsSource="{Binding Racks}" 
                               DisplayMemberPath="LocationCode" 
                               SelectedItem="{Binding SelectedRack}"
                               IsEditable="False"
-                              MinHeight="60"
-                              Margin="0,0,0,10"/>
+                              MinHeight="44"
+                              Margin="0,4,0,10"/>
 
-                    <TextBlock Text="Low Stock Threshold"/>
+                    <TextBlock Text="Low Stock Threshold" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding LowStockThreshold}"/>
 
                     <Grid Margin="0,30,0,20">
@@ -214,8 +244,8 @@
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Command="{Binding ResetCommand}" Content="Reset" Height="70" FontSize="28" FontWeight="Bold" Background="Black" Foreground="White"/>
-                        <Button Grid.Column="2" Command="{Binding SaveItemCommand}" Content="Save Item" Height="70" FontSize="28" FontWeight="Bold"/>
+                        <Button Grid.Column="0" Command="{Binding ResetCommand}" Content="Reset" Height="56" FontSize="22" FontWeight="Bold" Background="Black" Foreground="White" Padding="16,8"/>
+                        <Button Grid.Column="2" Command="{Binding SaveItemCommand}" Content="Save Item" Height="56" FontSize="22" FontWeight="Bold" Padding="16,8"/>
                     </Grid>
 
                 </StackPanel>
@@ -223,8 +253,8 @@
 
             <!-- Fixed Right Column: Result / Barcode / Preview -->
             <!-- Using VerticalAlignment="Top" and Margin matches the top of scroll view content -->
-            <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Top">
-                <Border Background="White" Padding="15" CornerRadius="8" Width="300" HorizontalAlignment="Left" MinHeight="150">
+            <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="center">
+                <Border Background="White" Padding="15" CornerRadius="8" Width="400" HorizontalAlignment="center" MinHeight="250">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.15"/>
                     </Border.Effect>

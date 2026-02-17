@@ -11,7 +11,12 @@
         Title="{Binding Title}" 
         WindowState="Maximized" 
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundColor}">
+        Background="{StaticResource BackgroundColor}"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="Grayscale"
+        TextOptions.TextHintingMode="Fixed">
     <Grid Margin="30">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
