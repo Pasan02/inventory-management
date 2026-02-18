@@ -176,14 +176,15 @@
                 
                 <!-- Home Menu -->
                 <DataTemplate DataType="{x:Type vm:HomeViewModel}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                    <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                        <Grid Width="1920" Height="1080">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
                         
-                        <!-- Welcome Header -->
-                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,30" Padding="24">
+                            <!-- Welcome Header -->
+                            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,30" Padding="24">
                             <StackPanel>
                                 <TextBlock Text="Vehicle A/C Inventory System" 
                                          FontSize="36" 
@@ -303,7 +304,8 @@
                                 </Button>
                             </Border>
                         </UniformGrid>
-                    </Grid>
+                        </Grid>
+                    </Viewbox>
                 </DataTemplate>
 
                 <DataTemplate DataType="{x:Type vm:LoginViewModel}">

@@ -1,21 +1,23 @@
 <UserControl x:Class="inventory_management.Views.LoginView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:converters="clr-namespace:inventory_management.Converters"
-             mc:Ignorable="d">
-    <UserControl.Resources>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-    </UserControl.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+         xmlns:converters="clr-namespace:inventory_management.Converters"
+         mc:Ignorable="d">
+<UserControl.Resources>
+    <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+</UserControl.Resources>
+<Grid>
+    <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+        <Grid Width="1920" Height="1080">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <Border Grid.Row="1" Width="800" Style="{StaticResource CardBorderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Grid.Row="1" Width="800" Style="{StaticResource CardBorderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center">
             <StackPanel Margin="20">
                 <TextBlock Text="Alpine Auto A/C" FontSize="48" FontWeight="Bold" Margin="0,0,0,50" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
 
@@ -138,8 +140,11 @@
                     </Button.Style>
                 </Button>
                 
+                
                 <!-- Status TextBlock removed as requested -->
             </StackPanel>
         </Border>
+            </Grid>
+        </Viewbox>
     </Grid>
 </UserControl>
