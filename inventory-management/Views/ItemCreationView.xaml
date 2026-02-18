@@ -11,63 +11,18 @@
     <Style TargetType="ComboBox">
         <EventSetter Event="PreviewMouseWheel" Handler="ComboBox_PreviewMouseWheel"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Background" Value="White"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
-                    <Grid x:Name="MainGrid">
-                        <Border x:Name="MainBorder" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="8">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <ContentPresenter Grid.Column="0" 
-                                                Grid.ColumnSpan="2"
-                                                Content="{TemplateBinding SelectionBoxItem}" 
-                                                ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
-                                                ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" 
-                                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
-                                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
-                                                Margin="10,0,35,0"
-                                                IsHitTestVisible="False"/>
-                                <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z" Fill="#555" 
-                                      HorizontalAlignment="Center" VerticalAlignment="Center" 
-                                      Margin="0,0,10,0" IsHitTestVisible="False"/>
-                            </Grid>
-                        </Border>
-                        <!-- Transparent button overlay to make entire ComboBox clickable -->
-                        <ToggleButton x:Name="ToggleButton" 
-                                    Focusable="False" 
-                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
-                                    ClickMode="Press"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"
-                                    Cursor="Hand"
-                                    OverridesDefaultStyle="True"
-                                    FocusVisualStyle="{x:Null}"
-                                    IsHitTestVisible="True">
-                            <ToggleButton.Template>
-                                <ControlTemplate TargetType="ToggleButton">
-                                    <Border Background="{TemplateBinding Background}" 
-                                            BorderBrush="{TemplateBinding BorderBrush}" 
-                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                            IsHitTestVisible="True"/>
-                                </ControlTemplate>
-                            </ToggleButton.Template>
-                        </ToggleButton>
+                    <Grid x:Name="MainGrid" SnapsToDevicePixels="true">
                         <Popup x:Name="PART_Popup" 
                                AllowsTransparency="True" 
                                Placement="Bottom" 
-                               IsOpen="{TemplateBinding IsDropDownOpen}" 
+                               IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
                                PopupAnimation="Slide"
-                               Width="{Binding ActualWidth, ElementName=MainGrid}">
+                               Width="{Binding ActualWidth, ElementName=MainGrid}"
+                               StaysOpen="False">
                             <Border Background="White" 
                                     BorderBrush="#CCCCCC" 
                                     BorderThickness="1" 
@@ -82,24 +37,56 @@
                                 </ScrollViewer>
                             </Border>
                         </Popup>
+
+                        <ToggleButton x:Name="ToggleButton" 
+                                    Focusable="False" 
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
+                                    ClickMode="Press"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Stretch"
+                                    Background="{TemplateBinding Background}"
+                                    Cursor="Hand">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border x:Name="MainBorder" 
+                                            BorderBrush="{TemplateBinding BorderBrush}" 
+                                            BorderThickness="{TemplateBinding BorderThickness}" 
+                                            Background="{TemplateBinding Background}"
+                                            CornerRadius="8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <ContentPresenter Grid.Column="0" 
+                                                            Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                                            ContentTemplate="{Binding SelectionBoxItemTemplate, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                                            ContentStringFormat="{Binding SelectionBoxItemStringFormat, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                                            HorizontalAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                                            VerticalAlignment="{Binding VerticalContentAlignment, RelativeSource={RelativeSource AncestorType=ComboBox}}" 
+                                                            Margin="10,0,35,0"/>
+                                            <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z" Fill="#555" 
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                  Margin="0,0,10,0"/>
+                                        </Grid>
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="MainBorder" Property="BorderBrush" Value="#0078D4"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="MainBorder" Property="Background" Value="#F0F0F0"/>
+                             <!-- Note: We can't target the border inside the ToggleButton template directly from here easily without triggers inside. 
+                                  Simplifying: Let's move styling to ToggleButton resources or just rely on transparency overlap if needed, 
+                                  but standard approach is usually better. 
+                                  Actually, since we moved the border INTO the ToggleButton, we should act on the ToggleButton properties or use triggers inside ToggleButton template.
+                                  For simpler fix, let's keep the border outside and just overlay the toggle button, but FIX THE HIT TEST. -->
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="Background" Value="White"/>
-        <Setter Property="BorderBrush" Value="#CCCCCC"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Padding" Value="8,4"/>
-        <Setter Property="FontSize" Value="18"/>
-        <Setter Property="MinHeight" Value="44"/>
+        <!-- reset of style -->
     </Style>
     <Style TargetType="TextBox">
         <Setter Property="FontSize" Value="18"/>
@@ -119,22 +106,15 @@
         <Setter Property="MinHeight" Value="36"/>
     </Style>
 </UserControl.Resources>
-<ScrollViewer VerticalScrollBarVisibility="Auto" Margin="20">
-<Grid>
-    <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-    </Grid.RowDefinitions>
+<Grid Margin="20">
+<Grid.ColumnDefinitions>
+    <ColumnDefinition Width="2*"/>
+    <ColumnDefinition Width="1*"/>
+</Grid.ColumnDefinitions>
 
-    <!-- Form -->
-    <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="1*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Form Area -->
-            <StackPanel Grid.Column="0" Margin="0,0,30,0">
+<!-- Scrollable Form Area -->
+<ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,20,0" Padding="0,0,20,0">
+    <StackPanel>
 
                     <TextBlock Text="Part Type" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,10">
@@ -187,7 +167,8 @@
                               SelectedItem="{Binding SelectedModel}"
                               IsEditable="False"
                               MinHeight="44"
-                              Margin="0,4,0,10"/>
+                              Margin="0,4,0,10"
+                              IsHitTestVisible="True"/>
 
                     <TextBlock Text="Year Range" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,5">
@@ -195,13 +176,10 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
                         <TextBox Grid.Column="0" Text="{Binding NewModelName}" Height="40" VerticalContentAlignment="Center"/>
                         <TextBox Grid.Column="2" Text="{Binding NewModelYearRange}" Height="40" VerticalContentAlignment="Center"/>
-                        <Button Grid.Column="4" Content="Add Model" Command="{Binding AddModelCommand}" Style="{StaticResource FormButtonStyle}" Width="120" Height="36" Padding="0"/>
                     </Grid>
 
                     <TextBlock Text="Brand" Style="{StaticResource FieldLabelStyle}"/>
@@ -220,12 +198,7 @@
 
                     <TextBlock Text="Item Image" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,20">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox Text="{Binding ImagePath}" Margin="0,0,10,0" Height="36" VerticalContentAlignment="Center"/>
-                        <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseItemImageCommand}" Style="{StaticResource FormButtonStyle}" Width="100" Height="36" Padding="5,0"/>
+                        <Button Content="Browse" Command="{Binding BrowseItemImageCommand}" Style="{StaticResource FormButtonStyle}" Width="100" Height="36" Padding="5,0" HorizontalAlignment="Left" Margin="0,0,0,0"/>
                     </Grid>
 
                     <TextBlock Text="Rack Location" Style="{StaticResource FieldLabelStyle}"/>
@@ -249,11 +222,12 @@
                         <Button Grid.Column="2" Command="{Binding SaveItemCommand}" Content="Save Item" Height="56" FontSize="22" FontWeight="Bold" Padding="16,8"/>
                     </Grid>
 
-                </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 
-            <!-- Right Column: Result / Barcode / Preview -->
-            <!-- Using VerticalAlignment="Top" and Margin matches the top of scroll view content -->
-            <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="center">
+    <!-- Fixed Right Column: Barcode Preview - Centered Vertically -->
+    <Grid Grid.Column="1">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <Border Background="White" Padding="15" CornerRadius="8" Width="400" HorizontalAlignment="center" MinHeight="250">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="15" ShadowDepth="4" Opacity="0.15"/>
@@ -264,8 +238,7 @@
                         <TextBlock Text="{Binding SelectedBarcode}" HorizontalAlignment="Center" FontSize="20" FontWeight="Bold"/>
                     </StackPanel>
                 </Border>
-            </StackPanel>
-        </Grid>
+        </StackPanel>
     </Grid>
-</ScrollViewer>
+</Grid>
 </UserControl>

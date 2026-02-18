@@ -399,6 +399,7 @@ namespace inventory_management.ViewModels
                 Manufacturers.Clear();
                 Racks.Clear();
                 Models.Clear();
+                Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
 
                 // Load lookups
                 var types = await _context.PartTypes.OrderBy(t => t.Name).ToListAsync();
@@ -416,6 +417,9 @@ namespace inventory_management.ViewModels
                 var racks = await _context.Racks.OrderBy(r => r.LocationCode).ToListAsync();
                 foreach (var r in racks) Racks.Add(r);
                 Racks.Add(new Rack { Id = -1, LocationCode = "+ Add New Rack..." });
+                
+                // Ensure Models ComboBox is not empty initially
+                Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
 
                 StatusMessage = string.Empty;
             }
@@ -440,8 +444,10 @@ namespace inventory_management.ViewModels
                         .ToListAsync();
                     
                     foreach (var m in models) Models.Add(m);
-                    Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
                 }
+                
+                // Always add the "Add New Model" option so the dropdown isn't empty
+                Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
             }
             catch (Exception ex)
             {
@@ -902,7 +908,14 @@ namespace inventory_management.ViewModels
 
         private async void HandleAddModel()
         {
-            if (SelectedManufacturer == null) return;
+            if (SelectedManufacturer == null || SelectedManufacturer.Id == -1)
+            {
+                StatusMessage = "Please select a manufacturer first.";
+                MessageBox.Show(Application.Current.MainWindow, "Please select a manufacturer before adding a model.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                // Reset selection so they can try again later
+                SelectedModel = null;
+                return;
+            }
 
             _isAddingReferenceData = true;
             try
