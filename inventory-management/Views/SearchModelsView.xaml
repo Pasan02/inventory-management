@@ -73,7 +73,7 @@
                 </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
                 <ScrollViewer.Resources>
                     <Style x:Key="ModernScrollThumb" TargetType="Thumb">
                         <Setter Property="Template">
@@ -126,109 +126,103 @@
                         <DataTemplate>
                             <Border Background="{StaticResource SurfaceColor}"
                                     CornerRadius="12"
-                                    Padding="12"
+                                    Padding="15"
                                     BorderBrush="{StaticResource BorderColor}"
                                     BorderThickness="1"
                                     Margin="8" 
-                                    Width="320">
+                                    Width="260">
                                 <Border.Effect>
                                     <DropShadowEffect Color="{Binding Source={StaticResource CardShadowColor}, Path=Color}" 
                                                     BlurRadius="12" 
                                                     ShadowDepth="0" 
                                                     Opacity="0.1"/>
                                 </Border.Effect>
-                                <StackPanel HorizontalAlignment="Center">
+                                <StackPanel HorizontalAlignment="Stretch">
                                     <!-- Item Image -->
-                                    <Image Width="260" Height="140" Margin="0,0,0,12" 
-                                           Stretch="UniformToFill"
-                                           VerticalAlignment="Center"
-                                           Source="{Binding ItemImagePath, Converter={x:Static converters:RelativeAssetPathToImageSourceConverter.Instance}}"/>
+                                    <Border CornerRadius="8" ClipToBounds="True" Margin="0,0,0,12" BorderBrush="#EEEEEE" BorderThickness="1">
+                                        <Image Height="140" 
+                                               Stretch="UniformToFill"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center"
+                                               Source="{Binding ItemImagePath, Converter={x:Static converters:RelativeAssetPathToImageSourceConverter.Instance}}"/>
+                                    </Border>
                                     
                                     <!-- Model Name and Year -->
                                     <TextBlock Text="{Binding Name}" 
-                                               FontWeight="SemiBold" 
+                                               FontWeight="Bold" 
                                                FontSize="20"
                                                TextAlignment="Center"
                                                Foreground="{StaticResource TextPrimaryColor}"
                                                Margin="0,0,0,4"/>
                                     <TextBlock Text="{Binding YearRange}" 
-                                               FontSize="15" 
+                                               FontSize="16" 
+                                               FontWeight="SemiBold"
                                                TextAlignment="Center"
                                                Foreground="{StaticResource TextSecondaryColor}"
-                                               Margin="0,0,0,8"/>
+                                               Margin="0,0,0,16"/>
 
                                     <!-- Details Section -->
-                                    <Grid Margin="0,0,0,4">
+                                    <Grid Margin="0,4,0,4">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <Grid Margin="0,0,0,4">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" 
-                                                           Text="Available Units: " 
-                                                           FontWeight="SemiBold" 
-                                                           FontSize="15"
-                                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                <TextBlock Grid.Column="1" 
-                                                           Text="{Binding Quantity}" 
-                                                           FontSize="15"
-                                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                            </Grid>
-                                            <Grid Margin="0,0,0,4">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" 
-                                                           Text="Brand: " 
-                                                           FontWeight="SemiBold" 
-                                                           FontSize="15"
-                                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                <TextBlock Grid.Column="1" 
-                                                           Text="{Binding Brands}" 
-                                                           FontSize="15"
+                                        
+                                        <!-- Left Column -->
+                                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                            <!-- Units -->
+                                            <StackPanel Margin="0,0,0,8">
+                                                <TextBlock Text="Units" 
+                                                           FontSize="13"
                                                            Foreground="{StaticResource TextSecondaryColor}"
+                                                           Margin="0,0,0,2"/>
+                                                <TextBlock Text="{Binding Quantity}" 
+                                                           FontWeight="Bold" 
+                                                           FontSize="16"
+                                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                            </StackPanel>
+                                            
+                                            <!-- Brand -->
+                                            <StackPanel>
+                                                <TextBlock Text="Brand" 
+                                                           FontSize="13"
+                                                           Foreground="{StaticResource TextSecondaryColor}"
+                                                           Margin="0,0,0,2"/>
+                                                <TextBlock Text="{Binding Brands}" 
+                                                           FontWeight="Bold" 
+                                                           FontSize="15"
+                                                           Foreground="{StaticResource TextPrimaryColor}"
                                                            TextWrapping="Wrap"/>
-                                            </Grid>
+                                            </StackPanel>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1">
-                                            <Grid Margin="0,0,0,4">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" 
-                                                           Text="Rack: " 
-                                                           FontWeight="SemiBold" 
-                                                           FontSize="15"
-                                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                <TextBlock Grid.Column="1" 
-                                                           Text="{Binding Racks}" 
-                                                           FontSize="15"
+                                        
+                                        <!-- Right Column -->
+                                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                            <!-- Rack -->
+                                            <StackPanel Margin="0,0,0,8">
+                                                <TextBlock Text="Rack" 
+                                                           FontSize="13"
                                                            Foreground="{StaticResource TextSecondaryColor}"
+                                                           Margin="0,0,0,2"/>
+                                                <TextBlock Text="{Binding Racks}" 
+                                                           FontWeight="Bold" 
+                                                           FontSize="16"
+                                                           Foreground="{StaticResource TextPrimaryColor}"
                                                            TextWrapping="Wrap"/>
-                                            </Grid>
-                                            <Grid Margin="0,0,0,4">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" 
-                                                           Text="Origin: " 
-                                                           FontWeight="SemiBold" 
-                                                           FontSize="15"
-                                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                <TextBlock Grid.Column="1" 
-                                                           Text="{Binding CountriesOfOrigin}" 
-                                                           FontSize="15"
+                                            </StackPanel>
+                                            
+                                            <!-- Origin -->
+                                            <StackPanel>
+                                                <TextBlock Text="Origin" 
+                                                           FontSize="13"
                                                            Foreground="{StaticResource TextSecondaryColor}"
+                                                           Margin="0,0,0,2"/>
+                                                <TextBlock Text="{Binding CountriesOfOrigin}" 
+                                                           FontWeight="Bold" 
+                                                           FontSize="15"
+                                                           Foreground="{StaticResource TextPrimaryColor}"
                                                            TextWrapping="Wrap"/>
-                                            </Grid>
+                                            </StackPanel>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
