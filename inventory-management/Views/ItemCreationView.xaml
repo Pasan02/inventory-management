@@ -51,12 +51,14 @@
                                     VerticalAlignment="Stretch"
                                     Cursor="Hand"
                                     OverridesDefaultStyle="True"
-                                    FocusVisualStyle="{x:Null}">
+                                    FocusVisualStyle="{x:Null}"
+                                    IsHitTestVisible="True">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border Background="{TemplateBinding Background}" 
                                             BorderBrush="{TemplateBinding BorderBrush}" 
-                                            BorderThickness="{TemplateBinding BorderThickness}"/>
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            IsHitTestVisible="True"/>
                                 </ControlTemplate>
                             </ToggleButton.Template>
                         </ToggleButton>
@@ -117,34 +119,28 @@
         <Setter Property="MinHeight" Value="36"/>
     </Style>
 </UserControl.Resources>
-<Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+<ScrollViewer VerticalScrollBarVisibility="Auto" Margin="20">
+<Grid>
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <TextBlock Text="Add New Item" FontSize="36" FontWeight="Bold" Margin="0,0,0,30"/>
-
-        <!-- Form -->
-        <!-- Fixed Panel for Barcode (Top-Right, aligned with start of form content) - Outside ScrollViewer to prevent scrolling -->
-        <Grid Grid.Row="0">
+    <!-- Form -->
+    <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Scrollable Form Area -->
-            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="0,0,30,0">
+            <!-- Form Area -->
+            <StackPanel Grid.Column="0" Margin="0,0,30,0">
 
                     <TextBlock Text="Part Type" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0" 
                                   ItemsSource="{Binding PartTypes}" 
@@ -161,20 +157,12 @@
                                 Height="36" 
                                 ToolTip="Add or update image for selected part type"/>
                     </Grid>
-                            <TextBlock Text="Image Path:" FontSize="16"/>
-                            <TextBox Text="{Binding NewPartTypeImagePath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
-                        </StackPanel>
-                    </Border>
-
-                    <TextBlock Text="Manufacturer"/>
-                    <ComboBox ItemsSource="{Binding Manufacturers}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedManufacturer}"/>
 
                     <TextBlock Text="Manufacturer" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0" 
                                   ItemsSource="{Binding Manufacturers}" 
@@ -191,10 +179,6 @@
                                 Height="36" 
                                 ToolTip="Add or update logo for selected manufacturer"/>
                     </Grid>
-                            <TextBlock Text="Logo Path:" FontSize="16"/>
-                            <TextBox Text="{Binding NewManufacturerLogoPath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
-                        </StackPanel>
-                    </Border>
 
 
                     <TextBlock Text="Vehicle Model" Style="{StaticResource FieldLabelStyle}"/>
@@ -266,9 +250,8 @@
                     </Grid>
 
                 </StackPanel>
-            </ScrollViewer>
 
-            <!-- Fixed Right Column: Result / Barcode / Preview -->
+            <!-- Right Column: Result / Barcode / Preview -->
             <!-- Using VerticalAlignment="Top" and Margin matches the top of scroll view content -->
             <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="center">
                 <Border Background="White" Padding="15" CornerRadius="8" Width="400" HorizontalAlignment="center" MinHeight="250">
@@ -283,7 +266,6 @@
                 </Border>
             </StackPanel>
         </Grid>
-
-        <!-- Navigation Footer can be in Main View or here -->
     </Grid>
+</ScrollViewer>
 </UserControl>

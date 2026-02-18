@@ -441,7 +441,6 @@ namespace inventory_management.ViewModels
                     
                     foreach (var m in models) Models.Add(m);
                     Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
-                    });
                 }
             }
             catch (Exception ex)

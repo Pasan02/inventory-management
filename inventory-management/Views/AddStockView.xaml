@@ -25,16 +25,14 @@
         <StackPanel Margin="0,0,40,0">
             <TextBlock Text="Search Item by Barcode" FontSize="24"/>
             <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Height="70" FontSize="22" VerticalContentAlignment="Center"/>
-            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Height="150" Margin="0,0,0,20" FontSize="20"/>
+            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Height="250" Margin="0,0,0,20" FontSize="20"/>
 
-            <TextBlock Text="Scan / Enter Barcode" FontSize="24"/>
-            <TextBox Text="{Binding BarcodeInput}" Margin="0,0,0,20" Height="80" FontSize="24" VerticalContentAlignment="Center">
+            <TextBlock Text="Selected Barcode" FontSize="24"/>
+            <TextBox Text="{Binding BarcodeInput}" Margin="0,0,0,20" Height="70" FontSize="24" VerticalContentAlignment="Center">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter" Command="{Binding ScanAddCommand}"/>
                 </TextBox.InputBindings>
             </TextBox>
-
-            <Button Command="{Binding LookupItemCommand}" Content="Load Item Details" Height="60" Margin="0,0,0,30" FontSize="24"/>
 
             <TextBlock Text="Quantity to Add" FontSize="24"/>
             <TextBox Text="{Binding Quantity}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center"/>

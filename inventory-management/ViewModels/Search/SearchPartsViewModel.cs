@@ -46,56 +46,27 @@ namespace inventory_management.ViewModels.Search
                 StatusMessage = "Loading parts...";
                 Parts.Clear();
 
-                // Load all part types that have items
-                var partTypeIds = await _context.Items
-                    .Select(i => i.PartTypeId)
-                    .Distinct()
+                // Load all part types with their items and calculate totals
+                var partTypeGroups = await _context.Items
+                    .Include(i => i.Stock)
+                    .Include(i => i.PartType)
+                    .AsNoTracking()
+                    .GroupBy(i => new { i.PartTypeId, i.PartType.Name, i.PartType.ImagePath, i.PartType.Image })
+                    .Select(g => new PartTypeSearchRow
+                    {
+                        PartTypeId = g.Key.PartTypeId,
+                        Name = g.Key.Name,
+                        ItemCount = g.Count(),
+                        Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0),
+                        ImagePath = g.Key.ImagePath,
+                        Image = g.Key.Image
+                    })
+                    .OrderBy(r => r.Name)
                     .ToListAsync();
 
-                foreach (var partTypeId in partTypeIds)
+                foreach (var row in partTypeGroups)
                 {
-                    // Get part type info
-                    var partType = await _context.PartTypes
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(pt => pt.Id == partTypeId);
-
-                    if (partType == null) continue;
-
-                    // Count items and calculate quantity
-                    var items = await _context.Items
-                        .Include(i => i.Stock)
-                        .AsNoTracking()
-                .GroupBy(i => new { i.PartTypeId, i.PartType.Name })
-                .Select(g => new PartTypeSearchRow
-                {
-                    PartTypeId = g.Key.PartTypeId,
-                    Name = g.Key.Name,
-                    ItemCount = g.Count(),
-                    Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0),
-                    ImagePath = g.Select(i => i.PartType.ImagePath).FirstOrDefault()
-                })
-                .OrderBy(r => r.Name)
-                        .ToListAsync();
-
-                    var row = new PartTypeSearchRow
-                    {
-                        PartTypeId = partTypeId,
-                        Name = partType.Name,
-                        ItemCount = items.Count,
-                        Quantity = items.Sum(i => i.Stock?.Quantity ?? 0),
-                        ImagePath = partType.ImagePath,
-                        Image = partType.Image
-                    };
-
                     Parts.Add(row);
-                }
-
-                // Sort by name
-                var sorted = Parts.OrderBy(p => p.Name).ToList();
-                Parts.Clear();
-                foreach (var part in sorted)
-                {
-                    Parts.Add(part);
                 }
 
                 StatusMessage = Parts.Count == 0 ? "No parts found." : $"{Parts.Count} parts available.";
