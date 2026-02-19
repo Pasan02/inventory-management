@@ -40,7 +40,7 @@ namespace inventory_management.ViewModels
             if (SelectedPartType == null || SelectedPartType.Id == -1)
             {
                 StatusMessage = "Please select a part type first.";
-                MessageBox.Show(Application.Current.MainWindow, "Please select a part type first.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Please select a part type first.", "Validation Error");
                 return;
             }
 
@@ -93,13 +93,13 @@ namespace inventory_management.ViewModels
                     SelectedPartType.Image = imageBytes;
 
                     StatusMessage = "Image saved successfully.";
-                    MessageBox.Show(Application.Current.MainWindow, "Image saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ModernMessageDialog.ShowSuccess("Image saved successfully!", "Success");
                 }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error saving image: {ex.Message}";
-                MessageBox.Show(Application.Current.MainWindow, $"Error saving image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError($"Error saving image: {ex.Message}", "Error");
             }
         }
 
@@ -117,7 +117,7 @@ namespace inventory_management.ViewModels
             if (SelectedManufacturer == null || SelectedManufacturer.Id == -1)
             {
                 StatusMessage = "Please select a manufacturer first.";
-                MessageBox.Show(Application.Current.MainWindow, "Please select a manufacturer first.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Please select a manufacturer first.", "Validation Error");
                 return;
             }
 
@@ -170,13 +170,13 @@ namespace inventory_management.ViewModels
                     SelectedManufacturer.Logo = logoBytes;
 
                     StatusMessage = "Logo saved successfully.";
-                    MessageBox.Show(Application.Current.MainWindow, "Logo saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ModernMessageDialog.ShowSuccess("Logo saved successfully!", "Success");
                 }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error saving logo: {ex.Message}";
-                MessageBox.Show(Application.Current.MainWindow, $"Error saving logo: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError($"Error saving logo: {ex.Message}", "Error");
             }
         }
 
@@ -399,8 +399,7 @@ namespace inventory_management.ViewModels
                 Manufacturers.Clear();
                 Racks.Clear();
                 Models.Clear();
-                Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
-
+                
                 // Load lookups
                 var types = await _context.PartTypes.OrderBy(t => t.Name).ToListAsync();
                 foreach (var t in types) PartTypes.Add(t);
@@ -650,16 +649,12 @@ namespace inventory_management.ViewModels
 
                 StatusMessage = $"Item Saved! Barcode: {newItem.Barcode}";
 
-                MessageBox.Show(Application.Current.MainWindow, 
-                    $"Item Saved Successfully!{Environment.NewLine}Barcode: {newItem.Barcode}", 
-                    "Success", 
-                    MessageBoxButton.OK, 
-                    MessageBoxImage.Information);
+                ModernMessageDialog.ShowSuccess($"Item Saved Successfully!{Environment.NewLine}Barcode: {newItem.Barcode}", "Success");
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error saving: {ex.Message}";
-                MessageBox.Show(Application.Current.MainWindow, $"Error saving item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ModernMessageDialog.ShowError($"Error saving item: {ex.Message}", "Error");
             }
         }
 
@@ -686,31 +681,31 @@ namespace inventory_management.ViewModels
             if (SelectedPartType == null) 
             { 
                 StatusMessage = string.Empty; // Clear text message, handled by dialog or validation visual 
-                MessageBox.Show(Application.Current.MainWindow, "Part Type is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Part Type is required.", "Validation Error");
                 return false; 
             }
             if (SelectedBrand == null) 
             { 
                 StatusMessage = string.Empty;
-                MessageBox.Show(Application.Current.MainWindow, "Brand is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Brand is required.", "Validation Error");
                 return false; 
             }
             if (SelectedManufacturer == null) 
             { 
                 StatusMessage = string.Empty;
-                MessageBox.Show(Application.Current.MainWindow, "Manufacturer is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Manufacturer is required.", "Validation Error");
                 return false; 
             }
             if (SelectedModel == null) 
             { 
                 StatusMessage = string.Empty;
-                MessageBox.Show(Application.Current.MainWindow, "Model is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Model is required.", "Validation Error");
                 return false; 
             }
             if (string.IsNullOrWhiteSpace(CountryOfOrigin)) 
             { 
                 StatusMessage = string.Empty;
-                MessageBox.Show(Application.Current.MainWindow, "Country of Origin is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Country of Origin is required.", "Validation Error");
                 return false; 
             }
             return true;
@@ -757,7 +752,7 @@ namespace inventory_management.ViewModels
                         if (PartTypes.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                         {
                             StatusMessage = "Part Type already exists.";
-                            MessageBox.Show(Application.Current.MainWindow, "Part Type already exists.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            ModernMessageDialog.ShowWarning("Part Type already exists.", "Error");
                             return;
                         }
 
@@ -768,12 +763,12 @@ namespace inventory_management.ViewModels
                         PartTypes.Insert(PartTypes.Count - 1, newItem);
                         SelectedPartType = newItem;
                         
-                        MessageBox.Show(Application.Current.MainWindow, "Part Type added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ModernMessageDialog.ShowSuccess("Part Type added successfully!", "Success");
                     }
                     catch (Exception ex)
                     {
                         StatusMessage = $"Error adding Part Type: {ex.Message}";
-                        MessageBox.Show(Application.Current.MainWindow, $"Error adding Part Type: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ModernMessageDialog.ShowError($"Error adding Part Type: {ex.Message}", "Error");
                     }
                 }
             }
@@ -798,7 +793,7 @@ namespace inventory_management.ViewModels
                         if (Manufacturers.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                         {
                             StatusMessage = "Manufacturer already exists.";
-                            MessageBox.Show(Application.Current.MainWindow, "Manufacturer already exists.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            ModernMessageDialog.ShowWarning("Manufacturer already exists.", "Error");
                             return;
                         }
 
@@ -809,12 +804,12 @@ namespace inventory_management.ViewModels
                         Manufacturers.Insert(Manufacturers.Count - 1, newItem);
                         SelectedManufacturer = newItem;
                         
-                        MessageBox.Show(Application.Current.MainWindow, "Manufacturer added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ModernMessageDialog.ShowSuccess("Manufacturer added successfully!", "Success");
                     }
                     catch (Exception ex)
                     {
                         StatusMessage = $"Error adding Manufacturer: {ex.Message}";
-                        MessageBox.Show(Application.Current.MainWindow, $"Error adding Manufacturer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ModernMessageDialog.ShowError($"Error adding Manufacturer: {ex.Message}", "Error");
                     }
                 }
             }
@@ -839,7 +834,7 @@ namespace inventory_management.ViewModels
                         if (Brands.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                         {
                             StatusMessage = "Brand already exists.";
-                            MessageBox.Show(Application.Current.MainWindow, "Brand already exists.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            ModernMessageDialog.ShowWarning("Brand already exists.", "Error");
                             return;
                         }
 
@@ -850,12 +845,12 @@ namespace inventory_management.ViewModels
                         Brands.Insert(Brands.Count - 1, newItem);
                         SelectedBrand = newItem;
                         
-                        MessageBox.Show(Application.Current.MainWindow, "Brand added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ModernMessageDialog.ShowSuccess("Brand added successfully!", "Success");
                     }
                     catch (Exception ex)
                     {
                         StatusMessage = $"Error adding Brand: {ex.Message}";
-                        MessageBox.Show(Application.Current.MainWindow, $"Error adding Brand: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ModernMessageDialog.ShowError($"Error adding Brand: {ex.Message}", "Error");
                     }
                 }
             }
@@ -880,7 +875,7 @@ namespace inventory_management.ViewModels
                         if (Racks.Any(x => x.LocationCode.Equals(code, StringComparison.OrdinalIgnoreCase)))
                         {
                             StatusMessage = "Rack already exists.";
-                            MessageBox.Show(Application.Current.MainWindow, "Rack already exists.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            ModernMessageDialog.ShowWarning("Rack already exists.", "Error");
                             return;
                         }
 
@@ -891,12 +886,12 @@ namespace inventory_management.ViewModels
                         Racks.Insert(Racks.Count - 1, newItem);
                         SelectedRack = newItem;
                         
-                        MessageBox.Show(Application.Current.MainWindow, "Rack added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ModernMessageDialog.ShowSuccess("Rack added successfully!", "Success");
                     }
                     catch (Exception ex)
                     {
                         StatusMessage = $"Error adding Rack: {ex.Message}";
-                        MessageBox.Show(Application.Current.MainWindow, $"Error adding Rack: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ModernMessageDialog.ShowError($"Error adding Rack: {ex.Message}", "Error");
                     }
                 }
             }
@@ -911,7 +906,7 @@ namespace inventory_management.ViewModels
             if (SelectedManufacturer == null || SelectedManufacturer.Id == -1)
             {
                 StatusMessage = "Please select a manufacturer first.";
-                MessageBox.Show(Application.Current.MainWindow, "Please select a manufacturer before adding a model.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernMessageDialog.ShowWarning("Please select a manufacturer before adding a model.", "Validation Error");
                 // Reset selection so they can try again later
                 SelectedModel = null;
                 return;
@@ -930,7 +925,7 @@ namespace inventory_management.ViewModels
                         if (Models.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                         {
                             StatusMessage = "Model already exists.";
-                            MessageBox.Show(Application.Current.MainWindow, "Model already exists for this manufacturer.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            ModernMessageDialog.ShowWarning("Model already exists for this manufacturer.", "Error");
                             return;
                         }
 
@@ -945,12 +940,12 @@ namespace inventory_management.ViewModels
                         Models.Insert(Models.Count - 1, newItem);
                         SelectedModel = newItem;
                         
-                        MessageBox.Show(Application.Current.MainWindow, "Vehicle Model added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                        ModernMessageDialog.ShowSuccess("Vehicle Model added successfully!", "Success");
                     }
                     catch (Exception ex)
                     {
                        StatusMessage = $"Error adding Model: {ex.Message}";
-                       MessageBox.Show(Application.Current.MainWindow, $"Error adding Model: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                       ModernMessageDialog.ShowError($"Error adding Model: {ex.Message}", "Error");
                     }
                 }
             }

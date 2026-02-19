@@ -34,6 +34,7 @@
                               AlternatingRowBackground="White"
                               BorderThickness="0"
                               HorizontalAlignment="Center"
+                              VerticalAlignment="Top"
                               Margin="0,20,0,0"
                               MaxHeight="600">
                     <DataGrid.ColumnHeaderStyle>
@@ -203,6 +204,7 @@
                               AlternatingRowBackground="White"
                               BorderThickness="0"
                               HorizontalAlignment="Center"
+                              VerticalAlignment="Top"
                               Margin="0,20,0,0"
                               MaxHeight="600">
                     <DataGrid.ColumnHeaderStyle>
@@ -372,6 +374,7 @@
                               AlternatingRowBackground="White"
                               BorderThickness="0"
                               HorizontalAlignment="Center"
+                              VerticalAlignment="Top"
                               Margin="0,20,0,0"
                               MaxHeight="600">
                     <DataGrid.ColumnHeaderStyle>
