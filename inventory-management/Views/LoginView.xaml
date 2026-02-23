@@ -8,7 +8,8 @@
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </UserControl.Resources>
-    <Grid>
+    <!-- Use a Margin to provide some spacing if window is very small, but center if large -->
+    <Grid VerticalAlignment="Center" MinHeight="600">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>

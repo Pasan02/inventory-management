@@ -176,171 +176,173 @@
         </StackPanel>
 
         <!-- Main Content Area with Navigation Switcher -->
-        <ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}">
-            <ContentControl.Resources>
-                
-                <!-- Home Menu -->
-                <DataTemplate DataType="{x:Type vm:HomeViewModel}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-                        
-                        <!-- Welcome Header -->
-                        <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,30" Padding="24">
-                            <StackPanel>
-                                <TextBlock Text="Vehicle A/C Inventory System" 
-                                         FontSize="36" 
-                                         FontWeight="Bold" 
-                                         Foreground="{StaticResource PrimaryColor}"/>
-                                <TextBlock Text="Select an action below to get started" 
-                                         FontSize="20" 
-                                         Foreground="{StaticResource TextSecondaryColor}"
-                                         Margin="0,8,0,0"/>
-                            </StackPanel>
-                        </Border>
-
-                        <UniformGrid Grid.Row="1" Columns="3" Rows="2" Margin="0">
-                            <!-- Add Stock Button -->
-                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
-                                <Button Command="{Binding DataContext.NavigateToAddStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        Background="#10B981"
-                                        Margin="0" Padding="20">
-                                    <StackPanel>
-                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="White"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                        <TextBlock Text="Add Stock" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
-                                        <TextBlock Text="Increase inventory quantities" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
-                                    </StackPanel>
-                                </Button>
-                            </Border>
-
-                            <!-- Remove Stock Button -->
-                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
-                                <Button Command="{Binding DataContext.NavigateToRemoveStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        Background="#EF4444"
-                                        Margin="0" Padding="20">
-                                    <StackPanel>
-                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M19,13H5V11H19V13Z" Fill="White"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                        <TextBlock Text="Remove Stock" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
-                                        <TextBlock Text="Decrease inventory quantities" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
-                                    </StackPanel>
-                                </Button>
-                            </Border>
+        <!-- Use Vertical Content Alignment to allow stretching children like Search View, but still scroll if small -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+             <ContentControl Content="{Binding CurrentViewModel}" MinHeight="600">
+                <ContentControl.Resources>
+                    
+                    <!-- Home Menu -->
+                    <DataTemplate DataType="{x:Type vm:HomeViewModel}">
+                         <Grid>
+                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
                             
-                            <!-- Search Button -->
-                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
-                                <Button Command="{Binding DataContext.NavigateToSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        Background="#2563EB"
-                                        Margin="0" Padding="20">
-                                    <StackPanel>
-                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" 
-                                                      Fill="White"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                        <TextBlock Text="Search / Items" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
-                                        <TextBlock Text="Find and view inventory" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
-                                    </StackPanel>
-                                </Button>
+                            <!-- Welcome Header -->
+                            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,30" Padding="24">
+                                <StackPanel>
+                                    <TextBlock Text="Vehicle A/C Inventory System" 
+                                             FontSize="36" 
+                                             FontWeight="Bold" 
+                                             Foreground="{StaticResource PrimaryColor}"/>
+                                    <TextBlock Text="Select an action below to get started" 
+                                             FontSize="20" 
+                                             Foreground="{StaticResource TextSecondaryColor}"
+                                             Margin="0,8,0,0"/>
+                                </StackPanel>
                             </Border>
 
-                            <!-- New Item Button -->
-                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
-                                <Button Command="{Binding DataContext.NavigateToCreateItemCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        Background="#8B5CF6"
-                                        Margin="0" Padding="20">
-                                    <StackPanel>
-                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M11,15V12H9V15H6V17H9V20H11V17H14V15H11Z" 
-                                                      Fill="White"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                        <TextBlock Text="New Item" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
-                                        <TextBlock Text="Add new inventory item" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
-                                    </StackPanel>
-                                </Button>
-                            </Border>
+                             <UniformGrid Grid.Row="1" Columns="3" Rows="2" Margin="0">
+                                <!-- Add Stock Button -->
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                    <Button Command="{Binding DataContext.NavigateToAddStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                            Background="#10B981"
+                                            Margin="0" Padding="20">
+                                        <StackPanel>
+                                            <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" Fill="White"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="Add Stock" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                            <TextBlock Text="Increase inventory quantities" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
 
-                            <!-- Reports Button -->
-                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
-                                <Button Command="{Binding DataContext.NavigateToReportsCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        Background="#F59E0B"
-                                        Margin="0" Padding="20">
-                                    <StackPanel>
-                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.11 3.89,21 5,21H19C20.11,21 21,20.11 21,19V5C21,3.89 20.11,3 19,3M9,17H7V10H9V17M13,17H11V7H13V17M17,17H15V13H17V17Z" 
-                                                      Fill="White"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                        <TextBlock Text="Reports" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
-                                        <TextBlock Text="View analytics and reports" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
-                                    </StackPanel>
-                                </Button>
-                            </Border>
+                                <!-- Remove Stock Button -->
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                    <Button Command="{Binding DataContext.NavigateToRemoveStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                            Background="#EF4444"
+                                            Margin="0" Padding="20">
+                                        <StackPanel>
+                                            <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19,13H5V11H19V13Z" Fill="White"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="Remove Stock" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                            <TextBlock Text="Decrease inventory quantities" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
+                                
+                                <!-- Search Button -->
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                    <Button Command="{Binding DataContext.NavigateToSearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                            Background="#2563EB"
+                                            Margin="0" Padding="20">
+                                        <StackPanel>
+                                            <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" 
+                                                          Fill="White"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="Search / Items" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                            <TextBlock Text="Find and view inventory" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
 
-                            <!-- Sign Out Button -->
-                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
-                                <Button Command="{Binding DataContext.LogoutCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                        Background="#64748B"
-                                        Margin="0" Padding="20">
-                                    <StackPanel>
-                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
-                                            <Canvas Width="24" Height="24">
-                                                <Path Data="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z" 
-                                                      Fill="White"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                        <TextBlock Text="Sign Out" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
-                                        <TextBlock Text="Log out of your account" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
-                                    </StackPanel>
-                                </Button>
-                            </Border>
-                        </UniformGrid>
-                    </Grid>
-                </DataTemplate>
+                                <!-- New Item Button -->
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                    <Button Command="{Binding DataContext.NavigateToCreateItemCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                            Background="#8B5CF6"
+                                            Margin="0" Padding="20">
+                                        <StackPanel>
+                                            <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M11,15V12H9V15H6V17H9V20H11V17H14V15H11Z" 
+                                                          Fill="White"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="New Item" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                            <TextBlock Text="Add new inventory item" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
 
-                <DataTemplate DataType="{x:Type vm:LoginViewModel}">
-                    <views:LoginView/>
-                </DataTemplate>
+                                <!-- Reports Button -->
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                    <Button Command="{Binding DataContext.NavigateToReportsCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                            Background="#F59E0B"
+                                            Margin="0" Padding="20">
+                                        <StackPanel>
+                                            <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M19,3H5C3.89,3 3,3.89 3,5V19C3,20.11 3.89,21 5,21H19C20.11,21 21,20.11 21,19V5C21,3.89 20.11,3 19,3M9,17H7V10H9V17M13,17H11V7H13V17M17,17H15V13H17V17Z" 
+                                                          Fill="White"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="Reports" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                            <TextBlock Text="View analytics and reports" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
 
-                <!-- Phase 2: Create Item View -->
-                <DataTemplate DataType="{x:Type vm:ItemCreationViewModel}">
-                    <views:ItemCreationView/>
-                </DataTemplate>
+                                <!-- Sign Out Button -->
+                                <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                    <Button Command="{Binding DataContext.LogoutCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                            Background="#64748B"
+                                            Margin="0" Padding="20">
+                                        <StackPanel>
+                                            <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z" 
+                                                          Fill="White"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="Sign Out" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                            <TextBlock Text="Log out of your account" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
+                            </UniformGrid>
+                        </Grid>
+                    </DataTemplate>
+                    
+                    <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+                        <views:LoginView/>
+                    </DataTemplate>
 
-                <!-- Phase 3: Add/Remove Stock Views -->
-                <DataTemplate DataType="{x:Type vm:AddStockViewModel}">
-                    <views:AddStockView/>
-                </DataTemplate>
-                
-                <DataTemplate DataType="{x:Type vm:RemoveStockViewModel}">
-                    <views:RemoveStockView/>
-                </DataTemplate>
+                    <!-- Phase 2: Create Item View -->
+                    <DataTemplate DataType="{x:Type vm:ItemCreationViewModel}">
+                        <views:ItemCreationView/>
+                    </DataTemplate>
 
-                <DataTemplate DataType="{x:Type vm:SearchItemsViewModel}">
-                    <views:SearchItemsView/>
-                </DataTemplate>
+                    <!-- Phase 3: Add/Remove Stock Views -->
+                    <DataTemplate DataType="{x:Type vm:AddStockViewModel}">
+                        <views:AddStockView/>
+                    </DataTemplate>
+                    
+                    <DataTemplate DataType="{x:Type vm:RemoveStockViewModel}">
+                        <views:RemoveStockView/>
+                    </DataTemplate>
 
-                <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
-                    <views:ReportsView/>
-                </DataTemplate>
+                    <DataTemplate DataType="{x:Type vm:SearchItemsViewModel}">
+                        <views:SearchItemsView/>
+                    </DataTemplate>
 
-                <!-- Future Views will be added here -->
+                    <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
+                        <views:ReportsView/>
+                    </DataTemplate>
 
-            </ContentControl.Resources>
-        </ContentControl>
+                    <!-- Future Views will be added here -->
 
+                </ContentControl.Resources>
+            </ContentControl>
+        </ScrollViewer>
     </Grid>
 </Window>
