@@ -115,7 +115,13 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            CurrentViewModel = _serviceProvider.GetRequiredService<SearchItemsViewModel>();
+            var vm = _serviceProvider.GetRequiredService<SearchItemsViewModel>();
+            vm.GoHomeAction = () =>
+            {
+                CurrentViewModel = _serviceProvider.GetRequiredService<HomeViewModel>();
+                Title = "Vehicle A/C Inventory System";
+            };
+            CurrentViewModel = vm;
             Title = "Search / Items";
         }
 

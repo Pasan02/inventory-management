@@ -14,6 +14,7 @@ namespace inventory_management.ViewModels.Search
         private readonly IDatabaseAvailabilityService _availabilityService;
         private readonly System.Action<ManufacturerSearchRow> _selectManufacturer;
         private readonly System.Action _goBack;
+        private readonly System.Action? _goHome;
 
         public PartTypeSearchRow Part { get; }
         public ObservableCollection<ManufacturerSearchRow> Manufacturers { get; } = new();
@@ -25,14 +26,21 @@ namespace inventory_management.ViewModels.Search
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public SearchManufacturersViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, PartTypeSearchRow part, System.Action<ManufacturerSearchRow> selectManufacturer, System.Action goBack)
+        public SearchManufacturersViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, PartTypeSearchRow part, System.Action<ManufacturerSearchRow> selectManufacturer, System.Action goBack, System.Action? goHome = null)
         {
             _context = context;
             _availabilityService = availabilityService;
             Part = part;
             _selectManufacturer = selectManufacturer;
             _goBack = goBack;
+            _goHome = goHome;
             _ = LoadManufacturersAsync();
+        }
+
+        [RelayCommand]
+        private void GoHome()
+        {
+            _goHome?.Invoke();
         }
 
         [RelayCommand]

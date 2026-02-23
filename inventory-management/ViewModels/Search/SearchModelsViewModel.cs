@@ -19,6 +19,7 @@ namespace inventory_management.ViewModels.Search
         private readonly IDatabaseAvailabilityService _availabilityService;
         private readonly System.Action _goBack;
         private readonly System.Action _viewAllItems;
+        private readonly System.Action? _goHome;
 
         public PartTypeSearchRow Part { get; }
         public ManufacturerSearchRow Manufacturer { get; }
@@ -51,7 +52,8 @@ namespace inventory_management.ViewModels.Search
             PartTypeSearchRow part,
             ManufacturerSearchRow manufacturer,
             System.Action goBack,
-            System.Action viewAllItems)
+            System.Action viewAllItems,
+            System.Action? goHome = null)
         {
             _context = context;
             _availabilityService = availabilityService;
@@ -59,9 +61,16 @@ namespace inventory_management.ViewModels.Search
             Manufacturer = manufacturer;
             _goBack = goBack;
             _viewAllItems = viewAllItems;
+            _goHome = goHome;
             ModelsView = CollectionViewSource.GetDefaultView(Models);
             ModelsView.Filter = FilterModels;
             _ = LoadModelsAsync();
+        }
+
+        [RelayCommand]
+        private void GoHome()
+        {
+            _goHome?.Invoke();
         }
 
         [RelayCommand]

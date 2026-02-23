@@ -13,19 +13,46 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                <TextBlock Text="Select Manufacturer for" 
-                           FontSize="28" 
-                           FontWeight="Bold" 
-                           Foreground="{StaticResource TextPrimaryColor}"
-                           Margin="0,0,8,0"/>
-                <TextBlock Text="{Binding Part.Name}" 
-                           FontSize="28" 
-                           FontWeight="Bold" 
-                           Foreground="{StaticResource TextPrimaryColor}"/>
-            </StackPanel>
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Select Manufacturer for" 
+                               FontSize="28" 
+                               FontWeight="Bold" 
+                               Foreground="{StaticResource TextPrimaryColor}"
+                               Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding Part.Name}" 
+                               FontSize="28" 
+                               FontWeight="Bold" 
+                               Foreground="{StaticResource TextPrimaryColor}"
+                               Margin="0,0,16,0"/>
+
+                    <Button Command="{Binding GoHomeCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="8"
+                            Cursor="Hand"
+                            ToolTip="Go to Home"
+                            VerticalAlignment="Center">
+                        <Grid>
+                            <Ellipse Width="40" Height="40" Fill="{StaticResource SurfaceColor}" Stroke="{StaticResource BorderColor}" StrokeThickness="1"/>
+                            <Path Data="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" 
+                                  Fill="{StaticResource TextPrimaryColor}"
+                                  Stretch="Uniform"
+                                  Width="20"
+                                  Height="20"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ScrollViewer.Resources>
                     <Style x:Key="ModernScrollThumb" TargetType="Thumb">
                         <Setter Property="Template">

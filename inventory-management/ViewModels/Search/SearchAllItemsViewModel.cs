@@ -18,6 +18,7 @@ namespace inventory_management.ViewModels.Search
         private readonly InventoryDbContext _context;
         private readonly IDatabaseAvailabilityService _availabilityService;
         private readonly System.Action _goBack;
+        private readonly System.Action? _goHome;
 
         public PartTypeSearchRow Part { get; }
         public ManufacturerSearchRow Manufacturer { get; }
@@ -45,13 +46,14 @@ namespace inventory_management.ViewModels.Search
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, PartTypeSearchRow part, ManufacturerSearchRow manufacturer, System.Action goBack)
+        public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, PartTypeSearchRow part, ManufacturerSearchRow manufacturer, System.Action goBack, System.Action? goHome = null)
         {
             _context = context;
             _availabilityService = availabilityService;
             Part = part;
             Manufacturer = manufacturer;
             _goBack = goBack;
+            _goHome = goHome;
 
             // Initialize collection view
             ItemsView = CollectionViewSource.GetDefaultView(Items);
@@ -166,6 +168,12 @@ namespace inventory_management.ViewModels.Search
         private void Back()
         {
             _goBack();
+        }
+
+        [RelayCommand]
+        private void GoHome()
+        {
+            _goHome?.Invoke();
         }
     }
 }

@@ -34,15 +34,36 @@
                     <TextBlock Text="{Binding Part.Name}" 
                                FontSize="28" 
                                FontWeight="Bold" 
-                               Foreground="{StaticResource TextPrimaryColor}"/>
+                               Foreground="{StaticResource TextPrimaryColor}"
+                               Margin="0,0,16,0"/>
+
+                    <Button Command="{Binding GoHomeCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="8"
+                            Cursor="Hand"
+                            ToolTip="Go to Home"
+                            VerticalAlignment="Center">
+                        <Grid>
+                            <Ellipse Width="40" Height="40" Fill="{StaticResource SurfaceColor}" Stroke="{StaticResource BorderColor}" StrokeThickness="1"/>
+                            <Path Data="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" 
+                                  Fill="{StaticResource TextPrimaryColor}"
+                                  Stretch="Uniform"
+                                  Width="20"
+                                  Height="20"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
+                        </Grid>
+                    </Button>
                 </StackPanel>
 
-                <Button Grid.Column="1" 
-                        Content="View All Items"
-                        Command="{Binding ViewAllItemsCommand}"
-                        FontSize="18"
-                        Padding="16,8"
-                        VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="View All Items"
+                            Command="{Binding ViewAllItemsCommand}"
+                            FontSize="18"
+                            Padding="16,8"
+                            VerticalAlignment="Center"/>
+                </StackPanel>
             </Grid>
 
             <!-- Search Box -->
@@ -73,7 +94,7 @@
                 </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,10,0">
                 <ScrollViewer.Resources>
                     <Style x:Key="ModernScrollThumb" TargetType="Thumb">
                         <Setter Property="Template">

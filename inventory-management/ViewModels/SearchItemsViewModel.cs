@@ -11,6 +11,8 @@ namespace inventory_management.ViewModels
         private readonly InventoryDbContext _context;
         private readonly IDatabaseAvailabilityService _availabilityService;
 
+        public System.Action? GoHomeAction { get; set; }
+
         private ViewModelBase _currentStep;
         public ViewModelBase CurrentStep
         {
@@ -105,7 +107,8 @@ namespace inventory_management.ViewModels
             {
                 _selectedManufacturer = manufacturer;
                 CurrentStep = CreateModelsStep(part, manufacturer);
-            }, () => CurrentStep = CreatePartsStep());
+            }, () => CurrentStep = CreatePartsStep(), 
+            GoHomeAction);
         }
 
         private ViewModelBase CreateModelsStep(PartTypeSearchRow part, ManufacturerSearchRow manufacturer)
@@ -116,7 +119,8 @@ namespace inventory_management.ViewModels
             }, () => 
             {
                 CurrentStep = CreateAllItemsStep(part, manufacturer);
-            });
+            },
+            GoHomeAction);
         }
 
         private ViewModelBase CreateAllItemsStep(PartTypeSearchRow part, ManufacturerSearchRow manufacturer)
@@ -124,7 +128,8 @@ namespace inventory_management.ViewModels
             return new SearchAllItemsViewModel(_context, _availabilityService, part, manufacturer, () =>
             {
                 CurrentStep = CreateModelsStep(part, manufacturer);
-            });
+            },
+            GoHomeAction);
         }
     }
 }
