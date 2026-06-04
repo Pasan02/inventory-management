@@ -9,6 +9,31 @@ namespace inventory_management.Views
         public AddStockView()
         {
             InitializeComponent();
+            Loaded += (s, e) => BarcodeInputTextBox.Focus();
+            DataContextChanged += (s, e) =>
+            {
+                if (e.OldValue is ViewModels.AddStockViewModel oldVm)
+                {
+                    oldVm.RequestFocus -= OnRequestFocus;
+                    oldVm.ItemLoaded -= OnItemLoaded;
+                }
+                if (e.NewValue is ViewModels.AddStockViewModel newVm)
+                {
+                    newVm.RequestFocus += OnRequestFocus;
+                    newVm.ItemLoaded += OnItemLoaded;
+                }
+            };
+        }
+
+        private void OnItemLoaded()
+        {
+            QuantityTextBox.Focus();
+            QuantityTextBox.SelectAll();
+        }
+
+        private void OnRequestFocus()
+        {
+            BarcodeInputTextBox.Focus();
         }
 
         // Prevent ListBox from changing selection when scrolling with mouse wheel

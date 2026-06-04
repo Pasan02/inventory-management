@@ -8,8 +8,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-using System.Collections.Generic; // Added
-using System; // Added
+using System.Collections.Generic;
+using System;
+using System.Threading;
 
 namespace inventory_management.ViewModels
 {
@@ -18,6 +19,11 @@ namespace inventory_management.ViewModels
         private readonly IStockService _stockService;
         private readonly IDatabaseAvailabilityService _availabilityService;
         private readonly List<Item> _allItems = new();
+        private readonly SemaphoreSlim _dbSemaphore = new(1, 1);
+        private CancellationTokenSource? _searchCts;
+        
+        public event Action? RequestFocus;
+        public event Action? ItemLoaded;
 
         private string _searchText = string.Empty;
         public string SearchText
@@ -55,7 +61,8 @@ namespace inventory_management.ViewModels
             {
                 if (SetProperty(ref _selectedItem, value) && value != null)
                 {
-                    BarcodeInput = value.Barcode;
+                    _barcodeInput = value.Barcode;
+                    OnPropertyChanged(nameof(BarcodeInput));
                     CurrentItem = value;
                     CurrentQuantity = value.Stock?.Quantity ?? 0;
                     StatusMessage = "Ready"; // Don't show success message
@@ -100,20 +107,28 @@ namespace inventory_management.ViewModels
 
         private async void LoadItems()
         {
-            var availability = await _availabilityService.GetStatusAsync();
-            if (!availability.IsAvailable)
+            await _dbSemaphore.WaitAsync();
+            try
             {
-                StatusMessage = availability.Message;
-                return;
-            }
+                var availability = await _availabilityService.GetStatusAsync();
+                if (!availability.IsAvailable)
+                {
+                    StatusMessage = availability.Message;
+                    return;
+                }
 
-            _allItems.Clear();
-            var items = await _stockService.GetItemsAsync();
-            foreach (var item in items)
-            {
-                _allItems.Add(item);
+                _allItems.Clear();
+                var items = await _stockService.GetItemsAsync();
+                foreach (var item in items)
+                {
+                    _allItems.Add(item);
+                }
+                FilterItems();
             }
-            FilterItems();
+            finally
+            {
+                _dbSemaphore.Release();
+            }
         }
 
         private void FilterItems()
@@ -159,6 +174,10 @@ namespace inventory_management.ViewModels
 
         private async Task LoadItemByBarcodeInput()
         {
+            _searchCts?.Cancel();
+            _searchCts = new CancellationTokenSource();
+            var token = _searchCts.Token;
+
             if (string.IsNullOrWhiteSpace(BarcodeInput))
             {
                 CurrentItem = null;
@@ -167,27 +186,50 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            var availability = await _availabilityService.GetStatusAsync();
-            if (!availability.IsAvailable)
+            try
             {
-                StatusMessage = availability.Message;
-                CurrentItem = null;
-                CurrentQuantity = 0;
-                return;
+                await Task.Delay(250, token);
+
+                await _dbSemaphore.WaitAsync(token);
+                try
+                {
+                    var availability = await _availabilityService.GetStatusAsync();
+                    if (token.IsCancellationRequested) return;
+
+                    if (!availability.IsAvailable)
+                    {
+                        StatusMessage = availability.Message;
+                        CurrentItem = null;
+                        CurrentQuantity = 0;
+                        return;
+                    }
+
+                    StatusMessage = "Searching...";
+                    var item = await _stockService.FindItemByBarcodeOrNameAsync(BarcodeInput);
+                    if (token.IsCancellationRequested) return;
+
+                    CurrentItem = item;
+
+                    if (CurrentItem == null)
+                    {
+                        CurrentQuantity = 0;
+                        StatusMessage = "Item not found.";
+                        return;
+                    }
+
+                    CurrentQuantity = CurrentItem.Stock?.Quantity ?? 0;
+                    StatusMessage = "Item loaded.";
+                    ItemLoaded?.Invoke();
+                }
+                finally
+                {
+                    _dbSemaphore.Release();
+                }
             }
-
-            StatusMessage = "Searching...";
-            CurrentItem = await _stockService.FindItemByBarcodeOrNameAsync(BarcodeInput);
-
-            if (CurrentItem == null)
+            catch (OperationCanceledException)
             {
-                CurrentQuantity = 0;
-                StatusMessage = "Item not found.";
-                return;
+                // Ignore cancellation
             }
-
-            CurrentQuantity = CurrentItem.Stock?.Quantity ?? 0;
-            StatusMessage = "Item loaded.";
         }
 
         [RelayCommand]
@@ -206,88 +248,44 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            var item = CurrentItem ?? await _stockService.FindItemByBarcodeAsync(BarcodeInput);
-            if (item == null)
+            await _dbSemaphore.WaitAsync();
+            try
             {
-                StatusMessage = "Item not found.";
-                ModernMessageDialog.ShowError("Item not found.", "Error");
-                CurrentItem = null;
-                CurrentQuantity = 0;
-                return;
-            }
-
-            CurrentItem = item;
-            var result = await _stockService.RemoveStockAsync(item.Barcode, Quantity);
-
-            if (result.Success)
-            {
-                ModernMessageDialog.ShowSuccess($"Stock removed successfully.\nNew Quantity: {result.NewQuantity}", "Success");
-                
-                // Refresh the current item to show updated stock
-                var updatedItem = await _stockService.FindItemByBarcodeAsync(item.Barcode);
-                if (updatedItem != null)
+                var item = CurrentItem ?? await _stockService.FindItemByBarcodeAsync(BarcodeInput);
+                if (item == null)
                 {
-                    CurrentItem = updatedItem;
-                    CurrentQuantity = updatedItem.Stock?.Quantity ?? 0;
+                    StatusMessage = "Item not found.";
+                    ModernMessageDialog.ShowError("Item not found.", "Error");
+                    CurrentItem = null;
+                    CurrentQuantity = 0;
+                    return;
                 }
-                
-                Quantity = 1;
+
+                CurrentItem = item;
+                var result = await _stockService.RemoveStockAsync(item.Barcode, Quantity);
+
+                if (result.Success)
+                {
+                    ModernMessageDialog.ShowSuccess($"Stock removed successfully.\nNew Quantity: {result.NewQuantity}", "Success");
+                    ClearInputs();
+                    RequestFocus?.Invoke();
+                }
+                else
+                {
+                    StatusMessage = result.Message;
+                    ModernMessageDialog.ShowError($"Failed to remove stock: {result.Message}", "Error");
+                }
             }
-            else
+            finally
             {
-                StatusMessage = result.Message;
-                ModernMessageDialog.ShowError($"Failed to remove stock: {result.Message}", "Error");
+                _dbSemaphore.Release();
             }
         }
 
         [RelayCommand]
-        private async Task ScanRemove()
+        private async Task LookupItem()
         {
-            if (string.IsNullOrWhiteSpace(BarcodeInput))
-            {
-                StatusMessage = "Barcode is required.";
-                return;
-            }
-
-            var availability = await _availabilityService.GetStatusAsync();
-            if (!availability.IsAvailable)
-            {
-                StatusMessage = availability.Message;
-                return;
-            }
-
-            var item = await _stockService.FindItemByBarcodeAsync(BarcodeInput);
-            if (item == null)
-            {
-                StatusMessage = "Item not found.";
-                ModernMessageDialog.ShowError("Item not found.", "Error");
-                CurrentItem = null;
-                CurrentQuantity = 0;
-                return;
-            }
-
-            CurrentItem = item;
-            var result = await _stockService.RemoveStockAsync(item.Barcode, 1);
-
-            if (result.Success)
-            {
-                ModernMessageDialog.ShowSuccess($"Stock removed successfully.\nNew Quantity: {result.NewQuantity}", "Success");
-                
-                // Refresh the current item to show updated stock
-                var updatedItem = await _stockService.FindItemByBarcodeAsync(item.Barcode);
-                if (updatedItem != null)
-                {
-                    CurrentItem = updatedItem;
-                    CurrentQuantity = updatedItem.Stock?.Quantity ?? 0;
-                }
-                
-                Quantity = 1;
-            }
-            else
-            {
-                 StatusMessage = result.Message;
-                 ModernMessageDialog.ShowError($"Failed to remove stock: {result.Message}", "Error");
-            }
+            await LoadItemByBarcodeInput();
         }
     }
 }

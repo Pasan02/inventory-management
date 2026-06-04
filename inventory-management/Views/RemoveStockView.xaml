@@ -24,34 +24,45 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Margin="0,0,40,0" Grid.ColumnSpan="3">
-            <TextBlock Text="Search Item by Barcode" FontSize="24"/>
-            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Height="70" FontSize="22" VerticalContentAlignment="Center"/>
-            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Height="150" Margin="0,0,0,20" FontSize="20"/>
+        <ScrollViewer Grid.ColumnSpan="3" Grid.RowSpan="2" VerticalScrollBarVisibility="Auto" Margin="0,0,40,0">
+            <StackPanel>
+                <TextBlock Text="Search Item by Barcode" FontSize="24"/>
+                <TextBox x:Name="SearchTextBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Height="70" FontSize="22" VerticalContentAlignment="Center"/>
+                <ListBox x:Name="SearchListBox" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Height="150" Margin="0,0,0,20" FontSize="20">
+                    <ListBox.Style>
+                        <Style TargetType="ListBox">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsFocused, ElementName=SearchTextBox}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=SearchListBox}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.Style>
+                </ListBox>
 
-            <TextBlock Text="Selected Barcode" FontSize="24"/>
-            <TextBox Text="{Binding BarcodeInput}" Margin="0,0,0,20" Height="80" FontSize="24" VerticalContentAlignment="Center">
-                <TextBox.InputBindings>
-                    <KeyBinding Key="Enter" Command="{Binding ScanRemoveCommand}"/>
-                </TextBox.InputBindings>
-            </TextBox>
-
-            <Button Command="{Binding LookupItemCommand}" Content="Load Item Details" Height="60" Margin="0,0,0,30" FontSize="24"/>
-
-            <TextBlock Text="Quantity to Remove" FontSize="24"/>
-            <TextBox Text="{Binding Quantity}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center"/>
-
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="10"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Command="{Binding ResetCommand}" Content="Reset" Height="70" FontSize="28" FontWeight="Bold" Background="Black" Foreground="White"/>
-                <Button Grid.Column="2" Command="{Binding RemoveStockCommand}" Content="Remove Stock" Height="70" FontSize="28" FontWeight="Bold"/>
-            </Grid>
-
-        </StackPanel>
+                <TextBlock Text="Selected Barcode" FontSize="24"/>
+                <TextBox x:Name="BarcodeInputTextBox" Text="{Binding BarcodeInput, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20" Height="80" FontSize="24" VerticalContentAlignment="Center">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding LookupItemCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+                <TextBlock Text="Quantity to Remove" FontSize="24"/>
+                <TextBox x:Name="QuantityTextBox" Text="{Binding Quantity}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Command="{Binding ResetCommand}" Content="Reset" Height="70" FontSize="28" FontWeight="Bold" Background="Black" Foreground="White"/>
+                    <Button Grid.Column="2" Command="{Binding RemoveStockCommand}" Content="Remove Stock" Height="70" FontSize="28" FontWeight="Bold" IsDefault="True"/>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
 
         <Border Grid.Column="3" Padding="10" BorderBrush="#DDD" BorderThickness="1"
                 Visibility="{Binding CurrentItem, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}">

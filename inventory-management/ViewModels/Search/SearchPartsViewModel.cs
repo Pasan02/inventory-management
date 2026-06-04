@@ -46,31 +46,23 @@ namespace inventory_management.ViewModels.Search
                 StatusMessage = "Loading parts...";
                 Parts.Clear();
 
-                // Load all part types that have items
-                var partTypeIds = await _context.Items
-                    .Select(i => i.PartTypeId)
-                    .Distinct()
+                // Load all registered part types
+                var partTypes = await _context.PartTypes
+                    .AsNoTracking()
                     .ToListAsync();
 
-                foreach (var partTypeId in partTypeIds)
+                foreach (var partType in partTypes)
                 {
-                    // Get part type info
-                    var partType = await _context.PartTypes
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(pt => pt.Id == partTypeId);
-
-                    if (partType == null) continue;
-
                     // Count items and calculate quantity
                     var items = await _context.Items
-                        .Where(i => i.PartTypeId == partTypeId)
+                        .Where(i => i.PartTypeId == partType.Id)
                         .Include(i => i.Stock)
                         .AsNoTracking()
                         .ToListAsync();
 
                     var row = new PartTypeSearchRow
                     {
-                        PartTypeId = partTypeId,
+                        PartTypeId = partType.Id,
                         Name = partType.Name,
                         ItemCount = items.Count,
                         Quantity = items.Sum(i => i.Stock?.Quantity ?? 0),
