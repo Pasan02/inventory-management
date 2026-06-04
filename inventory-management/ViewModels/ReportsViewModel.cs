@@ -86,6 +86,10 @@ namespace inventory_management.ViewModels
 
                 var transactions = await _context.Transactions
                     .Include(t => t.Item)
+                        .ThenInclude(i => i.PartType)
+                    .Include(t => t.Item)
+                        .ThenInclude(i => i.VehicleModel)
+                            .ThenInclude(vm => vm.Manufacturer)
                     .AsNoTracking()
                     .OrderByDescending(t => t.Timestamp)
                     .Take(200)
@@ -98,6 +102,9 @@ namespace inventory_management.ViewModels
                         Timestamp = transaction.Timestamp,
                         Barcode = transaction.Item.Barcode,
                         Description = transaction.Item.Description,
+                        PartType = transaction.Item.PartType?.Name ?? string.Empty,
+                        Manufacturer = transaction.Item.VehicleModel?.Manufacturer?.Name ?? string.Empty,
+                        Model = transaction.Item.VehicleModel?.Name ?? string.Empty,
                         ActionType = transaction.ActionType,
                         QuantityChange = transaction.QuantityChange,
                         MachineName = transaction.MachineName

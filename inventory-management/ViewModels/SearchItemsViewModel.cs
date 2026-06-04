@@ -36,12 +36,16 @@ namespace inventory_management.ViewModels
         /// </summary>
         public bool GoBack()
         {
-            // If we're on All Items page, go back to Models
             if (CurrentStep is SearchAllItemsViewModel)
             {
                 if (_selectedPart != null && _selectedManufacturer != null)
                 {
                     CurrentStep = CreateModelsStep(_selectedPart, _selectedManufacturer);
+                    return true;
+                }
+                else if (_selectedPart != null)
+                {
+                    CurrentStep = CreateManufacturersStep(_selectedPart);
                     return true;
                 }
             }
@@ -107,7 +111,11 @@ namespace inventory_management.ViewModels
             {
                 _selectedManufacturer = manufacturer;
                 CurrentStep = CreateModelsStep(part, manufacturer);
-            }, () => CurrentStep = CreatePartsStep());
+            }, () => CurrentStep = CreatePartsStep(), () => 
+            {
+                _selectedManufacturer = null;
+                CurrentStep = CreateAllItemsStep(part, null);
+            });
         }
 
         private ViewModelBase CreateModelsStep(PartTypeSearchRow part, ManufacturerSearchRow manufacturer)
@@ -121,11 +129,18 @@ namespace inventory_management.ViewModels
             });
         }
 
-        private ViewModelBase CreateAllItemsStep(PartTypeSearchRow part, ManufacturerSearchRow manufacturer)
+        private ViewModelBase CreateAllItemsStep(PartTypeSearchRow part, ManufacturerSearchRow? manufacturer)
         {
             return new SearchAllItemsViewModel(_context, _availabilityService, _printService, part, manufacturer, () =>
             {
-                CurrentStep = CreateModelsStep(part, manufacturer);
+                if (manufacturer != null)
+                {
+                    CurrentStep = CreateModelsStep(part, manufacturer);
+                }
+                else
+                {
+                    CurrentStep = CreateManufacturersStep(part);
+                }
             });
         }
     }

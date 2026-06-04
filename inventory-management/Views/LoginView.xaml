@@ -92,6 +92,7 @@
 
                 <Button Content="Sign In" 
                         Command="{Binding LoginCommand}" 
+                        IsDefault="True"
                         Height="90" 
                         FontSize="36" 
                         FontWeight="Bold" 

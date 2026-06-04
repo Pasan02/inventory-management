@@ -21,7 +21,7 @@ namespace inventory_management.ViewModels.Search
         private readonly System.Action _goBack;
 
         public PartTypeSearchRow Part { get; }
-        public ManufacturerSearchRow Manufacturer { get; }
+        public ManufacturerSearchRow? Manufacturer { get; }
         
         public ObservableCollection<ItemSearchRow> Items { get; } = new();
         public ICollectionView ItemsView { get; }
@@ -46,7 +46,7 @@ namespace inventory_management.ViewModels.Search
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, PartTypeSearchRow part, ManufacturerSearchRow manufacturer, System.Action goBack)
+        public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, PartTypeSearchRow part, ManufacturerSearchRow? manufacturer, System.Action goBack)
         {
             _context = context;
             _availabilityService = availabilityService;
@@ -75,7 +75,9 @@ namespace inventory_management.ViewModels.Search
                     return;
                 }
 
-                StatusMessage = $"Loading items for {Manufacturer.Name} {Part.Name}...";
+                StatusMessage = Manufacturer == null 
+                    ? $"Loading items for {Part.Name}..." 
+                    : $"Loading items for {Manufacturer.Name} {Part.Name}...";
                 
                 // Clear existing items on UI thread
                 if (Application.Current?.Dispatcher != null)
@@ -96,7 +98,7 @@ namespace inventory_management.ViewModels.Search
                     .Include(i => i.Stock)
                     .AsNoTracking()
                     .Where(i => i.PartTypeId == Part.PartTypeId && 
-                                i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)
+                                (Manufacturer == null || i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId))
                     .OrderBy(i => i.VehicleModel.Name)
                     .ThenBy(i => i.PartBrand.Name)
                     .ToListAsync();
