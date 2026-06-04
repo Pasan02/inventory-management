@@ -63,18 +63,9 @@ namespace inventory_management.ViewModels.Search
 
                     // Count items and calculate quantity
                     var items = await _context.Items
+                        .Where(i => i.PartTypeId == partTypeId)
                         .Include(i => i.Stock)
                         .AsNoTracking()
-                .GroupBy(i => new { i.PartTypeId, i.PartType.Name })
-                .Select(g => new PartTypeSearchRow
-                {
-                    PartTypeId = g.Key.PartTypeId,
-                    Name = g.Key.Name,
-                    ItemCount = g.Count(),
-                    Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0),
-                    ImagePath = g.Select(i => i.PartType.ImagePath).FirstOrDefault()
-                })
-                .OrderBy(r => r.Name)
                         .ToListAsync();
 
                     var row = new PartTypeSearchRow

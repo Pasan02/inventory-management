@@ -10,6 +10,7 @@ namespace inventory_management.ViewModels
     {
         private readonly InventoryDbContext _context;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly IPrintService _printService;
 
         private ViewModelBase _currentStep;
         public ViewModelBase CurrentStep
@@ -21,10 +22,11 @@ namespace inventory_management.ViewModels
         private PartTypeSearchRow? _selectedPart;
         private ManufacturerSearchRow? _selectedManufacturer;
 
-        public SearchItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService)
+        public SearchItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService)
         {
             _context = context;
             _availabilityService = availabilityService;
+            _printService = printService;
             _currentStep = CreatePartsStep();
         }
 
@@ -121,7 +123,7 @@ namespace inventory_management.ViewModels
 
         private ViewModelBase CreateAllItemsStep(PartTypeSearchRow part, ManufacturerSearchRow manufacturer)
         {
-            return new SearchAllItemsViewModel(_context, _availabilityService, part, manufacturer, () =>
+            return new SearchAllItemsViewModel(_context, _availabilityService, _printService, part, manufacturer, () =>
             {
                 CurrentStep = CreateModelsStep(part, manufacturer);
             });

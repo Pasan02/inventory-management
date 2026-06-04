@@ -21,6 +21,7 @@ namespace inventory_management.ViewModels
     {
         private readonly InventoryDbContext _context;
         private readonly IBarcodeService _barcodeService;
+        private readonly IPrintService _printService;
         private readonly IDatabaseAvailabilityService _availabilityService;
         private bool _isAddingReferenceData;
 
@@ -320,7 +321,17 @@ namespace inventory_management.ViewModels
                     Application.Current.Dispatcher.InvokeAsync(HandleAddModel);
                     return;
                 }
-                SetProperty(ref _selectedModel, value);
+                if (SetProperty(ref _selectedModel, value))
+                {
+                    if (value != null && value.Id != -1)
+                    {
+                        NewModelYearRange = value.YearRange ?? string.Empty;
+                    }
+                    else
+                    {
+                        NewModelYearRange = string.Empty;
+                    }
+                }
             }
         }
 
@@ -370,10 +381,11 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public ItemCreationViewModel(InventoryDbContext context, IBarcodeService barcodeService, IDatabaseAvailabilityService availabilityService)
+        public ItemCreationViewModel(InventoryDbContext context, IBarcodeService barcodeService, IPrintService printService, IDatabaseAvailabilityService availabilityService)
         {
             _context = context;
             _barcodeService = barcodeService;
+            _printService = printService;
             _availabilityService = availabilityService;
             
             LoadReferenceData();
@@ -441,7 +453,6 @@ namespace inventory_management.ViewModels
                     
                     foreach (var m in models) Models.Add(m);
                     Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
-                    });
                 }
             }
             catch (Exception ex)
@@ -524,50 +535,6 @@ namespace inventory_management.ViewModels
             StatusMessage = "Manufacturer added.";
         }
 
-        [RelayCommand]
-        private async Task AddModel()
-        {
-            if (SelectedManufacturer == null)
-            {
-                StatusMessage = "Select a manufacturer for the model.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(NewModelName))
-            {
-                StatusMessage = "Model name is required.";
-                return;
-            }
-
-            var availability = await _availabilityService.GetStatusAsync();
-            if (!availability.IsAvailable)
-            {
-                StatusMessage = availability.Message;
-                return;
-            }
-
-            var name = NewModelName.Trim();
-            if (await _context.Models.AnyAsync(m => m.VehicleManufacturerId == SelectedManufacturer.Id && m.Name == name))
-            {
-                StatusMessage = "Model already exists for this manufacturer.";
-                return;
-            }
-
-            var model = new VehicleModel
-            {
-                VehicleManufacturerId = SelectedManufacturer.Id,
-                Name = name,
-                YearRange = string.IsNullOrWhiteSpace(NewModelYearRange) ? null : NewModelYearRange.Trim()
-            };
-
-            _context.Models.Add(model);
-            await _context.SaveChangesAsync();
-
-            Models.Add(model);
-            NewModelName = string.Empty;
-            NewModelYearRange = string.Empty;
-            StatusMessage = "Model added.";
-        }
 
         [RelayCommand]
         private void Reset()
@@ -655,6 +622,46 @@ namespace inventory_management.ViewModels
             {
                 StatusMessage = $"Error saving: {ex.Message}";
                 MessageBox.Show(Application.Current.MainWindow, $"Error saving item: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        [RelayCommand]
+        private async Task PrintBarcode()
+        {
+            if (string.IsNullOrWhiteSpace(SelectedBarcode))
+            {
+                StatusMessage = "No barcode generated yet.";
+                MessageBox.Show(Application.Current.MainWindow, "No barcode has been generated yet.", "Print Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                var partName = SelectedPartType != null && SelectedPartType.Id != -1 ? SelectedPartType.Name : "";
+                var brandName = SelectedBrand != null && SelectedBrand.Id != -1 ? SelectedBrand.Name : "";
+                var manufacturerName = SelectedManufacturer != null && SelectedManufacturer.Id != -1 ? SelectedManufacturer.Name : "";
+                var modelName = SelectedModel != null && SelectedModel.Id != -1 ? SelectedModel.Name : "";
+
+                var title = $"{brandName} {partName}".Trim();
+                var details = $"{manufacturerName} {modelName}".Trim();
+
+                StatusMessage = "Printing barcode label...";
+                var success = await _printService.PrintBarcodeLabelAsync(SelectedBarcode, title, details);
+                
+                if (success)
+                {
+                    StatusMessage = "Barcode label printed successfully.";
+                }
+                else
+                {
+                    StatusMessage = "Failed to print barcode label.";
+                    MessageBox.Show(Application.Current.MainWindow, "Printing failed. Please ensure the Zebra printer is installed and connected.", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Print error: {ex.Message}";
+                MessageBox.Show(Application.Current.MainWindow, $"An error occurred while printing: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -925,7 +932,8 @@ namespace inventory_management.ViewModels
                         var newItem = new VehicleModel 
                         { 
                             Name = name, 
-                            VehicleManufacturerId = SelectedManufacturer.Id
+                            VehicleManufacturerId = SelectedManufacturer.Id,
+                            YearRange = string.IsNullOrWhiteSpace(NewModelYearRange) ? null : NewModelYearRange.Trim()
                         };
                         _context.Models.Add(newItem);
                         await _context.SaveChangesAsync();

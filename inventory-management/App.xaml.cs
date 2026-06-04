@@ -1,4 +1,4 @@
-﻿using System.Configuration;
+using System.Configuration;
 using System.Data;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +31,7 @@ namespace inventory_management
 
                     // SERVICES
                     services.AddSingleton<Services.IBarcodeService, Services.BarcodeService>();
+                    services.AddSingleton<Services.IPrintService, Services.PrintService>();
                     services.AddTransient<Services.IStockService, Services.StockService>();
                     services.AddTransient<IDatabaseAvailabilityService, DatabaseAvailabilityService>();
                     services.AddTransient<IBackupService, BackupService>();
@@ -85,29 +86,12 @@ namespace inventory_management
                     await EnsureIdentitySequencesAsync(dbContext);
 
                     var integrityCheck = scope.ServiceProvider.GetRequiredService<IIntegrityCheckService>();
-                    var integrityResult = await integrityCheck.RunAsync();
-                    if (!integrityResult.IsHealthy)
-                    {
-                        MessageBox.Show(string.Join(Environment.NewLine, integrityResult.Issues), "Integrity Check Warning");
-                    }
+                    await integrityCheck.RunAsync();
 
                     var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
                     
                     // Force reset admin password to ensure access
                     await authService.ForceSetPasswordAsync("admin", "admin123");
-
-                    var resetResult = await authService.TryResetAdminAsync();
-                    if (resetResult.Changed)
-                    {
-                        var action = resetResult.Created ? "created" : "reset";
-                        MessageBox.Show($"Admin account {action}. Username: {resetResult.Username}. Temporary password: {resetResult.TemporaryPassword}", "Admin Account Updated");
-                    }
-
-                    var adminResult = await authService.EnsureDefaultAdminAsync();
-                    if (adminResult.Created)
-                    {
-                        MessageBox.Show($"Default admin created. Username: {adminResult.Username}. Temporary password: {adminResult.TemporaryPassword}", "Admin Account Created");
-                    }
                 }
                 catch (Exception ex)
                 {

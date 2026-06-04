@@ -17,6 +17,7 @@ namespace inventory_management.ViewModels.Search
     {
         private readonly InventoryDbContext _context;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly IPrintService _printService;
         private readonly System.Action _goBack;
 
         public PartTypeSearchRow Part { get; }
@@ -45,10 +46,11 @@ namespace inventory_management.ViewModels.Search
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, PartTypeSearchRow part, ManufacturerSearchRow manufacturer, System.Action goBack)
+        public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, PartTypeSearchRow part, ManufacturerSearchRow manufacturer, System.Action goBack)
         {
             _context = context;
             _availabilityService = availabilityService;
+            _printService = printService;
             Part = part;
             Manufacturer = manufacturer;
             _goBack = goBack;
@@ -166,6 +168,35 @@ namespace inventory_management.ViewModels.Search
         private void Back()
         {
             _goBack();
+        }
+
+        [RelayCommand]
+        private async Task PrintItemBarcode(ItemSearchRow item)
+        {
+            if (item == null) return;
+
+            try
+            {
+                StatusMessage = $"Printing barcode label for {item.Barcode}...";
+                var title = $"{item.Brand} {item.PartType}".Trim();
+                var details = $"{item.Manufacturer} {item.Model}".Trim();
+                
+                var success = await _printService.PrintBarcodeLabelAsync(item.Barcode, title, details);
+                if (success)
+                {
+                    StatusMessage = $"Barcode label printed successfully for {item.Barcode}.";
+                }
+                else
+                {
+                    StatusMessage = $"Failed to print barcode label for {item.Barcode}.";
+                    MessageBox.Show(Application.Current.MainWindow, "Printing failed. Please ensure the Zebra printer is installed and connected.", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Print error: {ex.Message}";
+                MessageBox.Show(Application.Current.MainWindow, $"An error occurred while printing: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
