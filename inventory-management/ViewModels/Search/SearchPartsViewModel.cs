@@ -82,7 +82,7 @@ namespace inventory_management.ViewModels.Search
                         PartTypeId = partTypeId,
                         Name = partType.Name,
                         ItemCount = items.Count,
-                        Quantity = items.Sum(i => i.Stock?.Quantity ?? 0),
+                        Quantity = items.Sum(i => i.Quantity),
                         ImagePath = partType.ImagePath,
                         Image = partType.Image
                     };

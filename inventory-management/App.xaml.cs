@@ -1,4 +1,4 @@
-﻿using System.Configuration;
+using System.Configuration;
 using System.Data;
 using System.Windows;
 using Microsoft.Extensions.Configuration;
@@ -27,7 +27,7 @@ namespace inventory_management
                         ?? "Host=localhost;Database=inventory_ac_db;Username=postgres;Password=pasan";
 
                     services.AddDbContext<InventoryDbContext>(options =>
-                        options.UseNpgsql(connectionString), ServiceLifetime.Transient);
+                        options.UseNpgsql(connectionString), ServiceLifetime.Transient, ServiceLifetime.Transient);
 
                     // SERVICES
                     services.AddSingleton<Services.IBarcodeService, Services.BarcodeService>();
@@ -82,6 +82,7 @@ namespace inventory_management
                     
                     await dbContext.Database.MigrateAsync();
                     await EnsurePlaceholderDataAsync(dbContext);
+                    await RepairSeedTransactionChecksumsAsync(dbContext);
                     await EnsureIdentitySequencesAsync(dbContext);
 
                     var integrityCheck = scope.ServiceProvider.GetRequiredService<IIntegrityCheckService>();
@@ -244,6 +245,25 @@ namespace inventory_management
             {
                 await context.Database.ExecuteSqlRawAsync(sql);
             }
+        }
+
+        private static async Task RepairSeedTransactionChecksumsAsync(InventoryDbContext context)
+        {
+            var seededTransactions = await context.Transactions
+                .Where(t => t.ChecksumHash == "SEED" || string.IsNullOrWhiteSpace(t.ChecksumHash))
+                .ToListAsync();
+
+            if (seededTransactions.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var transaction in seededTransactions)
+            {
+                transaction.ChecksumHash = StockTransactionHasher.ComputeChecksum(transaction);
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 }

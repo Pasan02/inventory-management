@@ -10,7 +10,7 @@ namespace inventory_management.Converters
     {
         public static ByteArrayToImageConverter Instance { get; } = new ByteArrayToImageConverter();
 
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is byte[] bytes && bytes.Length > 0)
             {
@@ -33,7 +33,7 @@ namespace inventory_management.Converters
             return null;
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

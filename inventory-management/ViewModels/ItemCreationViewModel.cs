@@ -376,11 +376,11 @@ namespace inventory_management.ViewModels
             _barcodeService = barcodeService;
             _availabilityService = availabilityService;
             
-            LoadReferenceData();
+            _ = LoadReferenceData();
         }
 
         [RelayCommand]
-        private async void LoadReferenceData()
+        private async Task LoadReferenceData()
         {
             try
             {
@@ -441,7 +441,6 @@ namespace inventory_management.ViewModels
                     
                     foreach (var m in models) Models.Add(m);
                     Models.Add(new VehicleModel { Id = -1, Name = "+ Add New Model..." });
-                    });
                 }
             }
             catch (Exception ex)

@@ -144,7 +144,6 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0" 
                                   ItemsSource="{Binding PartTypes}" 
@@ -161,20 +160,14 @@
                                 Height="36" 
                                 ToolTip="Add or update image for selected part type"/>
                     </Grid>
-                            <TextBlock Text="Image Path:" FontSize="16"/>
-                            <TextBox Text="{Binding NewPartTypeImagePath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
-                        </StackPanel>
-                    </Border>
-
-                    <TextBlock Text="Manufacturer"/>
-                    <ComboBox ItemsSource="{Binding Manufacturers}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedManufacturer}"/>
+                    <TextBlock Text="Image Path:" FontSize="16"/>
+                    <TextBox Text="{Binding NewPartTypeImagePath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
 
                     <TextBlock Text="Manufacturer" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0" 
                                   ItemsSource="{Binding Manufacturers}" 
@@ -191,10 +184,8 @@
                                 Height="36" 
                                 ToolTip="Add or update logo for selected manufacturer"/>
                     </Grid>
-                            <TextBlock Text="Logo Path:" FontSize="16"/>
-                            <TextBox Text="{Binding NewManufacturerLogoPath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
-                        </StackPanel>
-                    </Border>
+                    <TextBlock Text="Logo Path:" FontSize="16"/>
+                    <TextBox Text="{Binding NewManufacturerLogoPath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
 
 
                     <TextBlock Text="Vehicle Model" Style="{StaticResource FieldLabelStyle}"/>
