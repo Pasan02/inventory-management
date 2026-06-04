@@ -201,7 +201,7 @@
                             </StackPanel>
                         </Border>
 
-                        <UniformGrid Grid.Row="1" Columns="3" Rows="2" Margin="0">
+                        <UniformGrid Grid.Row="1" Columns="3" Rows="3" Margin="0">
                             <!-- Add Stock Button -->
                             <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
                                 <Button Command="{Binding DataContext.NavigateToAddStockCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
@@ -290,6 +290,24 @@
                                 </Button>
                             </Border>
 
+                            <!-- Barcode Center Button -->
+                            <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
+                                <Button Command="{Binding DataContext.NavigateToBarcodeCenterCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                        Background="#0F766E"
+                                        Margin="0" Padding="20">
+                                    <StackPanel>
+                                        <Viewbox Width="64" Height="64" Margin="0,0,0,15">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M4,5H6V19H4V5M7,5H8V19H7V5M10,5H14V7H10V5M15,5H16V19H15V5M18,5H20V19H18V5M10,9H14V11H10V9M10,13H14V15H10V13M10,17H14V19H10V17Z"
+                                                      Fill="White"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="Barcode Center" FontSize="28" FontWeight="Bold" TextAlignment="Center" Foreground="White"/>
+                                        <TextBlock Text="Preview and print item labels" FontSize="16" Opacity="0.9" TextAlignment="Center" Margin="0,8,0,0" Foreground="White"/>
+                                    </StackPanel>
+                                </Button>
+                            </Border>
+
                             <!-- Sign Out Button -->
                             <Border Style="{StaticResource CompactCardStyle}" Margin="10" Cursor="Hand">
                                 <Button Command="{Binding DataContext.LogoutCommand, RelativeSource={RelativeSource AncestorType=Window}}" 
@@ -335,6 +353,10 @@
 
                 <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
                     <views:ReportsView/>
+                </DataTemplate>
+
+                <DataTemplate DataType="{x:Type vm:BarcodeManagementViewModel}">
+                    <views:BarcodeManagementView/>
                 </DataTemplate>
 
                 <!-- Future Views will be added here -->

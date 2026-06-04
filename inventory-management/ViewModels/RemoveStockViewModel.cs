@@ -10,14 +10,17 @@ using System.Windows;
 
 using System.Collections.Generic; // Added
 using System; // Added
+using System.Windows.Threading;
 
 namespace inventory_management.ViewModels
 {
-    public partial class RemoveStockViewModel : ViewModelBase
+    public partial class RemoveStockViewModel : ViewModelBase, IScannerAwareViewModel
     {
         private readonly IStockService _stockService;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly IScannerService _scannerService;
         private readonly List<Item> _allItems = new();
+        private bool _scannerActive;
 
         private string _searchText = string.Empty;
         public string SearchText
@@ -91,10 +94,19 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public RemoveStockViewModel(IStockService stockService, IDatabaseAvailabilityService availabilityService)
+        private string _scannerStatus = "Scanner mode: Keyboard (USB-HID / wedge fallback)";
+        public string ScannerStatus
+        {
+            get => _scannerStatus;
+            set => SetProperty(ref _scannerStatus, value);
+        }
+
+        public RemoveStockViewModel(IStockService stockService, IDatabaseAvailabilityService availabilityService, IScannerService scannerService)
         {
             _stockService = stockService;
             _availabilityService = availabilityService;
+            _scannerService = scannerService;
+            ScannerStatus = _scannerService.ScannerStatus;
             LoadItems();
         }
 
@@ -288,6 +300,46 @@ namespace inventory_management.ViewModels
                  StatusMessage = result.Message;
                  ModernMessageDialog.ShowError($"Failed to remove stock: {result.Message}", "Error");
             }
+        }
+
+        public void ActivateScanner()
+        {
+            if (_scannerActive)
+            {
+                return;
+            }
+
+            _scannerActive = true;
+            _scannerService.BarcodeScanned += OnBarcodeScanned;
+            _scannerService.ScannerStatusChanged += OnScannerStatusChanged;
+            ScannerStatus = _scannerService.ScannerStatus;
+            _ = _scannerService.RefreshDetectionAsync();
+        }
+
+        public void DeactivateScanner()
+        {
+            if (!_scannerActive)
+            {
+                return;
+            }
+
+            _scannerActive = false;
+            _scannerService.BarcodeScanned -= OnBarcodeScanned;
+            _scannerService.ScannerStatusChanged -= OnScannerStatusChanged;
+        }
+
+        private void OnScannerStatusChanged(object? sender, EventArgs e)
+        {
+            _ = App.Current.Dispatcher.InvokeAsync(() => ScannerStatus = _scannerService.ScannerStatus, DispatcherPriority.Normal);
+        }
+
+        private void OnBarcodeScanned(object? sender, BarcodeScannedEventArgs e)
+        {
+            _ = App.Current.Dispatcher.InvokeAsync(async () =>
+            {
+                BarcodeInput = e.Barcode;
+                await ScanRemove();
+            }, DispatcherPriority.Normal);
         }
     }
 }

@@ -107,6 +107,19 @@ namespace inventory_management.ViewModels
         }
 
         [RelayCommand]
+        private void NavigateToBarcodeCenter()
+        {
+            if (!IsAuthenticated)
+            {
+                GoHome();
+                return;
+            }
+
+            CurrentViewModel = _serviceProvider.GetRequiredService<BarcodeManagementViewModel>();
+            Title = "Barcode Center";
+        }
+
+        [RelayCommand]
         private void NavigateToSearch()
         {
             if (!IsAuthenticated)

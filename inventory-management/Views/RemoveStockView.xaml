@@ -5,65 +5,143 @@
          xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
          xmlns:converters="clr-namespace:inventory_management.Converters"
          mc:Ignorable="d" 
-         d:DesignHeight="600" d:DesignWidth="800">
-<UserControl.Resources>
-    <!-- Style to prevent ListBox from changing selection on mouse wheel scroll -->
-    <Style TargetType="ListBox">
-        <EventSetter Event="PreviewMouseWheel" Handler="ListBox_PreviewMouseWheel"/>
-    </Style>
-</UserControl.Resources>
-<Grid Margin="20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0*"/>
-            <ColumnDefinition Width="244*"/>
-            <ColumnDefinition Width="263*"/>
-            <ColumnDefinition Width="253*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+         d:DesignHeight="700" d:DesignWidth="1200">
+    <UserControl.Resources>
+        <Style TargetType="ListBox">
+            <EventSetter Event="PreviewMouseWheel" Handler="ListBox_PreviewMouseWheel"/>
+        </Style>
 
-        <StackPanel Margin="0,0,40,0" Grid.ColumnSpan="3">
-            <TextBlock Text="Search Item by Barcode" FontSize="24"/>
-            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Height="70" FontSize="22" VerticalContentAlignment="Center"/>
-            <ListBox ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" DisplayMemberPath="Barcode" Height="150" Margin="0,0,0,20" FontSize="20"/>
+        <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+    </UserControl.Resources>
 
-            <TextBlock Text="Selected Barcode" FontSize="24"/>
-            <TextBox Text="{Binding BarcodeInput}" Margin="0,0,0,20" Height="80" FontSize="24" VerticalContentAlignment="Center">
-                <TextBox.InputBindings>
-                    <KeyBinding Key="Enter" Command="{Binding ScanRemoveCommand}"/>
-                </TextBox.InputBindings>
-            </TextBox>
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <Grid Margin="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2.3*"/>
+                <ColumnDefinition Width="28"/>
+                <ColumnDefinition Width="1.2*"/>
+            </Grid.ColumnDefinitions>
 
-            <Button Command="{Binding LookupItemCommand}" Content="Load Item Details" Height="60" Margin="0,0,0,30" FontSize="24"/>
+            <Border Grid.Column="0"
+                    Style="{StaticResource CardBorderStyle}"
+                    Padding="28">
+                <StackPanel>
+                    <TextBlock Text="Remove Stock"
+                               FontSize="32"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource DangerColor}"
+                               Margin="0,0,0,24"/>
 
-            <TextBlock Text="Quantity to Remove" FontSize="24"/>
-            <TextBox Text="{Binding Quantity}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center"/>
+                    <TextBlock Text="Search Item by Barcode" Style="{StaticResource SectionLabelStyle}"/>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Height="56"
+                             FontSize="20"
+                             VerticalContentAlignment="Center"/>
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="10"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Command="{Binding ResetCommand}" Content="Reset" Height="70" FontSize="28" FontWeight="Bold" Background="Black" Foreground="White"/>
-                <Button Grid.Column="2" Command="{Binding RemoveStockCommand}" Content="Remove Stock" Height="70" FontSize="28" FontWeight="Bold"/>
-            </Grid>
+                    <ListBox ItemsSource="{Binding Items}"
+                             SelectedItem="{Binding SelectedItem}"
+                             DisplayMemberPath="Barcode"
+                             Height="180"
+                             Margin="0,0,0,24"
+                             FontSize="18"/>
 
-        </StackPanel>
+                    <TextBlock Text="Selected Barcode" Style="{StaticResource SectionLabelStyle}"/>
+                    <TextBlock Text="{Binding ScannerStatus}"
+                               FontSize="15"
+                               Foreground="{StaticResource TextSecondaryColor}"
+                               Margin="0,0,0,8"/>
+                    <TextBox x:Name="BarcodeInputTextBox"
+                             Text="{Binding BarcodeInput}"
+                             Height="62"
+                             FontSize="22"
+                             Margin="0,0,0,20"
+                             VerticalContentAlignment="Center">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding ScanRemoveCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
 
-        <Border Grid.Column="3" Padding="10" BorderBrush="#DDD" BorderThickness="1"
-                Visibility="{Binding CurrentItem, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}">
-            <StackPanel>
-                <TextBlock Text="Item Details" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock Text="{Binding CurrentItem.PartType.Name, StringFormat=Part Type: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentItem.PartBrand.Name, StringFormat=Brand: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentItem.VehicleModel.Manufacturer.Name, StringFormat=Make: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentItem.VehicleModel.Name, StringFormat=Model: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentItem.Rack.LocationCode, StringFormat=Rack: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentQuantity, StringFormat=Current Stock: {0}}" Margin="0,10,0,0" FontWeight="Bold"/>
-            </StackPanel>
-        </Border>
-    </Grid>
+                    <Button Command="{Binding LookupItemCommand}"
+                            Content="Load Item Details"
+                            Height="54"
+                            Margin="0,0,0,24"
+                            FontSize="20"/>
+
+                    <TextBlock Text="Quantity to Remove" Style="{StaticResource SectionLabelStyle}"/>
+                    <TextBox Text="{Binding Quantity}"
+                             Height="56"
+                             FontSize="22"
+                             Margin="0,0,0,28"
+                             VerticalContentAlignment="Center"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0"
+                                Command="{Binding ResetCommand}"
+                                Content="Reset"
+                                Height="58"
+                                FontSize="22"
+                                FontWeight="Bold"
+                                Background="Black"
+                                Foreground="White"/>
+                        <Button Grid.Column="2"
+                                Command="{Binding RemoveStockCommand}"
+                                Content="Remove Stock"
+                                Height="58"
+                                FontSize="22"
+                                FontWeight="Bold"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2"
+                    Style="{StaticResource CompactCardStyle}"
+                    Padding="24"
+                    VerticalAlignment="Top"
+                    Visibility="{Binding CurrentItem, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}">
+                <StackPanel>
+                    <TextBlock Text="Item Details"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryColor}"
+                               Margin="0,0,0,18"/>
+
+                    <TextBlock Text="{Binding CurrentItem.Barcode, StringFormat=Barcode: {0}}" Margin="0,0,0,10"/>
+                    <TextBlock Text="{Binding CurrentItem.PartType.Name, StringFormat=Part Type: {0}}" Margin="0,0,0,10"/>
+                    <TextBlock Text="{Binding CurrentItem.PartBrand.Name, StringFormat=Brand: {0}}" Margin="0,0,0,10"/>
+                    <TextBlock Text="{Binding CurrentItem.VehicleModel.Manufacturer.Name, StringFormat=Make: {0}}" Margin="0,0,0,10"/>
+                    <TextBlock Text="{Binding CurrentItem.VehicleModel.Name, StringFormat=Model: {0}}" Margin="0,0,0,10"/>
+                    <TextBlock Text="{Binding CurrentItem.Rack.LocationCode, StringFormat=Rack: {0}}" Margin="0,0,0,10"/>
+
+                    <Border Margin="0,14,0,0"
+                            Padding="16"
+                            Background="#FFF7ED"
+                            BorderBrush="{StaticResource BorderColor}"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                        <StackPanel>
+                            <TextBlock Text="Current Stock"
+                                       FontSize="16"
+                                       Foreground="{StaticResource TextSecondaryColor}"/>
+                            <TextBlock Text="{Binding CurrentQuantity}"
+                                       FontSize="30"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource DangerColor}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

@@ -31,6 +31,8 @@ namespace inventory_management
 
                     // SERVICES
                     services.AddSingleton<Services.IBarcodeService, Services.BarcodeService>();
+                    services.AddSingleton<IBarcodePrintService, BarcodePrintService>();
+                    services.AddSingleton<IScannerService, ScannerService>();
                     services.AddTransient<Services.IStockService, Services.StockService>();
                     services.AddTransient<IDatabaseAvailabilityService, DatabaseAvailabilityService>();
                     services.AddTransient<IBackupService, BackupService>();
@@ -47,6 +49,7 @@ namespace inventory_management
                     services.AddTransient<ViewModels.RemoveStockViewModel>();
                     services.AddTransient<ViewModels.SearchItemsViewModel>();
                     services.AddTransient<ViewModels.ReportsViewModel>();
+                    services.AddTransient<ViewModels.BarcodeManagementViewModel>();
 
                     // MAIN WINDOW
                     services.AddSingleton<MainWindow>();
