@@ -120,7 +120,7 @@ namespace inventory_management.ViewModels
 
         private ViewModelBase CreateModelsStep(PartTypeSearchRow part, ManufacturerSearchRow manufacturer)
         {
-            return new SearchModelsViewModel(_context, _availabilityService, part, manufacturer, () =>
+            return new SearchModelsViewModel(_context, _availabilityService, _printService, part, manufacturer, () =>
             {
                 CurrentStep = CreateManufacturersStep(part);
             }, () => 
