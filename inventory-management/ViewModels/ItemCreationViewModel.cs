@@ -473,6 +473,23 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _mobileCaptureUrl, value);
         }
 
+        [RelayCommand]
+        private void CopyMobileCaptureUrl()
+        {
+            if (!string.IsNullOrEmpty(MobileCaptureUrl))
+            {
+                try
+                {
+                    Clipboard.SetText(MobileCaptureUrl);
+                    StatusMessage = "Mobile capture URL copied to clipboard!";
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Failed to copy to clipboard: {ex.Message}";
+                }
+            }
+        }
+
         public ItemCreationViewModel(
             InventoryDbContext context, 
             IBarcodeService barcodeService, 

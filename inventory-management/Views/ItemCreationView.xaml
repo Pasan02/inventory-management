@@ -227,16 +227,33 @@
                     </Grid>
                     <!-- Mobile capture instructions -->
                     <Border CornerRadius="8" Background="#F1F5F9" Padding="12" Margin="0,0,0,20" BorderBrush="#E2E8F0" BorderThickness="1">
-                        <StackPanel Orientation="Horizontal">
-                            <Viewbox Width="20" Height="20" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <Path Data="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14zM12 18c.83 0 1.5-.67 1.5-1.5S12.83 15 12 15s-1.5.67-1.5 1.5.67 1.5 1.5 1.5z" Fill="#475569"/>
-                            </Viewbox>
-                            <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="#475569" TextWrapping="Wrap">
-                                <Run Text="To upload photo from phone camera, visit: "/>
-                                <Run Text="{Binding MobileCaptureUrl}" FontWeight="Bold" Foreground="#0284c7"/>
-                                <Run Text=" (on the same WiFi network)"/>
-                            </TextBlock>
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center">
+                                <Viewbox Width="20" Height="20" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <Path Data="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14zM12 18c.83 0 1.5-.67 1.5-1.5S12.83 15 12 15s-1.5.67-1.5 1.5.67 1.5 1.5 1.5z" Fill="#475569"/>
+                                </Viewbox>
+                                <TextBlock VerticalAlignment="Center" FontSize="14" Foreground="#475569" TextWrapping="Wrap">
+                                    <Run Text="To upload photo from phone camera, visit: "/>
+                                    <Run Text="{Binding MobileCaptureUrl}" FontWeight="Bold" Foreground="#0284c7"/>
+                                    <Run Text=" (on the same WiFi network)"/>
+                                </TextBlock>
+                            </StackPanel>
+                            
+                            <Button Grid.Column="1" 
+                                    Content="Copy URL" 
+                                    Command="{Binding CopyMobileCaptureUrlCommand}" 
+                                    Style="{StaticResource FormButtonStyle}" 
+                                    Width="100" 
+                                    Height="32" 
+                                    Padding="5,0"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center"/>
+                        </Grid>
                     </Border>
 
                     <TextBlock Text="Rack Location" Style="{StaticResource FieldLabelStyle}"/>
@@ -364,6 +381,30 @@
                                 FontSize="18" 
                                 FontWeight="Bold"
                                 Margin="0,20,0,0"/>
+                        <TextBlock Text="{Binding StatusMessage}" 
+                                   HorizontalAlignment="Center" 
+                                   Foreground="#0284c7" 
+                                   FontWeight="SemiBold" 
+                                   FontSize="14"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Margin" Value="0,15,0,0"/>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="">
+                                            <Setter Property="Margin" Value="0"/>
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                        <Trigger Property="Text" Value="{x:Null}">
+                                            <Setter Property="Margin" Value="0"/>
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </StackPanel>
                 </Border>
             </StackPanel>

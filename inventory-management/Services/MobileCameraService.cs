@@ -1,16 +1,20 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace inventory_management.Services
 {
     public class MobileCameraService : IMobileCameraService, IDisposable
     {
-        private HttpListener? _listener;
+        private TcpListener? _listener;
         private bool _isRunning;
+        private CancellationTokenSource? _cts;
         private const int Port = 5050;
 
         public event Action<byte[]>? ImageReceived;
@@ -24,30 +28,63 @@ namespace inventory_management.Services
                 using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
                 {
                     socket.Connect("8.8.8.8", 65530);
-                    var endPoint = socket.LocalEndPoint as IPEndPoint;
-                    return endPoint?.Address.ToString() ?? "localhost";
-                }
-            }
-            catch
-            {
-                // Fallback to local machine hostname lookup
-                try
-                {
-                    var host = Dns.GetHostEntry(Dns.GetHostName());
-                    foreach (var ip in host.AddressList)
+                    if (socket.LocalEndPoint is IPEndPoint endPoint)
                     {
-                        if (ip.AddressFamily == AddressFamily.InterNetwork)
+                        var ipStr = endPoint.Address.ToString();
+                        if (!ipStr.StartsWith("127.") && ipStr != "0.0.0.0")
                         {
-                            return ip.ToString();
+                            return ipStr;
                         }
                     }
                 }
-                catch
-                {
-                    // Ignore
-                }
-                return "localhost";
             }
+            catch { }
+
+            try
+            {
+                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.OperationalStatus != OperationalStatus.Up) continue;
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+                    
+                    var name = ni.Name.ToLower();
+                    var desc = ni.Description.ToLower();
+                    if (name.Contains("virtual") || name.Contains("vethernet") || name.Contains("wsl") || name.Contains("loopback") || name.Contains("pseudo") ||
+                        desc.Contains("virtual") || desc.Contains("vmware") || desc.Contains("virtualbox") || desc.Contains("host-only") || desc.Contains("vpn") || desc.Contains("wireguard"))
+                    {
+                        continue;
+                    }
+
+                    var ipProps = ni.GetIPProperties();
+                    foreach (var addr in ipProps.UnicastAddresses)
+                    {
+                        if (addr.Address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            var ipStr = addr.Address.ToString();
+                            if (ipStr.StartsWith("192.168.") || ipStr.StartsWith("10.") || ipStr.StartsWith("172."))
+                            {
+                                return ipStr;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            try
+            {
+                var host = Dns.GetHostEntry(Dns.GetHostName());
+                foreach (var ip in host.AddressList)
+                {
+                    if (ip.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(ip))
+                    {
+                        return ip.ToString();
+                    }
+                }
+            }
+            catch { }
+
+            return "localhost";
         }
 
         public string GetMobileCaptureUrl()
@@ -62,24 +99,16 @@ namespace inventory_management.Services
 
             try
             {
-                _listener = new HttpListener();
-                var localIp = GetLocalIpAddress();
-                
-                // Add prefixes for local IP, localhost, and 127.0.0.1
-                _listener.Prefixes.Add($"http://localhost:{Port}/");
-                _listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
-                
-                if (localIp != "localhost")
-                {
-                    _listener.Prefixes.Add($"http://{localIp}:{Port}/");
-                }
-
+                _cts = new CancellationTokenSource();
+                // Listen on IPAddress.Any (0.0.0.0) so it binds to all network interfaces without UAC restriction
+                _listener = new TcpListener(IPAddress.Any, Port);
                 _listener.Start();
                 _isRunning = true;
-                
+
                 // Start background listening task
-                Task.Run(() => ListenAsync());
-                System.Diagnostics.Debug.WriteLine($"MobileCameraService started at: {GetMobileCaptureUrl()}");
+                var token = _cts.Token;
+                Task.Run(() => ListenAsync(token), token);
+                System.Diagnostics.Debug.WriteLine($"MobileCameraService started on port {Port} at: {GetMobileCaptureUrl()}");
             }
             catch (Exception ex)
             {
@@ -95,11 +124,8 @@ namespace inventory_management.Services
             try
             {
                 _isRunning = false;
-                if (_listener != null && _listener.IsListening)
-                {
-                    _listener.Stop();
-                    _listener.Close();
-                }
+                _cts?.Cancel();
+                _listener?.Stop();
                 _listener = null;
                 System.Diagnostics.Debug.WriteLine("MobileCameraService stopped.");
             }
@@ -109,100 +135,166 @@ namespace inventory_management.Services
             }
         }
 
-        private async Task ListenAsync()
+        private async Task ListenAsync(CancellationToken token)
         {
-            while (_isRunning && _listener != null && _listener.IsListening)
+            while (_isRunning && _listener != null)
             {
                 try
                 {
-                    var context = await _listener.GetContextAsync();
-                    _ = Task.Run(() => HandleRequestAsync(context));
+                    var client = await _listener.AcceptTcpClientAsync(token);
+                    _ = Task.Run(() => HandleClientAsync(client), token);
                 }
-                catch (HttpListenerException)
+                catch (ObjectDisposedException)
                 {
-                    // Listening stopped, normal exit
+                    break; // Listener stopped, normal exit
+                }
+                catch (OperationCanceledException)
+                {
                     break;
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error receiving request: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Error receiving connection: {ex.Message}");
                 }
             }
         }
 
-        private async Task HandleRequestAsync(HttpListenerContext context)
+        private async Task HandleClientAsync(TcpClient client)
         {
-            var request = context.Request;
-            var response = context.Response;
-
-            try
-            {
-                // Add CORS headers so mobile phone can connect without issues
-                response.AddHeader("Access-Control-Allow-Origin", "*");
-                response.AddHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-                response.AddHeader("Access-Control-Allow-Headers", "Content-Type");
-
-                if (request.HttpMethod == "OPTIONS")
-                {
-                    response.StatusCode = (int)HttpStatusCode.OK;
-                    response.Close();
-                    return;
-                }
-
-                if (request.HttpMethod == "GET")
-                {
-                    // Serve the camera capture page
-                    var html = GetHtmlContent();
-                    var buffer = Encoding.UTF8.GetBytes(html);
-                    response.ContentType = "text/html; charset=utf-8";
-                    response.ContentLength64 = buffer.Length;
-                    await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-                    response.StatusCode = (int)HttpStatusCode.OK;
-                }
-                else if (request.HttpMethod == "POST" && request.Url?.AbsolutePath == "/upload")
-                {
-                    // Read raw binary image bytes directly from request stream
-                    using (var ms = new MemoryStream())
-                    {
-                        await request.InputStream.CopyToAsync(ms);
-                        var imageBytes = ms.ToArray();
-                        
-                        if (imageBytes.Length > 0)
-                        {
-                            // Trigger the event to the WPF UI thread
-                            ImageReceived?.Invoke(imageBytes);
-                            response.StatusCode = (int)HttpStatusCode.OK;
-                            
-                            var statusBuffer = Encoding.UTF8.GetBytes("Success");
-                            await response.OutputStream.WriteAsync(statusBuffer, 0, statusBuffer.Length);
-                        }
-                        else
-                        {
-                            response.StatusCode = (int)HttpStatusCode.BadRequest;
-                        }
-                    }
-                }
-                else
-                {
-                    response.StatusCode = (int)HttpStatusCode.NotFound;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error handling HTTP request: {ex.Message}");
-                response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            }
-            finally
+            using (client)
+            using (var stream = client.GetStream())
             {
                 try
                 {
-                    response.Close();
+                    stream.ReadTimeout = 10000; // 10 seconds timeout
+
+                    // Read request headers
+                    var headerBytes = new List<byte>();
+                    int b;
+                    bool doubleCrlfFound = false;
+
+                    while ((b = stream.ReadByte()) != -1)
+                    {
+                        headerBytes.Add((byte)b);
+                        if (headerBytes.Count >= 4 &&
+                            headerBytes[headerBytes.Count - 4] == '\r' &&
+                            headerBytes[headerBytes.Count - 3] == '\n' &&
+                            headerBytes[headerBytes.Count - 2] == '\r' &&
+                            headerBytes[headerBytes.Count - 1] == '\n')
+                        {
+                            doubleCrlfFound = true;
+                            break;
+                        }
+
+                        // Prevent buffer overflow or oversized headers
+                        if (headerBytes.Count > 8192) break;
+                    }
+
+                    if (!doubleCrlfFound) return;
+
+                    var headerString = Encoding.UTF8.GetString(headerBytes.ToArray());
+                    var headerLines = headerString.Split(new[] { "\r\n" }, StringSplitOptions.None);
+                    if (headerLines.Length == 0) return;
+
+                    var requestLine = headerLines[0].Split(' ');
+                    if (requestLine.Length < 2) return;
+
+                    string method = requestLine[0].ToUpper();
+                    string path = requestLine[1];
+
+                    // Find Content-Length
+                    int contentLength = 0;
+                    foreach (var line in headerLines)
+                    {
+                        if (line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            int.TryParse(line.Substring("Content-Length:".Length).Trim(), out contentLength);
+                        }
+                    }
+
+                    if (method == "OPTIONS")
+                    {
+                        await SendResponseAsync(stream, "", "text/plain", 200);
+                        return;
+                    }
+
+                    if (method == "GET")
+                    {
+                        var html = GetHtmlContent();
+                        await SendResponseAsync(stream, html, "text/html; charset=utf-8", 200);
+                    }
+                    else if (method == "POST" && path == "/upload")
+                    {
+                        if (contentLength > 0 && contentLength < 15 * 1024 * 1024) // 15MB limit
+                        {
+                            byte[] bodyBuffer = new byte[contentLength];
+                            int bytesRead = 0;
+                            while (bytesRead < contentLength)
+                            {
+                                int read = await stream.ReadAsync(bodyBuffer, bytesRead, contentLength - bytesRead);
+                                if (read <= 0) break;
+                                bytesRead += read;
+                            }
+
+                            if (bytesRead == contentLength)
+                            {
+                                // Fire event on background or UI thread
+                                _ = Task.Run(() => ImageReceived?.Invoke(bodyBuffer));
+                                await SendResponseAsync(stream, "Success", "text/plain", 200);
+                            }
+                            else
+                            {
+                                await SendResponseAsync(stream, "Incomplete data", "text/plain", 400);
+                            }
+                        }
+                        else
+                        {
+                            await SendResponseAsync(stream, "Invalid Content-Length", "text/plain", 400);
+                        }
+                    }
+                    else
+                    {
+                        await SendResponseAsync(stream, "Not Found", "text/plain", 404);
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore
+                    System.Diagnostics.Debug.WriteLine($"Error handling HTTP request: {ex.Message}");
                 }
             }
+        }
+
+        private async Task SendResponseAsync(NetworkStream stream, string content, string contentType, int statusCode)
+        {
+            var contentBytes = Encoding.UTF8.GetBytes(content);
+            var headerBuilder = new StringBuilder();
+            headerBuilder.AppendLine($"HTTP/1.1 {statusCode} {GetStatusDescription(statusCode)}");
+            headerBuilder.AppendLine($"Content-Type: {contentType}");
+            headerBuilder.AppendLine($"Content-Length: {contentBytes.Length}");
+            headerBuilder.AppendLine("Access-Control-Allow-Origin: *");
+            headerBuilder.AppendLine("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+            headerBuilder.AppendLine("Access-Control-Allow-Headers: Content-Type");
+            headerBuilder.AppendLine("Connection: close");
+            headerBuilder.AppendLine();
+
+            var headerBytes = Encoding.UTF8.GetBytes(headerBuilder.ToString());
+            await stream.WriteAsync(headerBytes, 0, headerBytes.Length);
+            if (contentBytes.Length > 0)
+            {
+                await stream.WriteAsync(contentBytes, 0, contentBytes.Length);
+            }
+            await stream.FlushAsync();
+        }
+
+        private string GetStatusDescription(int code)
+        {
+            return code switch
+            {
+                200 => "OK",
+                400 => "Bad Request",
+                404 => "Not Found",
+                _ => "Internal Server Error"
+            };
         }
 
         private string GetHtmlContent()
