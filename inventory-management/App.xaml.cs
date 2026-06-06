@@ -67,20 +67,6 @@ namespace inventory_management
 
                     var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
                     
-                    // Check database connection
-                    var canConnect = await dbContext.Database.CanConnectAsync();
-                    if (!canConnect)
-                    {
-                        MessageBox.Show(
-                            "Cannot connect to the database. Please ensure PostgreSQL is running and the connection settings in appsettings.json are correct.\\n\\n" +
-                            "Expected connection: Host=localhost;Database=inventory_ac_db;Username=postgres;Password=2003",
-                            "Database Connection Error",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                        Current.Shutdown();
-                        return;
-                    }
-                    
                     await dbContext.Database.MigrateAsync();
                     await EnsureIdentitySequencesAsync(dbContext);
 

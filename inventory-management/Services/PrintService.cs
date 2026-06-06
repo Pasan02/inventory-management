@@ -62,7 +62,7 @@ namespace inventory_management.Services
                     string zpl = 
                         "^XA\n" +
                         $"^FO0,40^FB400,1,0,C^A0N,24,24^FDAlpine Auto A/C^FS\n" +
-                        $"^FO40,85^BY2,2.0,50^BCN,50,Y,N,N^FD{barcode}^FS\n" +
+                        $"^FO10,85^BY2,2.0,50^BCN,50,Y,N,N^FD{barcode}^FS\n" +
                         $"^PQ{copies}\n" +
                         "^XZ\n";
 
