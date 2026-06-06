@@ -6,7 +6,8 @@ namespace inventory_management.Services
     public static class AssetPathService
     {
         public static string BasePath => Path.Combine(
-            AppContext.BaseDirectory,
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "InventoryManagement",
             "assets");
 
         private static bool _initialized;
@@ -33,7 +34,45 @@ namespace inventory_management.Services
             }
 
             Directory.CreateDirectory(BasePath);
+            
+            // Migrate old assets if they exist in the AppContext.BaseDirectory
+            var oldPath = Path.Combine(AppContext.BaseDirectory, "assets");
+            if (Directory.Exists(oldPath) && oldPath != BasePath)
+            {
+                try
+                {
+                    CopyDirectory(oldPath, BasePath);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to migrate assets: {ex.Message}");
+                }
+            }
+
             _initialized = true;
+        }
+
+        private static void CopyDirectory(string sourceDir, string destinationDir)
+        {
+            var dir = new DirectoryInfo(sourceDir);
+            if (!dir.Exists) return;
+
+            Directory.CreateDirectory(destinationDir);
+
+            foreach (FileInfo file in dir.GetFiles())
+            {
+                string targetFilePath = Path.Combine(destinationDir, file.Name);
+                if (!File.Exists(targetFilePath))
+                {
+                    file.CopyTo(targetFilePath);
+                }
+            }
+
+            foreach (DirectoryInfo subDir in dir.GetDirectories())
+            {
+                string newDestinationDir = Path.Combine(destinationDir, subDir.Name);
+                CopyDirectory(subDir.FullName, newDestinationDir);
+            }
         }
     }
 }

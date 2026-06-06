@@ -32,6 +32,7 @@ namespace inventory_management.ViewModels
 
         private readonly IServiceProvider _serviceProvider;
         private readonly LoginViewModel _loginViewModel;
+        private IServiceScope? _currentScope;
 
         public MainViewModel(IServiceProvider serviceProvider, LoginViewModel loginViewModel)
         {
@@ -40,6 +41,14 @@ namespace inventory_management.ViewModels
             _loginViewModel.LoginSucceeded = OnLoginSucceeded;
             CurrentViewModel = _loginViewModel;
             Title = "Sign In";
+        }
+
+        private void NavigateTo<TViewModel>(string title) where TViewModel : ViewModelBase
+        {
+            _currentScope?.Dispose();
+            _currentScope = _serviceProvider.CreateScope();
+            CurrentViewModel = _currentScope.ServiceProvider.GetRequiredService<TViewModel>();
+            Title = title;
         }
 
         [RelayCommand]
@@ -63,8 +72,7 @@ namespace inventory_management.ViewModels
             }
 
             // Otherwise go to home
-            CurrentViewModel = _serviceProvider.GetRequiredService<HomeViewModel>();
-            Title = "Vehicle A/C Inventory System";
+            NavigateTo<HomeViewModel>("Vehicle A/C Inventory System");
         }
 
         [RelayCommand]
@@ -76,8 +84,7 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            CurrentViewModel = _serviceProvider.GetRequiredService<ItemCreationViewModel>();
-             Title = "Create New Inventory Item";
+            NavigateTo<ItemCreationViewModel>("Create New Inventory Item");
         }
 
         [RelayCommand]
@@ -89,8 +96,7 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            CurrentViewModel = _serviceProvider.GetRequiredService<AddStockViewModel>();
-            Title = "Add Stock";
+            NavigateTo<AddStockViewModel>("Add Stock");
         }
 
         [RelayCommand]
@@ -102,8 +108,7 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            CurrentViewModel = _serviceProvider.GetRequiredService<RemoveStockViewModel>();
-            Title = "Remove Stock";
+            NavigateTo<RemoveStockViewModel>("Remove Stock");
         }
 
         [RelayCommand]
@@ -115,8 +120,7 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            CurrentViewModel = _serviceProvider.GetRequiredService<SearchItemsViewModel>();
-            Title = "Search / Items";
+            NavigateTo<SearchItemsViewModel>("Search / Items");
         }
 
         [RelayCommand]
@@ -128,8 +132,7 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            CurrentViewModel = _serviceProvider.GetRequiredService<ReportsViewModel>();
-            Title = "Reports";
+            NavigateTo<ReportsViewModel>("Reports");
         }
 
         [RelayCommand]
@@ -143,6 +146,10 @@ namespace inventory_management.ViewModels
             {
                 _loginViewModel.Reset();
                 IsAuthenticated = false;
+                
+                _currentScope?.Dispose();
+                _currentScope = null;
+                
                 CurrentViewModel = _loginViewModel;
                 Title = "Sign In";
             }
