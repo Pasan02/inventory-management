@@ -373,6 +373,90 @@ namespace inventory_management.ViewModels
             }
         }
 
+        private string _secretPriceCode = string.Empty;
+        public string SecretPriceCode
+        {
+            get => _secretPriceCode;
+            set => SetProperty(ref _secretPriceCode, value);
+        }
+
+        public ObservableCollection<VehicleModel> CompatibleModelsList { get; } = new();
+
+        public ObservableCollection<VehicleManufacturer> CompatibilityManufacturers { get; } = new();
+        public ObservableCollection<VehicleModel> CompatibilityModels { get; } = new();
+
+        private VehicleManufacturer? _selectedCompatibilityManufacturer;
+        public VehicleManufacturer? SelectedCompatibilityManufacturer
+        {
+            get => _selectedCompatibilityManufacturer;
+            set
+            {
+                if (SetProperty(ref _selectedCompatibilityManufacturer, value))
+                {
+                    OnSelectedCompatibilityManufacturerChanged(value);
+                }
+            }
+        }
+
+        private VehicleModel? _selectedCompatibilityModel;
+        public VehicleModel? SelectedCompatibilityModel
+        {
+            get => _selectedCompatibilityModel;
+            set => SetProperty(ref _selectedCompatibilityModel, value);
+        }
+
+        [RelayCommand]
+        private void AddCompatibleModel()
+        {
+            if (SelectedCompatibilityModel == null || SelectedCompatibilityModel.Id == -1)
+            {
+                MessageBox.Show(Application.Current.MainWindow, "Please select a valid compatibility model.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (CompatibleModelsList.Any(m => m.Id == SelectedCompatibilityModel.Id))
+            {
+                MessageBox.Show(Application.Current.MainWindow, "This model is already added as compatible.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            CompatibleModelsList.Add(SelectedCompatibilityModel);
+            StatusMessage = $"Added compatibility for {SelectedCompatibilityModel.Name}.";
+        }
+
+        [RelayCommand]
+        private void RemoveCompatibleModel(VehicleModel? model)
+        {
+            if (model != null)
+            {
+                CompatibleModelsList.Remove(model);
+                StatusMessage = $"Removed compatibility for {model.Name}.";
+            }
+        }
+
+        private async void OnSelectedCompatibilityManufacturerChanged(VehicleManufacturer? value)
+        {
+            try
+            {
+                CompatibilityModels.Clear();
+                SelectedCompatibilityModel = null;
+                
+                if (value != null && value.Id != -1)
+                {
+                    var models = await _context.Models
+                        .Where(m => m.VehicleManufacturerId == value.Id)
+                        .OrderBy(m => m.Name)
+                        .ToListAsync();
+                    
+                    foreach (var m in models) CompatibilityModels.Add(m);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error loading compatibility models: {ex.Message}";
+            }
+        }
+
         // --- UI State ---
         private string _statusMessage = string.Empty;
         public string StatusMessage
@@ -424,6 +508,9 @@ namespace inventory_management.ViewModels
                 var manufacturers = await _context.Manufacturers.OrderBy(m => m.Name).ToListAsync();
                 foreach (var m in manufacturers) Manufacturers.Add(m);
                 Manufacturers.Add(new VehicleManufacturer { Id = -1, Name = "+ Add New Manufacturer..." });
+
+                CompatibilityManufacturers.Clear();
+                foreach (var m in manufacturers) CompatibilityManufacturers.Add(m);
 
                 var racks = await _context.Racks.OrderBy(r => r.LocationCode).ToListAsync();
                 foreach (var r in racks) Racks.Add(r);
@@ -556,6 +643,10 @@ namespace inventory_management.ViewModels
             
             SelectedBarcode = string.Empty;
             BarcodeImage = null;
+            SecretPriceCode = string.Empty;
+            CompatibleModelsList.Clear();
+            SelectedCompatibilityManufacturer = null;
+            SelectedCompatibilityModel = null;
             StatusMessage = string.Empty;
         }
 
@@ -586,7 +677,9 @@ namespace inventory_management.ViewModels
                     LowStockThreshold = LowStockThreshold,
                     RackId = SelectedRack?.Id,
                     Barcode = "TEMP-" + Guid.NewGuid().ToString().Substring(0,8),
-                    ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath.Trim()
+                    ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath.Trim(),
+                    SecretPriceCode = SecretPriceCode?.Trim() ?? string.Empty,
+                    RegisteredDate = DateTime.UtcNow
                 };
 
                 _context.Items.Add(newItem);
@@ -594,6 +687,16 @@ namespace inventory_management.ViewModels
 
                 // Generate real barcode
                 newItem.Barcode = _barcodeService.GenerateBarcodeString(newItem.Id);
+
+                // Add compatibility models
+                foreach (var compModel in CompatibleModelsList)
+                {
+                    _context.ItemCompatibleModels.Add(new ItemCompatibleModel
+                    {
+                        ItemId = newItem.Id,
+                        VehicleModelId = compModel.Id
+                    });
+                }
                 
                 var initialStock = new Stock
                 {

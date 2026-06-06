@@ -64,6 +64,7 @@ namespace inventory_management.ViewModels
                     OnPropertyChanged(nameof(BarcodeInput));
                     CurrentItem = value;
                     CurrentQuantity = value.Stock?.Quantity ?? 0;
+                    SecretPriceCode = value.SecretPriceCode;
                     StatusMessage = "Ready";
                 }
             }
@@ -88,6 +89,13 @@ namespace inventory_management.ViewModels
         {
             get => _currentQuantity;
             set => SetProperty(ref _currentQuantity, value);
+        }
+
+        private string _secretPriceCode = string.Empty;
+        public string SecretPriceCode
+        {
+            get => _secretPriceCode;
+            set => SetProperty(ref _secretPriceCode, value);
         }
 
         private string _statusMessage = "Ready";
@@ -157,6 +165,7 @@ namespace inventory_management.ViewModels
             SelectedItem = null;
             CurrentItem = null;
             CurrentQuantity = 0;
+            SecretPriceCode = string.Empty;
             FilterItems();
         }
 
@@ -207,11 +216,13 @@ namespace inventory_management.ViewModels
                     if (CurrentItem == null)
                     {
                         CurrentQuantity = 0;
+                        SecretPriceCode = string.Empty;
                         StatusMessage = "Item not found.";
                         return;
                     }
 
                     CurrentQuantity = CurrentItem.Stock?.Quantity ?? 0;
+                    SecretPriceCode = CurrentItem.SecretPriceCode;
                     StatusMessage = "Item loaded.";
                     ItemLoaded?.Invoke();
                 }
@@ -256,20 +267,37 @@ namespace inventory_management.ViewModels
                 }
 
                 CurrentItem = item;
-                var result = await _stockService.AddStockAsync(item.Barcode, Quantity);
+                var result = await _stockService.AddStockWithPriceAsync(item.Barcode, Quantity, SecretPriceCode);
 
                 if (result.Success)
                 {
-                    ModernMessageDialog.ShowSuccess($"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success");
+                    ModernMessageDialog.ShowSuccess(result.Message, "Success");
                     CurrentQuantity = result.NewQuantity;
-                    if (CurrentItem?.Stock != null)
+                    
+                    if (!string.IsNullOrEmpty(result.NewBarcode))
+                    {
+                        _barcodeInput = result.NewBarcode;
+                        OnPropertyChanged(nameof(BarcodeInput));
+                        
+                        var newItem = await _stockService.FindItemByBarcodeAsync(result.NewBarcode);
+                        if (newItem != null)
+                        {
+                            CurrentItem = newItem;
+                            CurrentQuantity = newItem.Stock?.Quantity ?? 0;
+                            SecretPriceCode = newItem.SecretPriceCode;
+                        }
+                    }
+                    else if (CurrentItem?.Stock != null)
                     {
                         CurrentItem.Stock.Quantity = result.NewQuantity;
                     }
                     Quantity = 1;
                     
-                    _barcodeInput = string.Empty; 
-                    OnPropertyChanged(nameof(BarcodeInput)); // Update UI without triggering search reload
+                    if (string.IsNullOrEmpty(result.NewBarcode))
+                    {
+                        _barcodeInput = string.Empty; 
+                        OnPropertyChanged(nameof(BarcodeInput)); // Update UI without triggering search reload
+                    }
                     
                     SearchText = string.Empty;
                     

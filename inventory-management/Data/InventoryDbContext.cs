@@ -19,14 +19,16 @@ namespace inventory_management.Data
         public DbSet<StockTransaction> Transactions { get; set; }
         public DbSet<UserAccount> UserAccounts { get; set; }
         public DbSet<UserLoginAudit> UserLoginAudits { get; set; }
+        public DbSet<ItemCompatibleModel> ItemCompatibleModels { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Constraint: Unique Item Definition
+            // Constraint: Unique Item Definition (including SecretPriceCode)
             modelBuilder.Entity<Item>()
-                .HasIndex(i => new { i.PartTypeId, i.VehicleModelId, i.PartBrandId, i.CountryOfOrigin })
+                .HasIndex(i => new { i.PartTypeId, i.VehicleModelId, i.PartBrandId, i.CountryOfOrigin, i.SecretPriceCode })
+                .HasDatabaseName("IX_items_definition_unique")
                 .IsUnique();
 
             // Constraint: Barcode is unique
@@ -40,6 +42,22 @@ namespace inventory_management.Data
                 .WithOne(s => s.Item)
                 .HasForeignKey<Stock>(s => s.ItemId)
                 .OnDelete(DeleteBehavior.Restrict); // Prevent accidental deletions
+
+            // many-to-many relationship configuration for compatibility
+            modelBuilder.Entity<ItemCompatibleModel>()
+                .HasKey(ic => new { ic.ItemId, ic.VehicleModelId });
+
+            modelBuilder.Entity<ItemCompatibleModel>()
+                .HasOne(ic => ic.Item)
+                .WithMany(i => i.CompatibleModels)
+                .HasForeignKey(ic => ic.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ItemCompatibleModel>()
+                .HasOne(ic => ic.VehicleModel)
+                .WithMany()
+                .HasForeignKey(ic => ic.VehicleModelId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<UserAccount>()
                 .HasIndex(u => u.Username)

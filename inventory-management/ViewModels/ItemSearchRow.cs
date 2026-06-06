@@ -14,5 +14,8 @@ namespace inventory_management.ViewModels
         public int Quantity { get; set; }
         public string Origin { get; set; } = string.Empty;
         public string? ImagePath { get; set; }
+        public string SecretPriceCode { get; set; } = string.Empty;
+        public DateTime RegisteredDate { get; set; }
+        public string CompatibleModelsText { get; set; } = string.Empty;
     }
 }

@@ -100,13 +100,42 @@ namespace inventory_management.ViewModels.Search
                 .Include(i => i.PartBrand)
                 .Include(i => i.Rack)
                 .Include(i => i.Stock)
+                .Include(i => i.VehicleModel)
+                .Include(i => i.CompatibleModels)
+                    .ThenInclude(cm => cm.VehicleModel)
                 .AsNoTracking()
-                .Where(i => i.PartTypeId == Part.PartTypeId && i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)
+                .Where(i => i.PartTypeId == Part.PartTypeId && 
+                            (i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId || 
+                             i.CompatibleModels.Any(cm => cm.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)))
                 .ToListAsync();
 
-            var groupedItems = items
-                .GroupBy(i => i.VehicleModelId)
-                .ToDictionary(g => g.Key, g => g.ToList());
+            var groupedItems = new Dictionary<int, List<Data.Entities.Item>>();
+            foreach (var item in items)
+            {
+                if (item.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)
+                {
+                    if (!groupedItems.ContainsKey(item.VehicleModelId))
+                    {
+                        groupedItems[item.VehicleModelId] = new List<Data.Entities.Item>();
+                    }
+                    groupedItems[item.VehicleModelId].Add(item);
+                }
+
+                foreach (var cm in item.CompatibleModels)
+                {
+                    if (cm.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)
+                    {
+                        if (!groupedItems.ContainsKey(cm.VehicleModelId))
+                        {
+                            groupedItems[cm.VehicleModelId] = new List<Data.Entities.Item>();
+                        }
+                        if (!groupedItems[cm.VehicleModelId].Any(x => x.Id == item.Id))
+                        {
+                            groupedItems[cm.VehicleModelId].Add(item);
+                        }
+                    }
+                }
+            }
 
             var rows = models
                 .Select(model =>

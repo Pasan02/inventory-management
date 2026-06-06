@@ -210,6 +210,9 @@
                     <TextBlock Text="Country of Origin" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding CountryOfOrigin}"/>
 
+                    <TextBlock Text="Secret Price Code" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox Text="{Binding SecretPriceCode}"/>
+
                     <TextBlock Text="Description / Notes" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding Description}" Height="100" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
 
@@ -233,6 +236,89 @@
 
                     <TextBlock Text="Low Stock Threshold" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding LowStockThreshold}"/>
+
+                    <!-- Cross-Compatibility Section -->
+                    <Border BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Margin="0,20,0,10" Padding="0,20,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Cross-Compatibility (Optional)" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <TextBlock Text="Add compatible vehicle models for this item." FontSize="14" Foreground="Gray" Margin="0,0,0,15"/>
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Manufacturer" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding CompatibilityManufacturers}" 
+                                              DisplayMemberPath="Name" 
+                                              SelectedItem="{Binding SelectedCompatibilityManufacturer}"
+                                              IsEditable="False"
+                                              MinHeight="44"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Model" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding CompatibilityModels}" 
+                                              DisplayMemberPath="Name" 
+                                              SelectedItem="{Binding SelectedCompatibilityModel}"
+                                              IsEditable="False"
+                                              MinHeight="44"/>
+                                </StackPanel>
+                                
+                                <Button Grid.Column="4" 
+                                        Content="Add Link" 
+                                        Command="{Binding AddCompatibleModelCommand}"
+                                        Style="{StaticResource FormButtonStyle}"
+                                        VerticalAlignment="Bottom"
+                                        Height="44" 
+                                        Width="100"/>
+                            </Grid>
+                            
+                            <!-- List of Compatible Models -->
+                            <TextBlock Text="Compatible Models" Style="{StaticResource FieldLabelStyle}" Margin="0,15,0,5"/>
+                            <Border BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Background="#F9F9F9" MinHeight="80" Padding="10" Margin="0,0,0,10">
+                                <ScrollViewer MaxHeight="150" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding CompatibleModelsList}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#EAEAEA" BorderThickness="0,0,0,1" Padding="5" Margin="0,0,0,5">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" Foreground="#333333"/>
+                                                            <TextBlock Text=" (Year Range: " FontSize="14" Foreground="#666666"/>
+                                                            <TextBlock Text="{Binding YearRange}" FontSize="14" Foreground="#666666"/>
+                                                            <TextBlock Text=")" FontSize="14" Foreground="#666666"/>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="1" 
+                                                                Content="Remove" 
+                                                                Command="{Binding DataContext.RemoveCompatibleModelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Style="{StaticResource FormButtonStyle}"
+                                                                Background="#FF5252"
+                                                                Foreground="White"
+                                                                BorderThickness="0"
+                                                                FontSize="12"
+                                                                Height="28"
+                                                                Width="70"
+                                                                Padding="0"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </StackPanel>
+                    </Border>
 
                     <Grid Margin="0,30,0,20">
                         <Grid.ColumnDefinitions>

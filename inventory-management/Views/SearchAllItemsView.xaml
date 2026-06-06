@@ -154,6 +154,18 @@
                                             <Run Text="Origin: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
                                             <Run Text="{Binding Origin}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
                                         </TextBlock>
+                                        <TextBlock Margin="0,0,0,6" TextWrapping="Wrap">
+                                            <Run Text="Price Code: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <Run Text="{Binding SecretPriceCode}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
+                                        </TextBlock>
+                                        <TextBlock Margin="0,0,0,6" TextWrapping="Wrap">
+                                            <Run Text="Registered: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <Run Text="{Binding RegisteredDate, StringFormat='{}{0:yyyy-MM-dd}'}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
+                                        </TextBlock>
+                                        <TextBlock Margin="0,0,0,6" TextWrapping="Wrap">
+                                            <Run Text="Compat: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <Run Text="{Binding CompatibleModelsText}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
+                                        </TextBlock>
                                         <Grid Margin="0,0,0,6">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
