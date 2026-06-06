@@ -635,33 +635,45 @@ namespace inventory_management.ViewModels
                 return;
             }
 
-            try
+            var dialog = new SimpleInputDialog("Print Barcode", "Enter number of barcode copies to print:");
+            dialog.Owner = Application.Current.MainWindow;
+            
+            if (dialog.ShowDialog() == true)
             {
-                var partName = SelectedPartType != null && SelectedPartType.Id != -1 ? SelectedPartType.Name : "";
-                var brandName = SelectedBrand != null && SelectedBrand.Id != -1 ? SelectedBrand.Name : "";
-                var manufacturerName = SelectedManufacturer != null && SelectedManufacturer.Id != -1 ? SelectedManufacturer.Name : "";
-                var modelName = SelectedModel != null && SelectedModel.Id != -1 ? SelectedModel.Name : "";
-
-                var title = $"{brandName} {partName}".Trim();
-                var details = $"{manufacturerName} {modelName}".Trim();
-
-                StatusMessage = "Printing barcode label...";
-                var success = await _printService.PrintBarcodeLabelAsync(SelectedBarcode, title, details);
-                
-                if (success)
+                if (!int.TryParse(dialog.InputValue, out int copies) || copies <= 0)
                 {
-                    StatusMessage = "Barcode label printed successfully.";
+                    MessageBox.Show(Application.Current.MainWindow, "Please enter a valid positive number for copies.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
-                else
+
+                try
                 {
-                    StatusMessage = "Failed to print barcode label.";
-                    MessageBox.Show(Application.Current.MainWindow, "Printing failed. Please ensure the Zebra printer is installed and connected.", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    var partName = SelectedPartType != null && SelectedPartType.Id != -1 ? SelectedPartType.Name : "";
+                    var brandName = SelectedBrand != null && SelectedBrand.Id != -1 ? SelectedBrand.Name : "";
+                    var manufacturerName = SelectedManufacturer != null && SelectedManufacturer.Id != -1 ? SelectedManufacturer.Name : "";
+                    var modelName = SelectedModel != null && SelectedModel.Id != -1 ? SelectedModel.Name : "";
+
+                    var title = $"{brandName} {partName}".Trim();
+                    var details = $"{manufacturerName} {modelName}".Trim();
+
+                    StatusMessage = $"Printing {copies} barcode label(s)...";
+                    var success = await _printService.PrintBarcodeLabelAsync(SelectedBarcode, title, details, copies);
+                    
+                    if (success)
+                    {
+                        StatusMessage = "Barcode label printed successfully.";
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to print barcode label.";
+                        MessageBox.Show(Application.Current.MainWindow, "Printing failed. Please ensure the Zebra printer is installed and connected.", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Print error: {ex.Message}";
-                MessageBox.Show(Application.Current.MainWindow, $"An error occurred while printing: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Print error: {ex.Message}";
+                    MessageBox.Show(Application.Current.MainWindow, $"An error occurred while printing: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 

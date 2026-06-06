@@ -248,11 +248,22 @@ namespace inventory_management.ViewModels.Search
 
             try
             {
-                StatusMessage = $"Printing barcode label for {item.Barcode}...";
+                var dialog = new inventory_management.Views.SimpleInputDialog("Print Barcode", "Enter number of barcode copies to print:");
+                dialog.Owner = Application.Current.MainWindow;
+                
+                if (dialog.ShowDialog() != true) return;
+                
+                if (!int.TryParse(dialog.InputValue, out int copies) || copies <= 0)
+                {
+                    MessageBox.Show(Application.Current.MainWindow, "Please enter a valid positive number for copies.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                StatusMessage = $"Printing {copies} barcode label(s) for {item.Barcode}...";
                 var title = $"{item.Brand} {item.PartType}".Trim();
                 var details = $"{item.Manufacturer} {item.Model}".Trim();
                 
-                var success = await _printService.PrintBarcodeLabelAsync(item.Barcode, title, details);
+                var success = await _printService.PrintBarcodeLabelAsync(item.Barcode, title, details, copies);
                 if (success)
                 {
                     StatusMessage = $"Barcode label printed successfully for {item.Barcode}.";

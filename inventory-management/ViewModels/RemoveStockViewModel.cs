@@ -267,7 +267,24 @@ namespace inventory_management.ViewModels
                 if (result.Success)
                 {
                     ModernMessageDialog.ShowSuccess($"Stock removed successfully.\nNew Quantity: {result.NewQuantity}", "Success");
-                    ClearInputs();
+                    CurrentQuantity = result.NewQuantity;
+                    if (CurrentItem?.Stock != null)
+                    {
+                        CurrentItem.Stock.Quantity = result.NewQuantity;
+                    }
+                    Quantity = 1;
+                    
+                    _barcodeInput = string.Empty; 
+                    OnPropertyChanged(nameof(BarcodeInput)); // Update UI without triggering search reload
+                    
+                    SearchText = string.Empty;
+                    
+                    // Reload the background items list to reflect changes without hiding the current item
+                    var items = await _stockService.GetItemsAsync();
+                    _allItems.Clear();
+                    foreach (var itm in items) _allItems.Add(itm);
+                    FilterItems();
+                    
                     RequestFocus?.Invoke();
                 }
                 else
