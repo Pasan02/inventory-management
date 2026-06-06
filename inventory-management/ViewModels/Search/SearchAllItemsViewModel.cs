@@ -24,7 +24,6 @@ namespace inventory_management.ViewModels.Search
         public ManufacturerSearchRow? Manufacturer { get; }
         
         public ObservableCollection<ItemSearchRow> Items { get; } = new();
-        public ICollectionView ItemsView { get; }
 
         private string _searchText = string.Empty;
         public string SearchText
@@ -34,7 +33,8 @@ namespace inventory_management.ViewModels.Search
             {
                 if (SetProperty(ref _searchText, value))
                 {
-                    ItemsView.Refresh();
+                    CurrentPage = 1;
+                    _ = LoadItemsAsync();
                 }
             }
         }
@@ -46,6 +46,30 @@ namespace inventory_management.ViewModels.Search
             set => SetProperty(ref _statusMessage, value);
         }
 
+        // Pagination Properties
+        private int _currentPage = 1;
+        public int CurrentPage
+        {
+            get => _currentPage;
+            set => SetProperty(ref _currentPage, value);
+        }
+
+        private int _totalPages = 1;
+        public int TotalPages
+        {
+            get => _totalPages;
+            set => SetProperty(ref _totalPages, value);
+        }
+
+        private int _totalItems = 0;
+        public int TotalItems
+        {
+            get => _totalItems;
+            set => SetProperty(ref _totalItems, value);
+        }
+
+        public int PageSize { get; } = 5;
+
         public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, PartTypeSearchRow part, ManufacturerSearchRow? manufacturer, System.Action goBack)
         {
             _context = context;
@@ -54,10 +78,6 @@ namespace inventory_management.ViewModels.Search
             Part = part;
             Manufacturer = manufacturer;
             _goBack = goBack;
-
-            // Initialize collection view
-            ItemsView = CollectionViewSource.GetDefaultView(Items);
-            ItemsView.Filter = FilterItems;
             
             // Start loading items
             _ = LoadItemsAsync();
@@ -89,7 +109,7 @@ namespace inventory_management.ViewModels.Search
                     Items.Clear();
                 }
 
-                var items = await _context.Items
+                var query = _context.Items
                     .Include(i => i.PartType)
                     .Include(i => i.PartBrand)
                     .Include(i => i.VehicleModel)
@@ -98,9 +118,34 @@ namespace inventory_management.ViewModels.Search
                     .Include(i => i.Stock)
                     .AsNoTracking()
                     .Where(i => i.PartTypeId == Part.PartTypeId && 
-                                (Manufacturer == null || i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId))
+                                (Manufacturer == null || i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId));
+
+                // Apply DB-side search filter
+                if (!string.IsNullOrWhiteSpace(SearchText))
+                {
+                    var term = SearchText.Trim().ToLower();
+                    query = query.Where(i => 
+                        i.VehicleModel.Name.ToLower().Contains(term) ||
+                        i.PartBrand.Name.ToLower().Contains(term) ||
+                        i.VehicleModel.Manufacturer.Name.ToLower().Contains(term) ||
+                        i.Description.ToLower().Contains(term) ||
+                        i.Barcode.ToLower().Contains(term));
+                }
+
+                TotalItems = await query.CountAsync();
+                TotalPages = Math.Max(1, (int)Math.Ceiling(TotalItems / (double)PageSize));
+
+                // Ensure current page is valid
+                if (CurrentPage > TotalPages)
+                {
+                    CurrentPage = TotalPages;
+                }
+
+                var items = await query
                     .OrderBy(i => i.VehicleModel.Name)
                     .ThenBy(i => i.PartBrand.Name)
+                    .Skip((CurrentPage - 1) * PageSize)
+                    .Take(PageSize)
                     .ToListAsync();
 
                 // Add items on UI thread to ensure View updates
@@ -122,16 +167,54 @@ namespace inventory_management.ViewModels.Search
                     }
                 }
 
-                StatusMessage = Items.Count == 0 
+                StatusMessage = TotalItems == 0 
                     ? "No items found." 
-                    : $"{Items.Count} items found.";
-                
-                ItemsView.Refresh();
+                    : $"Showing {Items.Count} of {TotalItems} items.";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error loading items: {ex.Message}";
                 System.Diagnostics.Debug.WriteLine($"Error in LoadItemsAsync: {ex}");
+            }
+        }
+
+        [RelayCommand]
+        private void NextPage()
+        {
+            if (CurrentPage < TotalPages)
+            {
+                CurrentPage++;
+                _ = LoadItemsAsync();
+            }
+        }
+
+        [RelayCommand]
+        private void PreviousPage()
+        {
+            if (CurrentPage > 1)
+            {
+                CurrentPage--;
+                _ = LoadItemsAsync();
+            }
+        }
+
+        [RelayCommand]
+        private void FirstPage()
+        {
+            if (CurrentPage > 1)
+            {
+                CurrentPage = 1;
+                _ = LoadItemsAsync();
+            }
+        }
+
+        [RelayCommand]
+        private void LastPage()
+        {
+            if (CurrentPage < TotalPages)
+            {
+                CurrentPage = TotalPages;
+                _ = LoadItemsAsync();
             }
         }
 
@@ -150,20 +233,6 @@ namespace inventory_management.ViewModels.Search
                 Origin = item.CountryOfOrigin,
                 ImagePath = item.ImagePath
             };
-        }
-
-        private bool FilterItems(object item)
-        {
-            if (item is not ItemSearchRow row) return false;
-            
-            if (string.IsNullOrWhiteSpace(SearchText)) return true;
-
-            var term = SearchText.Trim();
-            return row.Model.Contains(term, StringComparison.OrdinalIgnoreCase)
-                   || row.Brand.Contains(term, StringComparison.OrdinalIgnoreCase)
-                   || row.Manufacturer.Contains(term, StringComparison.OrdinalIgnoreCase)
-                   || row.Description.Contains(term, StringComparison.OrdinalIgnoreCase)
-                   || row.Barcode.Contains(term, StringComparison.OrdinalIgnoreCase);
         }
 
         [RelayCommand]

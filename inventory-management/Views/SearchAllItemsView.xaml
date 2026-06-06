@@ -12,6 +12,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
@@ -59,7 +60,7 @@
                 </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
                 <ScrollViewer.Resources>
                     <Style x:Key="ModernScrollThumb" TargetType="Thumb">
                         <Setter Property="Template">
@@ -79,21 +80,21 @@
                         </Setter>
                     </Style>
                     <Style TargetType="ScrollBar">
-                        <Setter Property="Width" Value="10"/>
+                        <Setter Property="Height" Value="10"/>
                         <Setter Property="Background" Value="Transparent"/>
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ScrollBar">
-                                    <Grid Background="{TemplateBinding Background}" Width="{TemplateBinding Width}">
-                                        <Track x:Name="PART_Track" IsDirectionReversed="true">
+                                    <Grid Background="{TemplateBinding Background}" Height="{TemplateBinding Height}">
+                                        <Track x:Name="PART_Track" IsDirectionReversed="False">
                                             <Track.DecreaseRepeatButton>
-                                                <RepeatButton Command="ScrollBar.LineUpCommand" Opacity="0" IsHitTestVisible="False"/>
+                                                <RepeatButton Command="ScrollBar.LineLeftCommand" Opacity="0" IsHitTestVisible="False"/>
                                             </Track.DecreaseRepeatButton>
                                             <Track.Thumb>
                                                 <Thumb Style="{StaticResource ModernScrollThumb}"/>
                                             </Track.Thumb>
                                             <Track.IncreaseRepeatButton>
-                                                <RepeatButton Command="ScrollBar.LineDownCommand" Opacity="0" IsHitTestVisible="False"/>
+                                                <RepeatButton Command="ScrollBar.LineRightCommand" Opacity="0" IsHitTestVisible="False"/>
                                             </Track.IncreaseRepeatButton>
                                         </Track>
                                     </Grid>
@@ -102,10 +103,10 @@
                         </Setter>
                     </Style>
                 </ScrollViewer.Resources>
-                <ItemsControl ItemsSource="{Binding ItemsView}">
+                <ItemsControl ItemsSource="{Binding Items}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <WrapPanel />
+                            <StackPanel Orientation="Horizontal" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
@@ -116,7 +117,7 @@
                                     BorderBrush="{StaticResource BorderColor}"
                                     BorderThickness="1"
                                     Margin="8" 
-                                    Width="275">
+                                    Width="240">
                                 <Border.Effect>
                                     <DropShadowEffect Color="{Binding Source={StaticResource CardShadowColor}, Path=Color}" 
                                                     BlurRadius="12" 
@@ -125,7 +126,7 @@
                                 </Border.Effect>
                                 <StackPanel HorizontalAlignment="Center">
                                     <!-- Item Image -->
-                                    <Image Width="247" Height="130" Margin="0,0,0,12" 
+                                    <Image Width="212" Height="110" Margin="0,0,0,12" 
                                            Stretch="UniformToFill"
                                            VerticalAlignment="Center"
                                            Source="{Binding ImagePath, Converter={x:Static converters:RelativeAssetPathToImageSourceConverter.Instance}}"/>
@@ -185,7 +186,56 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <TextBlock Grid.Row="3" 
+            <!-- Pagination -->
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <Button Command="{Binding FirstPageCommand}" 
+                        Content="&lt;&lt;" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Width="36" Height="36" 
+                        Margin="0,0,8,0" 
+                        Padding="0"
+                        FontSize="16"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"/>
+                
+                <Button Command="{Binding PreviousPageCommand}" 
+                        Content="&lt;" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Width="36" Height="36" 
+                        Margin="0,0,20,0" 
+                        Padding="0"
+                        FontSize="16"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"/>
+                
+                <TextBlock VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryColor}">
+                    <Run Text="Page "/>
+                    <Run Text="{Binding CurrentPage}"/>
+                    <Run Text=" of "/>
+                    <Run Text="{Binding TotalPages}"/>
+                </TextBlock>
+
+                <Button Command="{Binding NextPageCommand}" 
+                        Content="&gt;" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Width="36" Height="36" 
+                        Margin="20,0,8,0" 
+                        Padding="0"
+                        FontSize="16"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"/>
+                
+                <Button Command="{Binding LastPageCommand}" 
+                        Content="&gt;&gt;" 
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Width="36" Height="36" 
+                        Padding="0"
+                        FontSize="16"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="4" 
                        Text="{Binding StatusMessage}" 
                        Foreground="{StaticResource TextSecondaryColor}"
                        FontSize="18"

@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using Npgsql;
 
 namespace inventory_management.Services
 {
@@ -74,23 +76,43 @@ namespace inventory_management.Services
                 return;
             }
 
-            var payload = new FullBackup
-            {
-                GeneratedUtc = DateTime.UtcNow,
-                PartTypes = await _context.PartTypes.AsNoTracking().ToListAsync(),
-                PartBrands = await _context.PartBrands.AsNoTracking().ToListAsync(),
-                Manufacturers = await _context.Manufacturers.AsNoTracking().ToListAsync(),
-                Models = await _context.Models.AsNoTracking().ToListAsync(),
-                Racks = await _context.Racks.AsNoTracking().ToListAsync(),
-                Items = await _context.Items.AsNoTracking().ToListAsync(),
-                Stocks = await _context.Stocks.AsNoTracking().ToListAsync(),
-                Transactions = await _context.Transactions.AsNoTracking().ToListAsync(),
-                UserAccounts = await _context.UserAccounts.AsNoTracking().ToListAsync()
-            };
-
-            var fileName = $"full-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json";
+            var fileName = $"pg_backup-{DateTime.Now:yyyyMMdd-HHmmss}.backup";
             var path = Path.Combine(_backupFolder, fileName);
-            await File.WriteAllTextAsync(path, JsonSerializer.Serialize(payload, _jsonOptions));
+            
+            try 
+            {
+                var connStr = _context.Database.GetDbConnection().ConnectionString;
+                var builder = new NpgsqlConnectionStringBuilder(connStr);
+                
+                var processStartInfo = new ProcessStartInfo
+                {
+                    FileName = "pg_dump",
+                    Arguments = $"-h {builder.Host} -U {builder.Username} -d {builder.Database} -F c -f \"{path}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                
+                processStartInfo.EnvironmentVariables["PGPASSWORD"] = builder.Password;
+
+                using var process = Process.Start(processStartInfo);
+                if (process != null)
+                {
+                    await process.WaitForExitAsync();
+                    if (process.ExitCode != 0)
+                    {
+                        var error = await process.StandardError.ReadToEndAsync();
+                        System.Diagnostics.Debug.WriteLine($"pg_dump failed: {error}");
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error running pg_dump: {ex.Message}");
+                return;
+            }
 
             var state = await LoadStateAsync();
             state.LastFullBackupLocalDate = DateTime.Now.Date;
@@ -101,12 +123,17 @@ namespace inventory_management.Services
         {
             var state = await LoadStateAsync();
             var now = DateTime.Now;
-            if (state.LastFullBackupLocalDate.HasValue && state.LastFullBackupLocalDate.Value == now.Date)
+            
+            if (state.LastFullBackupLocalDate.HasValue)
             {
-                return false;
+                var daysSinceLastBackup = (now.Date - state.LastFullBackupLocalDate.Value.Date).TotalDays;
+                if (daysSinceLastBackup < 2)
+                {
+                    return false;
+                }
             }
 
-            if (now.Hour < 2)
+            if (now.Hour < 12)
             {
                 return false;
             }
