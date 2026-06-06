@@ -144,50 +144,48 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <ComboBox Grid.Column="0" 
-                                  ItemsSource="{Binding PartTypes}" 
-                                  DisplayMemberPath="Name" 
+                        <ComboBox Grid.Column="0"
+                                  ItemsSource="{Binding PartTypes}"
+                                  DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedPartType}"
                                   IsEditable="False"
                                   MinHeight="44"
                                   Margin="0,4,10,0"/>
-                        <Button Grid.Column="1" 
-                                Content="Add Image" 
-                                Command="{Binding BrowsePartTypeImageCommand}" 
+                        <Button Grid.Column="1"
+                                Content="Add Image"
+                                Command="{Binding BrowsePartTypeImageCommand}"
                                 Style="{StaticResource FormButtonStyle}"
-                                Width="120" 
-                                Height="36" 
+                                Width="120"
+                                Height="36"
                                 ToolTip="Add or update image for selected part type"/>
                     </Grid>
-                            <TextBlock Text="Image Path:" FontSize="16"/>
-                            <TextBox Text="{Binding NewPartTypeImagePath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
+                    <TextBlock Text="Image Path:" FontSize="16"/>
+                    <TextBox Text="{Binding NewPartTypeImagePath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
 
                     <TextBlock Text="Manufacturer" Style="{StaticResource FieldLabelStyle}"/>
                     <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <ComboBox Grid.Column="0" 
-                                  ItemsSource="{Binding Manufacturers}" 
-                                  DisplayMemberPath="Name" 
+                        <ComboBox Grid.Column="0"
+                                  ItemsSource="{Binding Manufacturers}"
+                                  DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedManufacturer}"
                                   IsEditable="False"
                                   MinHeight="44"
                                   Margin="0,4,10,0"/>
-                        <Button Grid.Column="1" 
-                                Content="Add Logo" 
-                                Command="{Binding BrowseManufacturerLogoCommand}" 
+                        <Button Grid.Column="1"
+                                Content="Add Logo"
+                                Command="{Binding BrowseManufacturerLogoCommand}"
                                 Style="{StaticResource FormButtonStyle}"
-                                Width="120" 
-                                Height="36" 
+                                Width="120"
+                                Height="36"
                                 ToolTip="Add or update logo for selected manufacturer"/>
                     </Grid>
-                            <TextBlock Text="Logo Path:" FontSize="16"/>
-                            <TextBox Text="{Binding NewManufacturerLogoPath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
+                    <TextBlock Text="Logo Path:" FontSize="16"/>
+                    <TextBox Text="{Binding NewManufacturerLogoPath}" IsReadOnly="True" Background="Transparent" BorderThickness="0" FontSize="16"/>
 
 
                     <TextBlock Text="Vehicle Model" Style="{StaticResource FieldLabelStyle}"/>

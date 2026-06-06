@@ -46,7 +46,14 @@ namespace inventory_management.ViewModels.Search
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public SearchModelsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, inventory_management.ViewModels.Search.PartTypeSearchRow part, inventory_management.ViewModels.Search.ManufacturerSearchRow manufacturer, Action goBack, Action viewAllItems)
+        public SearchModelsViewModel(
+            InventoryDbContext context,
+            IDatabaseAvailabilityService availabilityService,
+            IPrintService printService,
+            PartTypeSearchRow part,
+            ManufacturerSearchRow manufacturer,
+            System.Action goBack,
+            System.Action viewAllItems)
         {
             _context = context;
             _availabilityService = availabilityService;

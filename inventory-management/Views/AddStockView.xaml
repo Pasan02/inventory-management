@@ -49,7 +49,11 @@
                     </TextBox.InputBindings>
                 </TextBox>
                 <TextBlock Text="Quantity to Add" FontSize="24"/>
-                <TextBox x:Name="QuantityTextBox" Text="{Binding Quantity}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center"/>
+                <TextBox x:Name="QuantityTextBox" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding AddStockCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -57,7 +61,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Button Grid.Column="0" Command="{Binding ResetCommand}" Content="Reset" Height="70" FontSize="28" FontWeight="Bold" Background="Black" Foreground="White"/>
-                    <Button Grid.Column="2" Command="{Binding AddStockCommand}" Content="Add Stock" Height="70" FontSize="28" FontWeight="Bold" IsDefault="True"/>
+                    <Button Grid.Column="2" Command="{Binding AddStockCommand}" Content="Add Stock" Height="70" FontSize="28" FontWeight="Bold"/>
                 </Grid>
             </StackPanel>
         </ScrollViewer>
