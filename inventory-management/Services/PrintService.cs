@@ -61,9 +61,9 @@ namespace inventory_management.Services
                     // ^XZ - End Format
                     string zpl = 
                         "^XA\n" +
-                        $"^FO40,25^A0N,22,22^FD{EscapeZpl(title)}^FS\n" +
-                        $"^FO40,55^A0N,18,18^FD{EscapeZpl(details ?? string.Empty)}^FS\n" +
-                        $"^FO40,85^BY2,2.0,50^BCN,50,Y,N,N^FD{barcode}^FS\n" +
+                        $"^FO10,25^A0N,22,22^FD{EscapeZpl(title)}^FS\n" +
+                        $"^FO10,55^A0N,18,18^FD{EscapeZpl(details ?? string.Empty)}^FS\n" +
+                        $"^FO10,85^BY2,2.0,50^BCN,50,Y,N,N^FD{barcode}^FS\n" +
                         $"^PQ{copies}\n" +
                         "^XZ\n";
 
