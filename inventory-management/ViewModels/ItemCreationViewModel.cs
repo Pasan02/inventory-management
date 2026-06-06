@@ -17,12 +17,13 @@ using Microsoft.Win32;
 
 namespace inventory_management.ViewModels
 {
-    public partial class ItemCreationViewModel : ViewModelBase
+    public partial class ItemCreationViewModel : ViewModelBase, IDisposable
     {
         private readonly InventoryDbContext _context;
         private readonly IBarcodeService _barcodeService;
         private readonly IPrintService _printService;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly IMobileCameraService _mobileCameraService;
         private bool _isAddingReferenceData;
 
         // --- Form Properties ---
@@ -465,12 +466,30 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public ItemCreationViewModel(InventoryDbContext context, IBarcodeService barcodeService, IPrintService printService, IDatabaseAvailabilityService availabilityService)
+        private string _mobileCaptureUrl = string.Empty;
+        public string MobileCaptureUrl
+        {
+            get => _mobileCaptureUrl;
+            set => SetProperty(ref _mobileCaptureUrl, value);
+        }
+
+        public ItemCreationViewModel(
+            InventoryDbContext context, 
+            IBarcodeService barcodeService, 
+            IPrintService printService, 
+            IDatabaseAvailabilityService availabilityService,
+            IMobileCameraService mobileCameraService)
         {
             _context = context;
             _barcodeService = barcodeService;
             _printService = printService;
             _availabilityService = availabilityService;
+            _mobileCameraService = mobileCameraService;
+            
+            // Start the local web camera server
+            _mobileCameraService.Start();
+            MobileCaptureUrl = _mobileCameraService.GetMobileCaptureUrl();
+            _mobileCameraService.ImageReceived += OnImageReceived;
             
             LoadReferenceData();
         }
@@ -1061,6 +1080,50 @@ namespace inventory_management.ViewModels
             {
                 _isAddingReferenceData = false;
             }
+        }
+
+        private void OnImageReceived(byte[] imageBytes)
+        {
+            Application.Current.Dispatcher.Invoke(async () =>
+            {
+                try
+                {
+                    // Check if bytes are valid
+                    var tempImageSource = BytesToImage(imageBytes);
+                    if (tempImageSource == null) return;
+
+                    var result = ModernMessageDialog.ShowQuestion(
+                        "A photo has been received from your mobile device. Do you want to set it as the item image?",
+                        "Mobile Photo Received");
+
+                    if (result == true)
+                    {
+                        var assetsRoot = AssetPathService.BasePath;
+                        var itemsFolder = Path.Combine(assetsRoot, "items");
+                        Directory.CreateDirectory(itemsFolder);
+
+                        var fileName = $"item-{Guid.NewGuid():N}.jpg";
+                        var relativePath = Path.Combine("items", fileName);
+                        var destination = Path.Combine(assetsRoot, relativePath);
+
+                        await File.WriteAllBytesAsync(destination, imageBytes);
+
+                        ImagePath = relativePath;
+                        StatusMessage = "Mobile image successfully approved and set.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error processing mobile photo: {ex.Message}";
+                    MessageBox.Show(Application.Current.MainWindow, $"Error saving mobile photo: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            });
+        }
+
+        public void Dispose()
+        {
+            _mobileCameraService.ImageReceived -= OnImageReceived;
+            _mobileCameraService.Stop();
         }
     }
 }
