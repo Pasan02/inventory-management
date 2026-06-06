@@ -208,7 +208,7 @@
 
                                 <Image Grid.Column="1" 
                                        Source="C:/Users/Avishka/Desktop/projects/vehicle_stock_management/inventory-management/assets/logo/logo.jpeg" 
-                                       Height="64" 
+                                       Height="120" 
                                        Stretch="Uniform" 
                                        HorizontalAlignment="Right" 
                                        VerticalAlignment="Center" 
