@@ -82,7 +82,6 @@ namespace inventory_management
                     }
                     
                     await dbContext.Database.MigrateAsync();
-                    await EnsurePlaceholderDataAsync(dbContext);
                     await EnsureIdentitySequencesAsync(dbContext);
 
                     var integrityCheck = scope.ServiceProvider.GetRequiredService<IIntegrityCheckService>();
@@ -117,96 +116,7 @@ namespace inventory_management
             base.OnExit(e);
         }
 
-        private static async Task EnsurePlaceholderDataAsync(InventoryDbContext context)
-        {
-            if (!await context.PartTypes.AnyAsync())
-            {
-                context.PartTypes.AddRange(
-                    new PartType { Name = "Compressor" },
-                    new PartType { Name = "Condenser" });
-            }
 
-            if (!await context.PartBrands.AnyAsync())
-            {
-                context.PartBrands.AddRange(
-                    new PartBrand { Name = "Denso" },
-                    new PartBrand { Name = "Bosch" });
-            }
-
-            if (!await context.Manufacturers.AnyAsync())
-            {
-                context.Manufacturers.AddRange(
-                    new VehicleManufacturer { Name = "Toyota" },
-                    new VehicleManufacturer { Name = "Ford" });
-            }
-
-            if (!await context.Racks.AnyAsync())
-            {
-                context.Racks.AddRange(
-                    new Rack { LocationCode = "A-01" },
-                    new Rack { LocationCode = "B-05" });
-            }
-
-            await context.SaveChangesAsync();
-
-            if (!await context.Models.AnyAsync())
-            {
-                var toyota = await context.Manufacturers.FirstAsync(m => m.Name == "Toyota");
-                var ford = await context.Manufacturers.FirstAsync(m => m.Name == "Ford");
-
-                context.Models.AddRange(
-                    new VehicleModel { VehicleManufacturerId = toyota.Id, Name = "Corolla", YearRange = "2010-2015" },
-                    new VehicleModel { VehicleManufacturerId = ford.Id, Name = "Focus", YearRange = "2012-2018" });
-
-                await context.SaveChangesAsync();
-            }
-
-            if (!await context.Items.AnyAsync())
-            {
-                var partType = await context.PartTypes.FirstAsync();
-                var brand = await context.PartBrands.FirstAsync();
-                var model = await context.Models.FirstAsync();
-                var rack = await context.Racks.FirstAsync();
-
-                var item = new Item
-                {
-                    Barcode = "ITEM-0001",
-                    PartTypeId = partType.Id,
-                    VehicleModelId = model.Id,
-                    PartBrandId = brand.Id,
-                    CountryOfOrigin = "Japan",
-                    Description = "Placeholder compressor",
-                    LowStockThreshold = 5,
-                    RackId = rack.Id
-                };
-
-                context.Items.Add(item);
-                await context.SaveChangesAsync();
-
-                var timestamp = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-
-                context.Stocks.Add(new Stock
-                {
-                    ItemId = item.Id,
-                    Quantity = 10,
-                    LastUpdated = timestamp
-                });
-
-                var transaction = new StockTransaction
-                {
-                    ItemId = item.Id,
-                    ActionType = "IN",
-                    QuantityChange = 10,
-                    Timestamp = timestamp,
-                    MachineName = Environment.MachineName
-                };
-
-                transaction.ChecksumHash = StockTransactionHasher.ComputeChecksum(transaction);
-                context.Transactions.Add(transaction);
-
-                await context.SaveChangesAsync();
-            }
-        }
 
         private static async Task EnsureIdentitySequencesAsync(InventoryDbContext context)
         {
