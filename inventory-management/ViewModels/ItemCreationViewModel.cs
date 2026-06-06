@@ -648,16 +648,8 @@ namespace inventory_management.ViewModels
 
                 try
                 {
-                    var partName = SelectedPartType != null && SelectedPartType.Id != -1 ? SelectedPartType.Name : "";
-                    var brandName = SelectedBrand != null && SelectedBrand.Id != -1 ? SelectedBrand.Name : "";
-                    var manufacturerName = SelectedManufacturer != null && SelectedManufacturer.Id != -1 ? SelectedManufacturer.Name : "";
-                    var modelName = SelectedModel != null && SelectedModel.Id != -1 ? SelectedModel.Name : "";
-
-                    var title = $"{brandName} {partName}".Trim();
-                    var details = $"{manufacturerName} {modelName}".Trim();
-
                     StatusMessage = $"Printing {copies} barcode label(s)...";
-                    var success = await _printService.PrintBarcodeLabelAsync(SelectedBarcode, title, details, copies);
+                    var success = await _printService.PrintBarcodeLabelAsync(SelectedBarcode, copies);
                     
                     if (success)
                     {

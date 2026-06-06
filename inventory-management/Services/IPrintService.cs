@@ -12,6 +12,6 @@ namespace inventory_management.Services
         /// <param name="details">Secondary information (e.g. Make + Model).</param>
         /// <param name="copies">Number of barcode labels to print.</param>
         /// <returns>True if printing was successful, false otherwise.</returns>
-        Task<bool> PrintBarcodeLabelAsync(string barcode, string title, string? details = null, int copies = 1);
+        Task<bool> PrintBarcodeLabelAsync(string barcode, int copies = 1);
     }
 }

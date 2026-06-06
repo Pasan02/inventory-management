@@ -260,10 +260,8 @@ namespace inventory_management.ViewModels.Search
                 }
 
                 StatusMessage = $"Printing {copies} barcode label(s) for {item.Barcode}...";
-                var title = $"{item.Brand} {item.PartType}".Trim();
-                var details = $"{item.Manufacturer} {item.Model}".Trim();
                 
-                var success = await _printService.PrintBarcodeLabelAsync(item.Barcode, title, details, copies);
+                var success = await _printService.PrintBarcodeLabelAsync(item.Barcode, copies);
                 if (success)
                 {
                     StatusMessage = $"Barcode label printed successfully for {item.Barcode}.";

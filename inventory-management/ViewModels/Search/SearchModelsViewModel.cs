@@ -190,10 +190,7 @@ namespace inventory_management.ViewModels.Search
 
                 if (item != null && !string.IsNullOrWhiteSpace(item.Barcode))
                 {
-                    var title = $"{item.PartBrand.Name} {item.PartType.Name}".Trim();
-                    var details = $"{item.VehicleModel.Manufacturer.Name} {item.VehicleModel.Name}".Trim();
-                    
-                    var success = await _printService.PrintBarcodeLabelAsync(item.Barcode, title, details, copies);
+                    var success = await _printService.PrintBarcodeLabelAsync(item.Barcode, copies);
                     if (success)
                     {
                         StatusMessage = $"Barcode label printed successfully for {modelRow.Name}.";

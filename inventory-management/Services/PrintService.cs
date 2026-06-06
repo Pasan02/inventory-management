@@ -36,7 +36,7 @@ namespace inventory_management.Services
         [DllImport("winspool.Drv", EntryPoint = "WritePrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         private static extern bool WritePrinter(IntPtr hPrinter, IntPtr pBytes, int dwCount, out int dwWritten);
 
-        public Task<bool> PrintBarcodeLabelAsync(string barcode, string title, string? details = null, int copies = 1)
+        public Task<bool> PrintBarcodeLabelAsync(string barcode, int copies = 1)
         {
             return Task.Run(() =>
             {
@@ -61,8 +61,7 @@ namespace inventory_management.Services
                     // ^XZ - End Format
                     string zpl = 
                         "^XA\n" +
-                        $"^FO40,25^A0N,22,22^FD{EscapeZpl(title)}^FS\n" +
-                        $"^FO40,55^A0N,18,18^FD{EscapeZpl(details ?? string.Empty)}^FS\n" +
+                        $"^FO0,40^FB400,1,0,C^A0N,24,24^FDAlpine Auto A/C^FS\n" +
                         $"^FO40,85^BY2,2.0,50^BCN,50,Y,N,N^FD{barcode}^FS\n" +
                         $"^PQ{copies}\n" +
                         "^XZ\n";

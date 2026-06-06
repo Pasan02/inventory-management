@@ -189,16 +189,31 @@
                         
                         <!-- Welcome Header -->
                         <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,30" Padding="24">
-                            <StackPanel>
-                                <TextBlock Text="Vehicle A/C Inventory System" 
-                                         FontSize="36" 
-                                         FontWeight="Bold" 
-                                         Foreground="{StaticResource PrimaryColor}"/>
-                                <TextBlock Text="Select an action below to get started" 
-                                         FontSize="20" 
-                                         Foreground="{StaticResource TextSecondaryColor}"
-                                         Margin="0,8,0,0"/>
-                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Alpine Auto A/C" 
+                                             FontSize="36" 
+                                             FontWeight="Bold" 
+                                             Foreground="{StaticResource PrimaryColor}"/>
+                                    <TextBlock Text="Select an action below to get started" 
+                                             FontSize="20" 
+                                             Foreground="{StaticResource TextSecondaryColor}"
+                                             Margin="0,8,0,0"/>
+                                </StackPanel>
+
+                                <Image Grid.Column="1" 
+                                       Source="C:/Users/Avishka/Desktop/projects/vehicle_stock_management/inventory-management/assets/logo/logo.jpeg" 
+                                       Height="64" 
+                                       Stretch="Uniform" 
+                                       HorizontalAlignment="Right" 
+                                       VerticalAlignment="Center" 
+                                       Margin="20,0,0,0"/>
+                            </Grid>
                         </Border>
 
                         <UniformGrid Grid.Row="1" Columns="3" Rows="2" Margin="0">
