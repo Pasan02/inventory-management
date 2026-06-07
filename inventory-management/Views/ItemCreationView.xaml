@@ -99,6 +99,91 @@
         <Setter Property="FontSize" Value="18"/>
         <Setter Property="MinHeight" Value="44"/>
     </Style>
+
+    <!-- Style for Editable ComboBoxes that supports modern looks and is editable -->
+    <Style x:Key="EditableComboBoxStyle" TargetType="ComboBox">
+        <EventSetter Event="PreviewMouseWheel" Handler="ComboBox_PreviewMouseWheel"/>
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#CCCCCC"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="MinHeight" Value="44"/>
+        <Setter Property="IsTabStop" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid x:Name="PlacementGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border x:Name="Border"
+                                Grid.ColumnSpan="2"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"/>
+                        <TextBox x:Name="PART_EditableTextBox"
+                                 Grid.Column="0"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Center"
+                                 Margin="10,2,2,2"
+                                 Focusable="True"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 FontSize="{TemplateBinding FontSize}"/>
+                        <ToggleButton x:Name="ToggleButton"
+                                      Grid.Column="1"
+                                      Background="Transparent"
+                                      BorderBrush="Transparent"
+                                      BorderThickness="0"
+                                      ClickMode="Press"
+                                      Focusable="False"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent" Width="30">
+                                        <Path Data="M 0 0 L 4 4 L 8 0 Z" Fill="#555" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <Popup x:Name="PART_Popup"
+                               AllowsTransparency="True"
+                               Grid.ColumnSpan="2"
+                               Placement="Bottom"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               PopupAnimation="Slide"
+                               Width="{Binding ActualWidth, ElementName=PlacementGrid}">
+                            <Border Background="White"
+                                    BorderBrush="#CCCCCC"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Margin="0,4,0,0"
+                                    MaxHeight="300">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.3"/>
+                                </Border.Effect>
+                                <ScrollViewer MaxHeight="300">
+                                    <ItemsPresenter/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Border" Property="BorderBrush" Value="#0078D4"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Border" Property="BorderBrush" Value="#0078D4"/>
+                            <Setter TargetName="Border" Property="BorderThickness" Value="2"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <Style TargetType="TextBox">
         <Setter Property="FontSize" Value="18"/>
         <Setter Property="Padding" Value="8,6"/>
@@ -213,6 +298,9 @@
                     <TextBlock Text="Pcode" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding SecretPriceCode}"/>
 
+                    <TextBlock Text="Custom Barcode (Optional)" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox Text="{Binding CustomBarcode}"/>
+
                     <TextBlock Text="Description / Notes" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding Description}" Height="100" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
 
@@ -274,39 +362,66 @@
                             <TextBlock Text="Add compatible vehicle models for this item." FontSize="14" Foreground="Gray" Margin="0,0,0,15"/>
                             
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="15"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="10"/>
-                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                
-                                <StackPanel Grid.Column="0">
+
+                                <!-- Row 0: Manufacturer and Model -->
+                                <StackPanel Grid.Row="0" Grid.Column="0">
                                     <TextBlock Text="Manufacturer" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
                                     <ComboBox ItemsSource="{Binding CompatibilityManufacturers}" 
-                                              DisplayMemberPath="Name" 
-                                              SelectedItem="{Binding SelectedCompatibilityManufacturer}"
-                                              IsEditable="False"
+                                              Style="{StaticResource EditableComboBoxStyle}"
+                                              IsEditable="True"
+                                              Text="{Binding NewCompatibilityManufacturer, UpdateSourceTrigger=PropertyChanged}"
                                               MinHeight="44"/>
                                 </StackPanel>
-                                
-                                <StackPanel Grid.Column="2">
+
+                                <StackPanel Grid.Row="0" Grid.Column="2">
                                     <TextBlock Text="Model" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
                                     <ComboBox ItemsSource="{Binding CompatibilityModels}" 
-                                              DisplayMemberPath="Name" 
-                                              SelectedItem="{Binding SelectedCompatibilityModel}"
-                                              IsEditable="False"
+                                              Style="{StaticResource EditableComboBoxStyle}"
+                                              IsEditable="True"
+                                              Text="{Binding NewCompatibilityModel, UpdateSourceTrigger=PropertyChanged}"
                                               MinHeight="44"/>
                                 </StackPanel>
-                                
-                                <Button Grid.Column="4" 
+
+                                <!-- Row 1: Brand and Year Range -->
+                                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,10,0,0">
+                                    <TextBlock Text="Brand" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
+                                    <ComboBox ItemsSource="{Binding CompatibilityBrands}" 
+                                              Style="{StaticResource EditableComboBoxStyle}"
+                                              IsEditable="True"
+                                              Text="{Binding NewCompatibilityBrand, UpdateSourceTrigger=PropertyChanged}"
+                                              MinHeight="44"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,10,0,0">
+                                    <TextBlock Text="Year Range" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding NewCompatibilityYearRange, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" Height="44" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Row 2: Country of Origin and Add Button -->
+                                <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,10,0,0">
+                                    <TextBlock Text="Country of Origin" Style="{StaticResource FieldLabelStyle}" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding NewCompatibilityCountryOfOrigin, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" Height="44" VerticalContentAlignment="Center"/>
+                                </StackPanel>
+
+                                <Button Grid.Row="2" Grid.Column="2" 
                                         Content="Add Link" 
                                         Command="{Binding AddCompatibleModelCommand}"
                                         Style="{StaticResource FormButtonStyle}"
                                         VerticalAlignment="Bottom"
+                                        HorizontalAlignment="Right"
                                         Height="44" 
-                                        Width="100"/>
+                                        Width="150"
+                                        Margin="0,0,0,4"/>
                             </Grid>
                             
                             <!-- List of Compatible Models -->
@@ -323,10 +438,7 @@
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold" Foreground="#333333"/>
-                                                            <TextBlock Text=" (Year Range: " FontSize="14" Foreground="#666666"/>
-                                                            <TextBlock Text="{Binding YearRange}" FontSize="14" Foreground="#666666"/>
-                                                            <TextBlock Text=")" FontSize="14" Foreground="#666666"/>
+                                                            <TextBlock Text="{Binding}" FontSize="16" FontWeight="SemiBold" Foreground="#333333" TextWrapping="Wrap"/>
                                                         </StackPanel>
                                                         <Button Grid.Column="1" 
                                                                 Content="Remove" 

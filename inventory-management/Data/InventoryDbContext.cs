@@ -43,20 +43,14 @@ namespace inventory_management.Data
                 .HasForeignKey<Stock>(s => s.ItemId)
                 .OnDelete(DeleteBehavior.Restrict); // Prevent accidental deletions
 
-            // many-to-many relationship configuration for compatibility
+            // Relationship configuration for compatibility
             modelBuilder.Entity<ItemCompatibleModel>()
-                .HasKey(ic => new { ic.ItemId, ic.VehicleModelId });
+                .HasKey(ic => ic.Id);
 
             modelBuilder.Entity<ItemCompatibleModel>()
                 .HasOne(ic => ic.Item)
                 .WithMany(i => i.CompatibleModels)
                 .HasForeignKey(ic => ic.ItemId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ItemCompatibleModel>()
-                .HasOne(ic => ic.VehicleModel)
-                .WithMany()
-                .HasForeignKey(ic => ic.VehicleModelId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<UserAccount>()

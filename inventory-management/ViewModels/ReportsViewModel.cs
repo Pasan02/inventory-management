@@ -58,8 +58,6 @@ namespace inventory_management.ViewModels
                     .Include(i => i.VehicleModel)
                         .ThenInclude(m => m.Manufacturer)
                     .Include(i => i.CompatibleModels)
-                        .ThenInclude(cm => cm.VehicleModel)
-                            .ThenInclude(vm => vm.Manufacturer)
                     .AsNoTracking()
                     .ToListAsync();
 
@@ -79,7 +77,7 @@ namespace inventory_management.ViewModels
                         var totalQuantity = g.Sum(i => i.Stock?.Quantity ?? 0);
                         
                         var compatTextList = g.SelectMany(i => i.CompatibleModels)
-                            .Select(cm => $"{cm.VehicleModel.Manufacturer.Name} {cm.VehicleModel.Name}")
+                            .Select(cm => cm.ToString())
                             .Distinct()
                             .OrderBy(n => n)
                             .ToList();

@@ -115,8 +115,6 @@ namespace inventory_management.ViewModels.Search
                     .Include(i => i.VehicleModel)
                         .ThenInclude(vm => vm.Manufacturer)
                     .Include(i => i.CompatibleModels)
-                        .ThenInclude(cm => cm.VehicleModel)
-                            .ThenInclude(vm => vm.Manufacturer)
                     .Include(i => i.Rack)
                     .Include(i => i.Stock)
                     .AsNoTracking()
@@ -131,7 +129,13 @@ namespace inventory_management.ViewModels.Search
                         i.VehicleModel.Name.ToLower().Contains(term) ||
                         i.PartBrand.Name.ToLower().Contains(term) ||
                         i.VehicleModel.Manufacturer.Name.ToLower().Contains(term) ||
-                        i.CompatibleModels.Any(cm => cm.VehicleModel.Name.ToLower().Contains(term) || cm.VehicleModel.Manufacturer.Name.ToLower().Contains(term)) ||
+                        i.CompatibleModels.Any(cm => 
+                            (cm.Model != null && cm.Model.ToLower().Contains(term)) ||
+                            (cm.Manufacturer != null && cm.Manufacturer.ToLower().Contains(term)) ||
+                            (cm.Brand != null && cm.Brand.ToLower().Contains(term)) ||
+                            (cm.CountryOfOrigin != null && cm.CountryOfOrigin.ToLower().Contains(term)) ||
+                            (cm.YearRange != null && cm.YearRange.ToLower().Contains(term))
+                        ) ||
                         i.Description.ToLower().Contains(term) ||
                         i.Barcode.ToLower().Contains(term));
                 }
@@ -225,7 +229,7 @@ namespace inventory_management.ViewModels.Search
         private ItemSearchRow MapToSearchRow(Data.Entities.Item item)
         {
             var compatText = string.Join(", ", item.CompatibleModels
-                .Select(cm => $"{cm.VehicleModel.Manufacturer.Name} {cm.VehicleModel.Name}"));
+                .Select(cm => cm.ToString()));
 
             return new ItemSearchRow
             {

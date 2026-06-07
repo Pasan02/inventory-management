@@ -45,8 +45,6 @@ namespace inventory_management.Services
                 .Include(i => i.VehicleModel)
                 .ThenInclude(m => m.Manufacturer)
                 .Include(i => i.CompatibleModels)
-                    .ThenInclude(cm => cm.VehicleModel)
-                        .ThenInclude(m => m.Manufacturer)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(i => i.Barcode == normalized);
         }
@@ -74,8 +72,6 @@ namespace inventory_management.Services
                 .Include(i => i.VehicleModel)
                 .ThenInclude(m => m.Manufacturer)
                 .Include(i => i.CompatibleModels)
-                    .ThenInclude(cm => cm.VehicleModel)
-                        .ThenInclude(m => m.Manufacturer)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(i => 
                     i.Barcode.ToLower() == normalized ||
@@ -83,7 +79,12 @@ namespace inventory_management.Services
                     i.PartBrand.Name.ToLower().Contains(normalized) ||
                     i.VehicleModel.Name.ToLower().Contains(normalized) ||
                     i.VehicleModel.Manufacturer.Name.ToLower().Contains(normalized) ||
-                    i.CompatibleModels.Any(cm => cm.VehicleModel.Name.ToLower().Contains(normalized) || cm.VehicleModel.Manufacturer.Name.ToLower().Contains(normalized)) ||
+                    i.CompatibleModels.Any(cm => 
+                        (cm.Model != null && cm.Model.ToLower().Contains(normalized)) ||
+                        (cm.Manufacturer != null && cm.Manufacturer.ToLower().Contains(normalized)) ||
+                        (cm.Brand != null && cm.Brand.ToLower().Contains(normalized)) ||
+                        (cm.CountryOfOrigin != null && cm.CountryOfOrigin.ToLower().Contains(normalized)) ||
+                        (cm.YearRange != null && cm.YearRange.ToLower().Contains(normalized))) ||
                     (i.PartType.Name + " " + i.PartBrand.Name).ToLower().Contains(normalized) ||
                     (i.PartType.Name + " " + i.VehicleModel.Name).ToLower().Contains(normalized) ||
                     (i.PartBrand.Name + " " + i.VehicleModel.Name).ToLower().Contains(normalized));
@@ -105,8 +106,6 @@ namespace inventory_management.Services
                 .Include(i => i.VehicleModel)
                 .ThenInclude(m => m.Manufacturer)
                 .Include(i => i.CompatibleModels)
-                    .ThenInclude(cm => cm.VehicleModel)
-                        .ThenInclude(m => m.Manufacturer)
                 .AsNoTracking()
                 .OrderBy(i => i.Barcode)
                 .ToListAsync();
@@ -184,7 +183,11 @@ namespace inventory_management.Services
                         _context.ItemCompatibleModels.Add(new ItemCompatibleModel
                         {
                             ItemId = newItem.Id,
-                            VehicleModelId = cm.VehicleModelId
+                            Manufacturer = cm.Manufacturer,
+                            Model = cm.Model,
+                            YearRange = cm.YearRange,
+                            Brand = cm.Brand,
+                            CountryOfOrigin = cm.CountryOfOrigin
                         });
                     }
 
@@ -299,18 +302,41 @@ namespace inventory_management.Services
 
                 transaction.ChecksumHash = StockTransactionHasher.ComputeChecksum(transaction);
 
-                _context.Transactions.Add(transaction);
+                if (newQuantity == 0)
+                {
+                    // MUST write physical mirror log before db records are deleted
+                    await WriteMirrorLogAsync(transaction, item.Barcode, newQuantity);
+
+                    // Delete transactions
+                    var txs = await _context.Transactions.Where(t => t.ItemId == item.Id).ToListAsync();
+                    _context.Transactions.RemoveRange(txs);
+
+                    // Delete compatibility models
+                    var comps = await _context.ItemCompatibleModels.Where(c => c.ItemId == item.Id).ToListAsync();
+                    _context.ItemCompatibleModels.RemoveRange(comps);
+
+                    // Delete stock
+                    _context.Stocks.Remove(item.Stock);
+
+                    // Delete item
+                    _context.Items.Remove(item);
+                }
+                else
+                {
+                    _context.Transactions.Add(transaction);
+                    await WriteMirrorLogAsync(transaction, item.Barcode, newQuantity);
+                }
 
                 await _context.SaveChangesAsync();
-
-                await WriteMirrorLogAsync(transaction, item.Barcode, newQuantity);
 
                 await dbTransaction.CommitAsync();
 
                 return new StockOperationResult
                 {
                     Success = true,
-                    Message = "Stock updated successfully.",
+                    Message = newQuantity == 0 
+                        ? "Stock reached 0. Item and all related records have been deleted from the database." 
+                        : "Stock updated successfully.",
                     NewQuantity = newQuantity
                 };
             }

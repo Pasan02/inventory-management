@@ -35,6 +35,13 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _selectedBarcode, value);
         }
 
+        private string _customBarcode = string.Empty;
+        public string CustomBarcode
+        {
+            get => _customBarcode;
+            set => SetProperty(ref _customBarcode, value);
+        }
+
         [RelayCommand]
         private async Task BrowsePartTypeImage()
         {
@@ -381,80 +388,146 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _secretPriceCode, value);
         }
 
-        public ObservableCollection<VehicleModel> CompatibleModelsList { get; } = new();
+        public ObservableCollection<ItemCompatibleModel> CompatibleModelsList { get; } = new();
 
-        public ObservableCollection<VehicleManufacturer> CompatibilityManufacturers { get; } = new();
-        public ObservableCollection<VehicleModel> CompatibilityModels { get; } = new();
+        public ObservableCollection<string> CompatibilityManufacturers { get; } = new();
+        public ObservableCollection<string> CompatibilityModels { get; } = new();
+        public ObservableCollection<string> CompatibilityBrands { get; } = new();
 
-        private VehicleManufacturer? _selectedCompatibilityManufacturer;
-        public VehicleManufacturer? SelectedCompatibilityManufacturer
+        private string _newCompatibilityManufacturer = string.Empty;
+        public string NewCompatibilityManufacturer
         {
-            get => _selectedCompatibilityManufacturer;
+            get => _newCompatibilityManufacturer;
             set
             {
-                if (SetProperty(ref _selectedCompatibilityManufacturer, value))
+                if (SetProperty(ref _newCompatibilityManufacturer, value))
                 {
-                    OnSelectedCompatibilityManufacturerChanged(value);
+                    UpdateCompatibilityModels();
                 }
             }
         }
 
-        private VehicleModel? _selectedCompatibilityModel;
-        public VehicleModel? SelectedCompatibilityModel
+        private string _newCompatibilityModel = string.Empty;
+        public string NewCompatibilityModel
         {
-            get => _selectedCompatibilityModel;
-            set => SetProperty(ref _selectedCompatibilityModel, value);
+            get => _newCompatibilityModel;
+            set => SetProperty(ref _newCompatibilityModel, value);
+        }
+
+        private string _newCompatibilityBrand = string.Empty;
+        public string NewCompatibilityBrand
+        {
+            get => _newCompatibilityBrand;
+            set => SetProperty(ref _newCompatibilityBrand, value);
+        }
+
+        private string _newCompatibilityYearRange = string.Empty;
+        public string NewCompatibilityYearRange
+        {
+            get => _newCompatibilityYearRange;
+            set => SetProperty(ref _newCompatibilityYearRange, value);
+        }
+
+        private string _newCompatibilityCountryOfOrigin = string.Empty;
+        public string NewCompatibilityCountryOfOrigin
+        {
+            get => _newCompatibilityCountryOfOrigin;
+            set => SetProperty(ref _newCompatibilityCountryOfOrigin, value);
         }
 
         [RelayCommand]
         private void AddCompatibleModel()
         {
-            if (SelectedCompatibilityModel == null || SelectedCompatibilityModel.Id == -1)
+            var manufacturer = NewCompatibilityManufacturer?.Trim();
+            var model = NewCompatibilityModel?.Trim();
+            var yearRange = NewCompatibilityYearRange?.Trim();
+            var brand = NewCompatibilityBrand?.Trim();
+            var origin = NewCompatibilityCountryOfOrigin?.Trim();
+
+            if (string.IsNullOrWhiteSpace(manufacturer) && 
+                string.IsNullOrWhiteSpace(model) && 
+                string.IsNullOrWhiteSpace(yearRange) && 
+                string.IsNullOrWhiteSpace(brand) && 
+                string.IsNullOrWhiteSpace(origin))
             {
-                MessageBox.Show(Application.Current.MainWindow, "Please select a valid compatibility model.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Application.Current.MainWindow, "At least one compatibility parameter must be provided.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            if (CompatibleModelsList.Any(m => m.Id == SelectedCompatibilityModel.Id))
+            var exists = CompatibleModelsList.Any(c => 
+                string.Equals(c.Manufacturer ?? "", manufacturer ?? "", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Model ?? "", model ?? "", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.YearRange ?? "", yearRange ?? "", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Brand ?? "", brand ?? "", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.CountryOfOrigin ?? "", origin ?? "", StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (exists)
             {
-                MessageBox.Show(Application.Current.MainWindow, "This model is already added as compatible.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(Application.Current.MainWindow, "This compatibility configuration is already added.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            CompatibleModelsList.Add(SelectedCompatibilityModel);
-            StatusMessage = $"Added compatibility for {SelectedCompatibilityModel.Name}.";
+            var newComp = new ItemCompatibleModel
+            {
+                Manufacturer = string.IsNullOrWhiteSpace(manufacturer) ? null : manufacturer,
+                Model = string.IsNullOrWhiteSpace(model) ? null : model,
+                YearRange = string.IsNullOrWhiteSpace(yearRange) ? null : yearRange,
+                Brand = string.IsNullOrWhiteSpace(brand) ? null : brand,
+                CountryOfOrigin = string.IsNullOrWhiteSpace(origin) ? null : origin
+            };
+
+            CompatibleModelsList.Add(newComp);
+            StatusMessage = "Added compatibility link.";
+
+            // Reset fields
+            NewCompatibilityManufacturer = string.Empty;
+            NewCompatibilityModel = string.Empty;
+            NewCompatibilityYearRange = string.Empty;
+            NewCompatibilityBrand = string.Empty;
+            NewCompatibilityCountryOfOrigin = string.Empty;
         }
 
         [RelayCommand]
-        private void RemoveCompatibleModel(VehicleModel? model)
+        private void RemoveCompatibleModel(ItemCompatibleModel? model)
         {
             if (model != null)
             {
                 CompatibleModelsList.Remove(model);
-                StatusMessage = $"Removed compatibility for {model.Name}.";
+                StatusMessage = "Removed compatibility link.";
             }
         }
 
-        private async void OnSelectedCompatibilityManufacturerChanged(VehicleManufacturer? value)
+        private async void UpdateCompatibilityModels()
         {
             try
             {
                 CompatibilityModels.Clear();
-                SelectedCompatibilityModel = null;
-                
-                if (value != null && value.Id != -1)
+                var mName = NewCompatibilityManufacturer?.Trim();
+
+                var allModelsQuery = _context.Models.AsNoTracking();
+                if (!string.IsNullOrWhiteSpace(mName))
                 {
-                    var models = await _context.Models
-                        .Where(m => m.VehicleManufacturerId == value.Id)
-                        .OrderBy(m => m.Name)
-                        .ToListAsync();
-                    
-                    foreach (var m in models) CompatibilityModels.Add(m);
+                    var manufacturer = await _context.Manufacturers
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(m => m.Name == mName);
+                    if (manufacturer != null)
+                    {
+                        allModelsQuery = allModelsQuery.Where(m => m.VehicleManufacturerId == manufacturer.Id);
+                    }
                 }
+
+                var models = await allModelsQuery
+                    .Select(m => m.Name)
+                    .Distinct()
+                    .OrderBy(n => n)
+                    .ToListAsync();
+
+                foreach (var n in models) CompatibilityModels.Add(n);
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error loading compatibility models: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"Error updating compatibility models: {ex.Message}");
             }
         }
 
@@ -546,11 +619,16 @@ namespace inventory_management.ViewModels
                 Manufacturers.Add(new VehicleManufacturer { Id = -1, Name = "+ Add New Manufacturer..." });
 
                 CompatibilityManufacturers.Clear();
-                foreach (var m in manufacturers) CompatibilityManufacturers.Add(m);
+                foreach (var m in manufacturers) CompatibilityManufacturers.Add(m.Name);
+
+                CompatibilityBrands.Clear();
+                foreach (var b in brands) CompatibilityBrands.Add(b.Name);
 
                 var racks = await _context.Racks.OrderBy(r => r.LocationCode).ToListAsync();
                 foreach (var r in racks) Racks.Add(r);
                 Racks.Add(new Rack { Id = -1, LocationCode = "+ Add New Rack..." });
+
+                UpdateCompatibilityModels();
 
                 StatusMessage = string.Empty;
             }
@@ -653,6 +731,7 @@ namespace inventory_management.ViewModels
             await _context.SaveChangesAsync();
 
             Manufacturers.Add(manufacturer);
+            CompatibilityManufacturers.Add(manufacturer.Name);
             NewManufacturerName = string.Empty;
             NewManufacturerLogoPath = string.Empty;
             StatusMessage = "Manufacturer added.";
@@ -678,11 +757,15 @@ namespace inventory_management.ViewModels
             NewModelYearRange = string.Empty;
             
             SelectedBarcode = string.Empty;
+            CustomBarcode = string.Empty;
             BarcodeImage = null;
             SecretPriceCode = string.Empty;
             CompatibleModelsList.Clear();
-            SelectedCompatibilityManufacturer = null;
-            SelectedCompatibilityModel = null;
+            NewCompatibilityManufacturer = string.Empty;
+            NewCompatibilityModel = string.Empty;
+            NewCompatibilityYearRange = string.Empty;
+            NewCompatibilityBrand = string.Empty;
+            NewCompatibilityCountryOfOrigin = string.Empty;
             StatusMessage = string.Empty;
         }
 
@@ -702,6 +785,24 @@ namespace inventory_management.ViewModels
 
                 StatusMessage = "Saving...";
 
+                string barcodeToUse = CustomBarcode?.Trim() ?? string.Empty;
+                bool isCustom = !string.IsNullOrWhiteSpace(barcodeToUse);
+
+                if (isCustom)
+                {
+                    var exists = await _context.Items.AnyAsync(i => i.Barcode == barcodeToUse);
+                    if (exists)
+                    {
+                        MessageBox.Show(Application.Current.MainWindow, "This custom barcode is currently in use by another active item.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        StatusMessage = "Failed: Barcode in use.";
+                        return;
+                    }
+                }
+                else
+                {
+                    barcodeToUse = "TEMP-" + Guid.NewGuid().ToString().Substring(0, 8);
+                }
+
                 // Create Item
                 var newItem = new Item
                 {
@@ -712,7 +813,7 @@ namespace inventory_management.ViewModels
                     Description = Description,
                     LowStockThreshold = LowStockThreshold,
                     RackId = SelectedRack?.Id,
-                    Barcode = "TEMP-" + Guid.NewGuid().ToString().Substring(0,8),
+                    Barcode = barcodeToUse,
                     ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath.Trim(),
                     SecretPriceCode = SecretPriceCode?.Trim() ?? string.Empty,
                     RegisteredDate = DateTime.UtcNow
@@ -721,17 +822,16 @@ namespace inventory_management.ViewModels
                 _context.Items.Add(newItem);
                 await _context.SaveChangesAsync();
 
-                // Generate real barcode
-                newItem.Barcode = _barcodeService.GenerateBarcodeString(newItem.Id);
+                if (!isCustom)
+                {
+                    newItem.Barcode = _barcodeService.GenerateBarcodeString(newItem.Id);
+                }
 
                 // Add compatibility models
                 foreach (var compModel in CompatibleModelsList)
                 {
-                    _context.ItemCompatibleModels.Add(new ItemCompatibleModel
-                    {
-                        ItemId = newItem.Id,
-                        VehicleModelId = compModel.Id
-                    });
+                    compModel.ItemId = newItem.Id;
+                    _context.ItemCompatibleModels.Add(compModel);
                 }
                 
                 var initialStock = new Stock
@@ -952,6 +1052,7 @@ namespace inventory_management.ViewModels
                         await _context.SaveChangesAsync();
 
                         Manufacturers.Insert(Manufacturers.Count - 1, newItem);
+                        CompatibilityManufacturers.Add(newItem.Name);
                         SelectedManufacturer = newItem;
                         
                         MessageBox.Show(Application.Current.MainWindow, "Manufacturer added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -993,6 +1094,7 @@ namespace inventory_management.ViewModels
                         await _context.SaveChangesAsync();
 
                         Brands.Insert(Brands.Count - 1, newItem);
+                        CompatibilityBrands.Add(newItem.Name);
                         SelectedBrand = newItem;
                         
                         MessageBox.Show(Application.Current.MainWindow, "Brand added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -1083,6 +1185,7 @@ namespace inventory_management.ViewModels
 
                         Models.Insert(Models.Count - 1, newItem);
                         SelectedModel = newItem;
+                        UpdateCompatibilityModels();
                         
                         MessageBox.Show(Application.Current.MainWindow, "Vehicle Model added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }

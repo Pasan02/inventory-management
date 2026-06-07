@@ -106,7 +106,10 @@
                     <ItemsControl ItemsSource="{Binding CurrentItem.CompatibleModels}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding VehicleModel.Name, StringFormat='• {0}'}" Margin="10,0,0,3" FontSize="12" TextWrapping="Wrap"/>
+                                <TextBlock Margin="10,0,0,3" FontSize="12" TextWrapping="Wrap">
+                                    <Run Text="• "/>
+                                    <Run Text="{Binding}"/>
+                                </TextBlock>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

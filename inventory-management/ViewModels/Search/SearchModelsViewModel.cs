@@ -102,11 +102,12 @@ namespace inventory_management.ViewModels.Search
                 .Include(i => i.Stock)
                 .Include(i => i.VehicleModel)
                 .Include(i => i.CompatibleModels)
-                    .ThenInclude(cm => cm.VehicleModel)
                 .AsNoTracking()
                 .Where(i => i.PartTypeId == Part.PartTypeId && 
                             (i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId || 
-                             i.CompatibleModels.Any(cm => cm.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)))
+                             i.CompatibleModels.Any(cm => 
+                                 cm.Manufacturer != null && 
+                                 cm.Manufacturer.ToLower() == Manufacturer.Name.ToLower())))
                 .ToListAsync();
 
             var groupedItems = new Dictionary<int, List<Data.Entities.Item>>();
@@ -123,15 +124,21 @@ namespace inventory_management.ViewModels.Search
 
                 foreach (var cm in item.CompatibleModels)
                 {
-                    if (cm.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)
+                    if (cm.Manufacturer != null && cm.Manufacturer.Equals(Manufacturer.Name, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (!groupedItems.ContainsKey(cm.VehicleModelId))
+                        var matchingModel = models.FirstOrDefault(m => 
+                            cm.Model != null && m.Name.Equals(cm.Model, StringComparison.OrdinalIgnoreCase));
+                        
+                        if (matchingModel != null)
                         {
-                            groupedItems[cm.VehicleModelId] = new List<Data.Entities.Item>();
-                        }
-                        if (!groupedItems[cm.VehicleModelId].Any(x => x.Id == item.Id))
-                        {
-                            groupedItems[cm.VehicleModelId].Add(item);
+                            if (!groupedItems.ContainsKey(matchingModel.Id))
+                            {
+                                groupedItems[matchingModel.Id] = new List<Data.Entities.Item>();
+                            }
+                            if (!groupedItems[matchingModel.Id].Any(x => x.Id == item.Id))
+                            {
+                                groupedItems[matchingModel.Id].Add(item);
+                            }
                         }
                     }
                 }
