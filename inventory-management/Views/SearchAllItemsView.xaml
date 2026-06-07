@@ -155,7 +155,7 @@
                                             <Run Text="{Binding Origin}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
                                         </TextBlock>
                                         <TextBlock Margin="0,0,0,6" TextWrapping="Wrap">
-                                            <Run Text="Price Code: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <Run Text="Pcode: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
                                             <Run Text="{Binding SecretPriceCode}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
                                         </TextBlock>
                                         <TextBlock Margin="0,0,0,6" TextWrapping="Wrap">

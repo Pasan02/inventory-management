@@ -79,7 +79,7 @@
                     <TextBlock Text="{Binding CurrentItem.VehicleModel.Name, StringFormat='Model: {0}'}" Margin="0,0,0,5" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentItem.Rack.LocationCode, StringFormat='Rack: {0}'}" Margin="0,0,0,5" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentItem.RegisteredDate, StringFormat='Registered: {0:yyyy-MM-dd HH:mm}'}" Margin="0,0,0,5" FontSize="14"/>
-                    <TextBlock Text="{Binding CurrentItem.SecretPriceCode, StringFormat='Secret Price: {0}'}" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CurrentItem.SecretPriceCode, StringFormat='Pcode: {0}'}" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
                     <TextBlock Text="{Binding CurrentQuantity, StringFormat='Current Stock: {0}'}" Margin="0,10,0,5" FontSize="16" FontWeight="Bold"/>
                     
                     <TextBlock Text="Compatible Models:" FontWeight="Bold" Margin="0,10,0,5" FontSize="14"/>

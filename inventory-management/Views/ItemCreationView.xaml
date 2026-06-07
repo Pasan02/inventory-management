@@ -210,7 +210,7 @@
                     <TextBlock Text="Country of Origin" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding CountryOfOrigin}"/>
 
-                    <TextBlock Text="Secret Price Code" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBlock Text="Pcode" Style="{StaticResource FieldLabelStyle}"/>
                     <TextBox Text="{Binding SecretPriceCode}"/>
 
                     <TextBlock Text="Description / Notes" Style="{StaticResource FieldLabelStyle}"/>
