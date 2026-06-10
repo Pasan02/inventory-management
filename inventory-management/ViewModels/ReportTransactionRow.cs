@@ -13,5 +13,7 @@ namespace inventory_management.ViewModels
         public string Model { get; set; } = string.Empty;
         public int QuantityChange { get; set; }
         public string MachineName { get; set; } = string.Empty;
+        public string SecretPriceCode { get; set; } = string.Empty;
+        public DateTime RegisteredDate { get; set; }
     }
 }
