@@ -82,14 +82,13 @@
                     <TextBlock Text="{Binding CurrentItem.VehicleModel.Manufacturer.Name, StringFormat='Make: {0}'}" Margin="0,0,0,5" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentItem.VehicleModel.Name, StringFormat='Model: {0}'}" Margin="0,0,0,5" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentItem.Rack.LocationCode, StringFormat='Rack: {0}'}" Margin="0,0,0,5" FontSize="14"/>
-                    <TextBlock Text="{Binding CurrentItem.RegisteredDate, StringFormat='Registered: {0:yyyy-MM-dd HH:mm}'}" Margin="0,0,0,5" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentItem.RegisteredDate, StringFormat='Registered Date: {0:yyyy-MM-dd}'}" Margin="0,0,0,5" FontSize="14"/>
                     <TextBlock Text="{Binding CurrentItem.SecretPriceCode, StringFormat='Pcode: {0}'}" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
                     <TextBlock Text="{Binding CurrentQuantity, StringFormat='Current Stock: {0}'}" Margin="0,10,0,5" FontSize="16" FontWeight="Bold"/>
                     
                     <!-- Barcode Display & Print Button -->
                     <Border BorderBrush="#EAEAEA" BorderThickness="0,1,0,1" Padding="0,10" Margin="0,10">
                         <StackPanel>
-                            <TextBlock Text="Barcode Label" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" FontSize="14"/>
                             <Image Source="{Binding BarcodeImage}" Height="60" Stretch="Uniform" Margin="0,0,0,5" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                             <TextBlock Text="{Binding CurrentItem.Barcode}" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
                             <Button Content="Print Barcode Label" 

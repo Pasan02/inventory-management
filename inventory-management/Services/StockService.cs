@@ -148,10 +148,12 @@ namespace inventory_management.Services
             }
 
             var currentPrice = item.SecretPriceCode ?? string.Empty;
+            var currentMonth = DateTime.UtcNow.ToString("yyyyMM");
+            var itemMonth = item.RegisteredDate.ToString("yyyyMM");
 
-            if (normalizedPrice != currentPrice)
+            if (normalizedPrice != currentPrice || currentMonth != itemMonth)
             {
-                // Price code is different, create a duplicate item
+                // Price code is different OR registration month is different, create a duplicate item
                 await using var dbTransaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
