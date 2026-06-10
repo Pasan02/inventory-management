@@ -68,9 +68,7 @@ namespace inventory_management.ViewModels
                         i.PartBrandId,
                         i.VehicleModelId,
                         CountryOfOrigin = i.CountryOfOrigin ?? string.Empty,
-                        RackId = i.RackId ?? 0,
-                        SecretPriceCode = i.SecretPriceCode ?? string.Empty,
-                        RegisteredDate = i.RegisteredDate.Date
+                        RackId = i.RackId ?? 0
                     })
                     .Select(g =>
                     {
@@ -97,8 +95,6 @@ namespace inventory_management.ViewModels
                             Rack = first.Rack?.LocationCode ?? string.Empty,
                             Quantity = totalQuantity,
                             LowStockThreshold = first.LowStockThreshold,
-                            SecretPriceCode = g.Key.SecretPriceCode,
-                            RegisteredDate = g.Key.RegisteredDate,
                             CompatibleModelsText = string.IsNullOrEmpty(compatText) ? "None" : compatText
                         };
                     })
@@ -138,9 +134,7 @@ namespace inventory_management.ViewModels
                         Model = transaction.Item.VehicleModel?.Name ?? string.Empty,
                         ActionType = transaction.ActionType,
                         QuantityChange = transaction.QuantityChange,
-                        MachineName = transaction.MachineName,
-                        SecretPriceCode = transaction.Item.SecretPriceCode ?? string.Empty,
-                        RegisteredDate = transaction.Item.RegisteredDate
+                        MachineName = transaction.MachineName
                     });
                 }
 

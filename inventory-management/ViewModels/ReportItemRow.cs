@@ -12,8 +12,6 @@ namespace inventory_management.ViewModels
         public string Rack { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public int LowStockThreshold { get; set; }
-        public string SecretPriceCode { get; set; } = string.Empty;
-        public System.DateTime RegisteredDate { get; set; }
         public string CompatibleModelsText { get; set; } = string.Empty;
     }
 }
