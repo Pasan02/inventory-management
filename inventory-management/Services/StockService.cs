@@ -151,6 +151,39 @@ namespace inventory_management.Services
             var currentMonth = DateTime.UtcNow.ToString("yyyyMM");
             var itemMonth = item.RegisteredDate.ToString("yyyyMM");
 
+            // Look for an existing item with the same definition and the target price code
+            var existingItem = await _context.Items
+                .Include(i => i.Stock)
+                .FirstOrDefaultAsync(i => 
+                    i.PartTypeId == item.PartTypeId &&
+                    i.VehicleModelId == item.VehicleModelId &&
+                    i.PartBrandId == item.PartBrandId &&
+                    i.CountryOfOrigin == item.CountryOfOrigin &&
+                    i.SecretPriceCode == normalizedPrice);
+
+            if (existingItem != null)
+            {
+                if (existingItem.Id == item.Id)
+                {
+                    // Regular stock update on the current item
+                    return await ChangeStockAsync(barcode, quantity, "IN");
+                }
+
+                // Update the stock of the existing item
+                var result = await ChangeStockAsync(existingItem.Barcode, quantity, "IN");
+                if (result.Success)
+                {
+                    return new StockOperationResult
+                    {
+                        Success = true,
+                        Message = result.Message,
+                        NewQuantity = result.NewQuantity,
+                        NewBarcode = existingItem.Barcode
+                    };
+                }
+                return result;
+            }
+
             if (normalizedPrice != currentPrice || currentMonth != itemMonth)
             {
                 // Price code is different OR registration month is different, create a duplicate item
