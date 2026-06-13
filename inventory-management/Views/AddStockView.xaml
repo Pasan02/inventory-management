@@ -107,7 +107,7 @@
                             <DataTemplate>
                                 <TextBlock Margin="10,0,0,3" FontSize="12" TextWrapping="Wrap">
                                     <Run Text="• "/>
-                                    <Run Text="{Binding}"/>
+                                    <Run Text="{Binding Mode=OneWay}"/>
                                 </TextBlock>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
