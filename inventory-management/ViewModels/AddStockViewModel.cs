@@ -116,6 +116,20 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _secretPriceCode, value);
         }
 
+        private List<int> _pendingOrderIds = new();
+        public List<int> PendingOrderIds
+        {
+            get => _pendingOrderIds;
+            set => SetProperty(ref _pendingOrderIds, value);
+        }
+
+        public void Prepopulate(string barcode, int quantity, List<int> orderIds)
+        {
+            BarcodeInput = barcode;
+            Quantity = quantity;
+            PendingOrderIds = orderIds ?? new List<int>();
+        }
+
         private string _statusMessage = "Ready";
         public string StatusMessage
         {
@@ -328,6 +342,15 @@ namespace inventory_management.ViewModels
                         }
                     }
                     Quantity = 1;
+                    
+                    if (PendingOrderIds != null && PendingOrderIds.Any())
+                    {
+                        foreach (var id in PendingOrderIds)
+                        {
+                            await _stockService.MarkOrderAsArrivedAsync(id);
+                        }
+                        PendingOrderIds.Clear();
+                    }
                     
                     if (string.IsNullOrEmpty(result.NewBarcode))
                     {

@@ -15,7 +15,7 @@ namespace inventory_management.Data
                 .Build();
 
             var connectionString = configuration.GetConnectionString("InventoryDb")
-                ?? "Host=localhost;Database=inventory_ac_db;Username=postgres;Password=password";
+                ?? "Host=localhost;Database=inventory_ac_db;Username=postgres;Password=root";
 
             var optionsBuilder = new DbContextOptionsBuilder<InventoryDbContext>();
             optionsBuilder.UseNpgsql(connectionString);

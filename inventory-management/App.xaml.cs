@@ -24,7 +24,7 @@ namespace inventory_management
                 .ConfigureServices((hostContext, services) =>
                 {
                     var connectionString = hostContext.Configuration.GetConnectionString("InventoryDb")
-                        ?? "Host=localhost;Database=inventory_ac_db;Username=postgres;Password=pasan";
+                        ?? "Host=localhost;Database=inventory_ac_db;Username=postgres;Password=root";
 
                     services.AddDbContext<InventoryDbContext>(options =>
                         options.UseNpgsql(connectionString), ServiceLifetime.Transient);

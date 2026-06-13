@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using inventory_management.Views;
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -97,6 +98,22 @@ namespace inventory_management.ViewModels
             }
 
             NavigateTo<AddStockViewModel>("Add Stock");
+        }
+
+        public void NavigateToAddStockWithPrepopulation(string barcode, int quantity, List<int> orderIds)
+        {
+            if (!IsAuthenticated)
+            {
+                GoHome();
+                return;
+            }
+
+            _currentScope?.Dispose();
+            _currentScope = _serviceProvider.CreateScope();
+            var addStockVm = _currentScope.ServiceProvider.GetRequiredService<AddStockViewModel>();
+            addStockVm.Prepopulate(barcode, quantity, orderIds);
+            CurrentViewModel = addStockVm;
+            Title = "Add Stock";
         }
 
         [RelayCommand]

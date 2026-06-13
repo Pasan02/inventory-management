@@ -20,6 +20,7 @@ namespace inventory_management.Data
         public DbSet<UserAccount> UserAccounts { get; set; }
         public DbSet<UserLoginAudit> UserLoginAudits { get; set; }
         public DbSet<ItemCompatibleModel> ItemCompatibleModels { get; set; }
+        public DbSet<OrderTracking> OrderTrackings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -62,6 +63,12 @@ namespace inventory_management.Data
                 .WithMany()
                 .HasForeignKey(a => a.UserAccountId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<OrderTracking>()
+                .HasOne(ot => ot.Item)
+                .WithMany()
+                .HasForeignKey(ot => ot.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

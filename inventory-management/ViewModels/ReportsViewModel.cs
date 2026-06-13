@@ -2,8 +2,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using inventory_management.Data;
 using inventory_management.Services;
+using inventory_management.Views;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,12 +20,46 @@ namespace inventory_management.ViewModels
         public ObservableCollection<ReportItemRow> StockSnapshot { get; } = new();
         public ObservableCollection<ReportItemRow> LowStockItems { get; } = new();
         public ObservableCollection<ReportTransactionRow> RecentTransactions { get; } = new();
+        public ObservableCollection<ReportOrderRow> RecentRemovedItems { get; } = new();
+        public ObservableCollection<ReportOrderRow> OrderedItems { get; } = new();
 
         private string _statusMessage = "Ready";
         public string StatusMessage
         {
             get => _statusMessage;
             set => SetProperty(ref _statusMessage, value);
+        }
+
+        private bool _selectAllRecentRemoved;
+        public bool SelectAllRecentRemoved
+        {
+            get => _selectAllRecentRemoved;
+            set
+            {
+                if (SetProperty(ref _selectAllRecentRemoved, value))
+                {
+                    foreach (var item in RecentRemovedItems)
+                    {
+                        item.IsSelected = value;
+                    }
+                }
+            }
+        }
+
+        private bool _selectAllOrdered;
+        public bool SelectAllOrdered
+        {
+            get => _selectAllOrdered;
+            set
+            {
+                if (SetProperty(ref _selectAllOrdered, value))
+                {
+                    foreach (var item in OrderedItems)
+                    {
+                        item.IsSelected = value;
+                    }
+                }
+            }
         }
 
         public ReportsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService)
@@ -49,6 +85,8 @@ namespace inventory_management.ViewModels
                 StockSnapshot.Clear();
                 LowStockItems.Clear();
                 RecentTransactions.Clear();
+                RecentRemovedItems.Clear();
+                OrderedItems.Clear();
 
                 var items = await _context.Items
                     .Include(i => i.Stock)
@@ -138,11 +176,234 @@ namespace inventory_management.ViewModels
                     });
                 }
 
+                // Load Order Tracking items
+                var orderTrackings = await _context.OrderTrackings
+                    .Include(o => o.Item)
+                        .ThenInclude(i => i.PartType)
+                    .Include(o => o.Item)
+                        .ThenInclude(i => i.PartBrand)
+                    .Include(o => o.Item)
+                        .ThenInclude(i => i.VehicleModel)
+                            .ThenInclude(m => m.Manufacturer)
+                    .Include(o => o.Item)
+                        .ThenInclude(i => i.Rack)
+                    .OrderByDescending(o => o.CreatedAt)
+                    .ToListAsync();
+
+                var pendingGrouped = orderTrackings
+                    .Where(o => o.Status == "Pending")
+                    .GroupBy(o => new
+                    {
+                        o.Item.PartTypeId,
+                        o.Item.PartBrandId,
+                        o.Item.VehicleModelId,
+                        CountryOfOrigin = o.Item.CountryOfOrigin ?? string.Empty,
+                        RackId = o.Item.RackId ?? 0
+                    })
+                    .Select(g =>
+                    {
+                        var first = g.First();
+                        var barcodes = string.Join(", ", g.Select(o => o.Item.Barcode).Distinct().OrderBy(b => b));
+                        var totalQuantity = g.Sum(o => o.Quantity);
+                        var orderIds = g.Select(o => o.Id).ToList();
+
+                        return new ReportOrderRow
+                        {
+                            Id = first.Id, // Representative ID
+                            OrderIds = orderIds,
+                            ItemId = first.ItemId,
+                            Barcode = barcodes,
+                            Description = first.Item.Description,
+                            PartType = first.Item.PartType.Name,
+                            Brand = first.Item.PartBrand.Name,
+                            Manufacturer = first.Item.VehicleModel.Manufacturer.Name,
+                            Model = first.Item.VehicleModel.Name,
+                            CountryOfOrigin = first.Item.CountryOfOrigin,
+                            Rack = first.Item.Rack?.LocationCode ?? string.Empty,
+                            Quantity = totalQuantity,
+                            Status = "Pending",
+                            CreatedAt = g.Max(o => o.CreatedAt)
+                        };
+                    })
+                    .OrderByDescending(r => r.CreatedAt)
+                    .ToList();
+
+                foreach (var row in pendingGrouped)
+                {
+                    RecentRemovedItems.Add(row);
+                }
+
+                var orderedGrouped = orderTrackings
+                    .Where(o => o.Status == "Ordered")
+                    .GroupBy(o => new
+                    {
+                        o.Item.PartTypeId,
+                        o.Item.PartBrandId,
+                        o.Item.VehicleModelId,
+                        CountryOfOrigin = o.Item.CountryOfOrigin ?? string.Empty,
+                        RackId = o.Item.RackId ?? 0
+                    })
+                    .Select(g =>
+                    {
+                        var first = g.First();
+                        var barcodes = string.Join(", ", g.Select(o => o.Item.Barcode).Distinct().OrderBy(b => b));
+                        var totalQuantity = g.Sum(o => o.Quantity);
+                        var orderIds = g.Select(o => o.Id).ToList();
+
+                        return new ReportOrderRow
+                        {
+                            Id = first.Id,
+                            OrderIds = orderIds,
+                            ItemId = first.ItemId,
+                            Barcode = barcodes,
+                            Description = first.Item.Description,
+                            PartType = first.Item.PartType.Name,
+                            Brand = first.Item.PartBrand.Name,
+                            Manufacturer = first.Item.VehicleModel.Manufacturer.Name,
+                            Model = first.Item.VehicleModel.Name,
+                            CountryOfOrigin = first.Item.CountryOfOrigin,
+                            Rack = first.Item.Rack?.LocationCode ?? string.Empty,
+                            Quantity = totalQuantity,
+                            Status = "Ordered",
+                            CreatedAt = g.Max(o => o.CreatedAt),
+                            OrderedAt = g.Max(o => o.OrderedAt)
+                        };
+                    })
+                    .OrderByDescending(r => r.OrderedAt)
+                    .ToList();
+
+                foreach (var row in orderedGrouped)
+                {
+                    OrderedItems.Add(row);
+                }
+
+                // Reset the select all flags
+                _selectAllRecentRemoved = false;
+                OnPropertyChanged(nameof(SelectAllRecentRemoved));
+                _selectAllOrdered = false;
+                OnPropertyChanged(nameof(SelectAllOrdered));
+
                 StatusMessage = $"Reports loaded: {StockSnapshot.Count} items.";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Error loading reports: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private async Task PlaceOrder(ReportOrderRow row)
+        {
+            if (row == null) return;
+
+            try
+            {
+                StatusMessage = "Placing order...";
+                var dbOrders = await _context.OrderTrackings
+                    .Where(o => row.OrderIds.Contains(o.Id))
+                    .ToListAsync();
+
+                foreach (var order in dbOrders)
+                {
+                    order.Status = "Ordered";
+                    order.OrderedAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+                await LoadReports();
+                StatusMessage = "Order placed successfully.";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, $"Failed to place order: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private async Task PlaceSelectedOrders()
+        {
+            var selectedRows = RecentRemovedItems.Where(r => r.IsSelected).ToList();
+            if (!selectedRows.Any())
+            {
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Please select at least one item to order.", "No Items Selected", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                StatusMessage = "Placing orders...";
+                var allOrderIds = selectedRows.SelectMany(r => r.OrderIds).ToList();
+                var dbOrders = await _context.OrderTrackings
+                    .Where(o => allOrderIds.Contains(o.Id))
+                    .ToListAsync();
+
+                foreach (var order in dbOrders)
+                {
+                    order.Status = "Ordered";
+                    order.OrderedAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+                await LoadReports();
+                StatusMessage = "Selected orders placed successfully.";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, $"Failed to place selected orders: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private async Task ArriveSelectedOrders()
+        {
+            var selectedRows = OrderedItems.Where(r => r.IsSelected).ToList();
+            if (!selectedRows.Any())
+            {
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Please select at least one item to mark as arrived.", "No Items Selected", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                StatusMessage = "Marking items as arrived...";
+                var allOrderIds = selectedRows.SelectMany(r => r.OrderIds).ToList();
+                var dbOrders = await _context.OrderTrackings
+                    .Where(o => allOrderIds.Contains(o.Id))
+                    .ToListAsync();
+
+                foreach (var order in dbOrders)
+                {
+                    order.Status = "Arrived";
+                    order.ArrivedAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+                await LoadReports();
+                StatusMessage = "Selected items marked as arrived.";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, $"Failed to mark selected items as arrived: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private void ArriveOrder(ReportOrderRow row)
+        {
+            if (row == null) return;
+
+            var mainVm = System.Windows.Application.Current.MainWindow.DataContext as MainViewModel;
+            if (mainVm != null)
+            {
+                var firstBarcode = row.Barcode.Split(',')[0].Trim();
+                mainVm.NavigateToAddStockWithPrepopulation(firstBarcode, row.Quantity, row.OrderIds);
+            }
+            else
+            {
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Navigation failed. Main view context not found.", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
     }

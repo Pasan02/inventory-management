@@ -51,11 +51,16 @@
                     </TextBox.InputBindings>
                 </TextBox>
                 <TextBlock Text="Quantity to Remove" FontSize="24"/>
-                <TextBox x:Name="QuantityTextBox" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center">
+                <TextBox x:Name="QuantityTextBox" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20" Height="70" FontSize="26" VerticalContentAlignment="Center">
                     <TextBox.InputBindings>
                         <KeyBinding Key="Enter" Command="{Binding RemoveStockCommand}"/>
                     </TextBox.InputBindings>
                 </TextBox>
+                <CheckBox Content="Is Replacement / Stock Correction (Exclude from Order Queue)" 
+                          IsChecked="{Binding IsReplacement}" 
+                          FontSize="20" 
+                          Margin="0,0,0,30" 
+                          VerticalAlignment="Center"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

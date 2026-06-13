@@ -84,6 +84,13 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _currentItem, value);
         }
 
+        private bool _isReplacement;
+        public bool IsReplacement
+        {
+            get => _isReplacement;
+            set => SetProperty(ref _isReplacement, value);
+        }
+
         private int _currentQuantity;
         public int CurrentQuantity
         {
@@ -158,6 +165,7 @@ namespace inventory_management.ViewModels
             OnPropertyChanged(nameof(BarcodeInput));
             SearchText = string.Empty;
             Quantity = 1;
+            IsReplacement = false;
             StatusMessage = "Ready";
             SelectedItem = null;
             CurrentItem = null;
@@ -262,13 +270,13 @@ namespace inventory_management.ViewModels
                 }
 
                 CurrentItem = item;
-                var result = await _stockService.RemoveStockAsync(item.Barcode, Quantity);
+                var result = await _stockService.RemoveStockAsync(item.Barcode, Quantity, IsReplacement);
 
                 if (result.Success)
                 {
                     if (result.NewQuantity == 0)
                     {
-                        ModernMessageDialog.ShowSuccess("Stock has been completely removed. This batch entity has been deleted from the database.", "Batch Cleared");
+                        ModernMessageDialog.ShowSuccess("Stock has been completely removed. The item is now out of stock.", "Stock Cleared");
                         ClearInputs();
                     }
                     else

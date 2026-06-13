@@ -274,17 +274,17 @@ namespace inventory_management.Services
             }
         }
 
-        public async Task<StockOperationResult> RemoveStockAsync(string barcode, int quantity)
+        public async Task<StockOperationResult> RemoveStockAsync(string barcode, int quantity, bool isReplacement = false)
         {
             if (quantity <= 0)
             {
                 return new StockOperationResult { Success = false, Message = "Quantity must be greater than zero." };
             }
 
-            return await ChangeStockAsync(barcode, -quantity, "OUT");
+            return await ChangeStockAsync(barcode, -quantity, isReplacement ? "REPLACEMENT" : "OUT", isReplacement);
         }
 
-        private async Task<StockOperationResult> ChangeStockAsync(string barcode, int quantityChange, string actionType)
+        private async Task<StockOperationResult> ChangeStockAsync(string barcode, int quantityChange, string actionType, bool isReplacement = false)
         {
             var availability = await _availabilityService.GetStatusAsync();
             if (!availability.IsAvailable)
@@ -342,6 +342,28 @@ namespace inventory_management.Services
                 _context.Transactions.Add(transaction);
                 await WriteMirrorLogAsync(transaction, item.Barcode, newQuantity);
 
+                // Add to order tracking queue if it is a standard removal (OUT)
+                if (actionType == "OUT" && !isReplacement)
+                {
+                    var pendingOrder = await _context.OrderTrackings
+                        .FirstOrDefaultAsync(o => o.ItemId == item.Id && o.Status == "Pending");
+                    
+                    if (pendingOrder != null)
+                    {
+                        pendingOrder.Quantity += Math.Abs(quantityChange);
+                    }
+                    else
+                    {
+                        _context.OrderTrackings.Add(new OrderTracking
+                        {
+                            ItemId = item.Id,
+                            Quantity = Math.Abs(quantityChange),
+                            Status = "Pending",
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
                 await dbTransaction.CommitAsync();
@@ -350,7 +372,7 @@ namespace inventory_management.Services
                 {
                     Success = true,
                     Message = newQuantity == 0 
-                        ? "Stock reached 0. Item and all related records have been deleted from the database." 
+                        ? "Stock reached 0. Item preserved in database for ordering/restocking." 
                         : "Stock updated successfully.",
                     NewQuantity = newQuantity
                 };
@@ -393,6 +415,7 @@ namespace inventory_management.Services
             var oldItems = await _context.Items
                 .Include(i => i.Stock)
                 .Where(i => i.Stock != null && i.Stock.Quantity <= 0 && i.Stock.LastUpdated < thresholdDate)
+                .Where(i => !_context.OrderTrackings.Any(o => o.ItemId == i.Id && o.Status != "Arrived"))
                 .ToListAsync();
 
             if (!oldItems.Any()) return;
@@ -410,6 +433,20 @@ namespace inventory_management.Services
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task MarkOrderAsArrivedAsync(int orderId)
+        {
+            var availability = await _availabilityService.GetStatusAsync();
+            if (!availability.IsAvailable) return;
+
+            var order = await _context.OrderTrackings.FindAsync(orderId);
+            if (order != null)
+            {
+                order.Status = "Arrived";
+                order.ArrivedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }
