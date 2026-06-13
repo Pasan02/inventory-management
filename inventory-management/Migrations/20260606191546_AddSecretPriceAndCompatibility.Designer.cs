@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using inventory_management.Data;
@@ -11,9 +12,11 @@ using inventory_management.Data;
 namespace inventory_management.Migrations
 {
     [DbContext(typeof(InventoryDbContext))]
-    partial class InventoryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260606191546_AddSecretPriceAndCompatibility")]
+    partial class AddSecretPriceAndCompatibility
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -93,53 +96,24 @@ namespace inventory_management.Migrations
                     b.HasIndex("VehicleModelId");
 
                     b.HasIndex("PartTypeId", "VehicleModelId", "PartBrandId", "CountryOfOrigin", "SecretPriceCode")
-                        .IsUnique()
-                        .HasDatabaseName("IX_items_definition_unique");
+                        .IsUnique();
 
                     b.ToTable("items");
                 });
 
             modelBuilder.Entity("inventory_management.Data.Entities.ItemCompatibleModel", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Brand")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("brand");
-
-                    b.Property<string>("CountryOfOrigin")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("country_of_origin");
-
                     b.Property<int>("ItemId")
                         .HasColumnType("integer")
                         .HasColumnName("item_id");
 
-                    b.Property<string>("Manufacturer")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("manufacturer");
+                    b.Property<int>("VehicleModelId")
+                        .HasColumnType("integer")
+                        .HasColumnName("vehicle_model_id");
 
-                    b.Property<string>("Model")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("model");
+                    b.HasKey("ItemId", "VehicleModelId");
 
-                    b.Property<string>("YearRange")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("year_range");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemId");
+                    b.HasIndex("VehicleModelId");
 
                     b.ToTable("item_compatible_models");
                 });
@@ -470,7 +444,15 @@ namespace inventory_management.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("inventory_management.Data.Entities.VehicleModel", "VehicleModel")
+                        .WithMany()
+                        .HasForeignKey("VehicleModelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Item");
+
+                    b.Navigation("VehicleModel");
                 });
 
             modelBuilder.Entity("inventory_management.Data.Entities.Stock", b =>

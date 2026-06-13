@@ -56,26 +56,53 @@ namespace inventory_management.ViewModels
                     .Include(i => i.PartType)
                     .Include(i => i.PartBrand)
                     .Include(i => i.VehicleModel)
-                    .ThenInclude(m => m.Manufacturer)
+                        .ThenInclude(m => m.Manufacturer)
+                    .Include(i => i.CompatibleModels)
                     .AsNoTracking()
                     .ToListAsync();
 
-                foreach (var item in items.OrderBy(i => i.Barcode))
-                {
-                    var row = new ReportItemRow
+                var grouped = items
+                    .GroupBy(i => new
                     {
-                        Barcode = item.Barcode,
-                        Description = item.Description,
-                        PartType = item.PartType.Name,
-                        Brand = item.PartBrand.Name,
-                        Manufacturer = item.VehicleModel.Manufacturer.Name,
-                        Model = item.VehicleModel.Name,
-                        CountryOfOrigin = item.CountryOfOrigin,
-                        Rack = item.Rack?.LocationCode ?? string.Empty,
-                        Quantity = item.Stock?.Quantity ?? 0,
-                        LowStockThreshold = item.LowStockThreshold
-                    };
+                        i.PartTypeId,
+                        i.PartBrandId,
+                        i.VehicleModelId,
+                        CountryOfOrigin = i.CountryOfOrigin ?? string.Empty,
+                        RackId = i.RackId ?? 0
+                    })
+                    .Select(g =>
+                    {
+                        var first = g.First();
+                        var barcodes = string.Join(", ", g.Select(i => i.Barcode).Distinct().OrderBy(b => b));
+                        var totalQuantity = g.Sum(i => i.Stock?.Quantity ?? 0);
+                        
+                        var compatTextList = g.SelectMany(i => i.CompatibleModels)
+                            .Select(cm => cm.ToString())
+                            .Distinct()
+                            .OrderBy(n => n)
+                            .ToList();
+                        var compatText = string.Join(", ", compatTextList);
 
+                        return new ReportItemRow
+                        {
+                            Barcode = barcodes,
+                            Description = first.Description,
+                            PartType = first.PartType.Name,
+                            Brand = first.PartBrand.Name,
+                            Manufacturer = first.VehicleModel.Manufacturer.Name,
+                            Model = first.VehicleModel.Name,
+                            CountryOfOrigin = first.CountryOfOrigin,
+                            Rack = first.Rack?.LocationCode ?? string.Empty,
+                            Quantity = totalQuantity,
+                            LowStockThreshold = first.LowStockThreshold,
+                            CompatibleModelsText = string.IsNullOrEmpty(compatText) ? "None" : compatText
+                        };
+                    })
+                    .OrderBy(r => r.Barcode)
+                    .ToList();
+
+                foreach (var row in grouped)
+                {
                     StockSnapshot.Add(row);
 
                     if (row.Quantity <= row.LowStockThreshold)

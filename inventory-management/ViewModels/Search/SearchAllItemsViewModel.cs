@@ -114,6 +114,7 @@ namespace inventory_management.ViewModels.Search
                     .Include(i => i.PartBrand)
                     .Include(i => i.VehicleModel)
                         .ThenInclude(vm => vm.Manufacturer)
+                    .Include(i => i.CompatibleModels)
                     .Include(i => i.Rack)
                     .Include(i => i.Stock)
                     .AsNoTracking()
@@ -128,6 +129,13 @@ namespace inventory_management.ViewModels.Search
                         i.VehicleModel.Name.ToLower().Contains(term) ||
                         i.PartBrand.Name.ToLower().Contains(term) ||
                         i.VehicleModel.Manufacturer.Name.ToLower().Contains(term) ||
+                        i.CompatibleModels.Any(cm => 
+                            (cm.Model != null && cm.Model.ToLower().Contains(term)) ||
+                            (cm.Manufacturer != null && cm.Manufacturer.ToLower().Contains(term)) ||
+                            (cm.Brand != null && cm.Brand.ToLower().Contains(term)) ||
+                            (cm.CountryOfOrigin != null && cm.CountryOfOrigin.ToLower().Contains(term)) ||
+                            (cm.YearRange != null && cm.YearRange.ToLower().Contains(term))
+                        ) ||
                         i.Description.ToLower().Contains(term) ||
                         i.Barcode.ToLower().Contains(term));
                 }
@@ -220,6 +228,9 @@ namespace inventory_management.ViewModels.Search
 
         private ItemSearchRow MapToSearchRow(Data.Entities.Item item)
         {
+            var compatText = string.Join(", ", item.CompatibleModels
+                .Select(cm => cm.ToString()));
+
             return new ItemSearchRow
             {
                 Barcode = item.Barcode,
@@ -231,7 +242,10 @@ namespace inventory_management.ViewModels.Search
                 Rack = item.Rack?.LocationCode ?? "N/A",
                 Quantity = item.Stock?.Quantity ?? 0,
                 Origin = item.CountryOfOrigin,
-                ImagePath = item.ImagePath
+                ImagePath = item.ImagePath,
+                SecretPriceCode = item.SecretPriceCode,
+                RegisteredDate = item.RegisteredDate,
+                CompatibleModelsText = string.IsNullOrEmpty(compatText) ? "None" : compatText
             };
         }
 

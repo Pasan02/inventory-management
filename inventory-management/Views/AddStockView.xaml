@@ -49,7 +49,17 @@
                     </TextBox.InputBindings>
                 </TextBox>
                 <TextBlock Text="Quantity to Add" FontSize="24"/>
-                <TextBox x:Name="QuantityTextBox" Text="{Binding Quantity}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center"/>
+                <TextBox x:Name="QuantityTextBox" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,20" Height="70" FontSize="26" VerticalContentAlignment="Center">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding AddStockCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+                <TextBlock Text="Pcode" FontSize="24"/>
+                <TextBox x:Name="SecretPriceCodeTextBox" Text="{Binding SecretPriceCode, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,30" Height="70" FontSize="26" VerticalContentAlignment="Center">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding AddStockCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -57,22 +67,53 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Button Grid.Column="0" Command="{Binding ResetCommand}" Content="Reset" Height="70" FontSize="28" FontWeight="Bold" Background="Black" Foreground="White"/>
-                    <Button Grid.Column="2" Command="{Binding AddStockCommand}" Content="Add Stock" Height="70" FontSize="28" FontWeight="Bold" IsDefault="True"/>
+                    <Button Grid.Column="2" Command="{Binding AddStockCommand}" Content="Add Stock" Height="70" FontSize="28" FontWeight="Bold"/>
                 </Grid>
             </StackPanel>
         </ScrollViewer>
 
         <Border Grid.Column="1" Padding="10" BorderBrush="#DDD" BorderThickness="1"
                 Visibility="{Binding CurrentItem, Converter={x:Static converters:NotNullToVisibilityConverter.Instance}}">
-            <StackPanel>
-                <TextBlock Text="Item Details" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock Text="{Binding CurrentItem.PartType.Name, StringFormat=Part Type: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentItem.PartBrand.Name, StringFormat=Brand: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentItem.VehicleModel.Manufacturer.Name, StringFormat=Make: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentItem.VehicleModel.Name, StringFormat=Model: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentItem.Rack.LocationCode, StringFormat=Rack: {0}}" Margin="0,0,0,5"/>
-                <TextBlock Text="{Binding CurrentQuantity, StringFormat=Current Stock: {0}}" Margin="0,10,0,0" FontWeight="Bold"/>
-            </StackPanel>
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="Item Details" FontWeight="Bold" Margin="0,0,0,10" FontSize="18"/>
+                    <TextBlock Text="{Binding CurrentItem.PartType.Name, StringFormat='Part Type: {0}'}" Margin="0,0,0,5" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentItem.PartBrand.Name, StringFormat='Brand: {0}'}" Margin="0,0,0,5" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentItem.VehicleModel.Manufacturer.Name, StringFormat='Make: {0}'}" Margin="0,0,0,5" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentItem.VehicleModel.Name, StringFormat='Model: {0}'}" Margin="0,0,0,5" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentItem.Rack.LocationCode, StringFormat='Rack: {0}'}" Margin="0,0,0,5" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentItem.RegisteredDate, StringFormat='Registered Date: {0:yyyy-MM-dd}'}" Margin="0,0,0,5" FontSize="14"/>
+                    <TextBlock Text="{Binding CurrentItem.SecretPriceCode, StringFormat='Pcode: {0}'}" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding CurrentQuantity, StringFormat='Current Stock: {0}'}" Margin="0,10,0,5" FontSize="16" FontWeight="Bold"/>
+                    
+                    <!-- Barcode Display & Print Button -->
+                    <Border BorderBrush="#EAEAEA" BorderThickness="0,1,0,1" Padding="0,10" Margin="0,10">
+                        <StackPanel>
+                            <Image Source="{Binding BarcodeImage}" Height="60" Stretch="Uniform" Margin="0,0,0,5" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            <TextBlock Text="{Binding CurrentItem.Barcode}" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <Button Content="Print Barcode Label" 
+                                    Command="{Binding PrintBarcodeCommand}" 
+                                    Height="40" 
+                                    FontSize="14" 
+                                    FontWeight="Bold"
+                                    Padding="10,0"
+                                    Margin="0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Compatible Models:" FontWeight="Bold" Margin="0,10,0,5" FontSize="14"/>
+                    <ItemsControl ItemsSource="{Binding CurrentItem.CompatibleModels}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Margin="10,0,0,3" FontSize="12" TextWrapping="Wrap">
+                                    <Run Text="• "/>
+                                    <Run Text="{Binding}"/>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
 </UserControl>

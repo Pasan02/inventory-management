@@ -58,5 +58,13 @@ namespace inventory_management.Data.Entities
 
         // Navigation to Stock (One-to-One mostly, but kept separate for purity)
         public Stock? Stock { get; set; }
+
+        [Column("secret_price_code")]
+        public string SecretPriceCode { get; set; } = string.Empty;
+
+        [Column("registered_date")]
+        public DateTime RegisteredDate { get; set; } = DateTime.UtcNow;
+
+        public ICollection<ItemCompatibleModel> CompatibleModels { get; set; } = new List<ItemCompatibleModel>();
     }
 }

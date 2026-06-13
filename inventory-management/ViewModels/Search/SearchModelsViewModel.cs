@@ -46,7 +46,14 @@ namespace inventory_management.ViewModels.Search
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public SearchModelsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, inventory_management.ViewModels.Search.PartTypeSearchRow part, inventory_management.ViewModels.Search.ManufacturerSearchRow manufacturer, Action goBack, Action viewAllItems)
+        public SearchModelsViewModel(
+            InventoryDbContext context,
+            IDatabaseAvailabilityService availabilityService,
+            IPrintService printService,
+            PartTypeSearchRow part,
+            ManufacturerSearchRow manufacturer,
+            System.Action goBack,
+            System.Action viewAllItems)
         {
             _context = context;
             _availabilityService = availabilityService;
@@ -93,13 +100,49 @@ namespace inventory_management.ViewModels.Search
                 .Include(i => i.PartBrand)
                 .Include(i => i.Rack)
                 .Include(i => i.Stock)
+                .Include(i => i.VehicleModel)
+                .Include(i => i.CompatibleModels)
                 .AsNoTracking()
-                .Where(i => i.PartTypeId == Part.PartTypeId && i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)
+                .Where(i => i.PartTypeId == Part.PartTypeId && 
+                            (i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId || 
+                             i.CompatibleModels.Any(cm => 
+                                 cm.Manufacturer != null && 
+                                 cm.Manufacturer.ToLower() == Manufacturer.Name.ToLower())))
                 .ToListAsync();
 
-            var groupedItems = items
-                .GroupBy(i => i.VehicleModelId)
-                .ToDictionary(g => g.Key, g => g.ToList());
+            var groupedItems = new Dictionary<int, List<Data.Entities.Item>>();
+            foreach (var item in items)
+            {
+                if (item.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId)
+                {
+                    if (!groupedItems.ContainsKey(item.VehicleModelId))
+                    {
+                        groupedItems[item.VehicleModelId] = new List<Data.Entities.Item>();
+                    }
+                    groupedItems[item.VehicleModelId].Add(item);
+                }
+
+                foreach (var cm in item.CompatibleModels)
+                {
+                    if (cm.Manufacturer != null && cm.Manufacturer.Equals(Manufacturer.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var matchingModel = models.FirstOrDefault(m => 
+                            cm.Model != null && m.Name.Equals(cm.Model, StringComparison.OrdinalIgnoreCase));
+                        
+                        if (matchingModel != null)
+                        {
+                            if (!groupedItems.ContainsKey(matchingModel.Id))
+                            {
+                                groupedItems[matchingModel.Id] = new List<Data.Entities.Item>();
+                            }
+                            if (!groupedItems[matchingModel.Id].Any(x => x.Id == item.Id))
+                            {
+                                groupedItems[matchingModel.Id].Add(item);
+                            }
+                        }
+                    }
+                }
+            }
 
             var rows = models
                 .Select(model =>

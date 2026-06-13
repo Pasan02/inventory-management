@@ -8,6 +8,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Collections.Generic;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.IO;
 using System;
 using System.Threading;
 
@@ -17,6 +20,8 @@ namespace inventory_management.ViewModels
     {
         private readonly IStockService _stockService;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly IBarcodeService _barcodeService;
+        private readonly IPrintService _printService;
         private readonly List<Item> _allItems = new();
         private readonly SemaphoreSlim _dbSemaphore = new(1, 1);
         private CancellationTokenSource? _searchCts;
@@ -64,6 +69,7 @@ namespace inventory_management.ViewModels
                     OnPropertyChanged(nameof(BarcodeInput));
                     CurrentItem = value;
                     CurrentQuantity = value.Stock?.Quantity ?? 0;
+                    SecretPriceCode = value.SecretPriceCode;
                     StatusMessage = "Ready";
                 }
             }
@@ -80,7 +86,20 @@ namespace inventory_management.ViewModels
         public Item? CurrentItem
         {
             get => _currentItem;
-            set => SetProperty(ref _currentItem, value);
+            set
+            {
+                if (SetProperty(ref _currentItem, value))
+                {
+                    UpdateBarcodeImage();
+                }
+            }
+        }
+
+        private ImageSource? _barcodeImage;
+        public ImageSource? BarcodeImage
+        {
+            get => _barcodeImage;
+            set => SetProperty(ref _barcodeImage, value);
         }
 
         private int _currentQuantity;
@@ -90,6 +109,13 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _currentQuantity, value);
         }
 
+        private string _secretPriceCode = string.Empty;
+        public string SecretPriceCode
+        {
+            get => _secretPriceCode;
+            set => SetProperty(ref _secretPriceCode, value);
+        }
+
         private string _statusMessage = "Ready";
         public string StatusMessage
         {
@@ -97,10 +123,16 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public AddStockViewModel(IStockService stockService, IDatabaseAvailabilityService availabilityService)
+        public AddStockViewModel(
+            IStockService stockService, 
+            IDatabaseAvailabilityService availabilityService, 
+            IBarcodeService barcodeService, 
+            IPrintService printService)
         {
             _stockService = stockService;
             _availabilityService = availabilityService;
+            _barcodeService = barcodeService;
+            _printService = printService;
             LoadItems();
         }
 
@@ -157,6 +189,7 @@ namespace inventory_management.ViewModels
             SelectedItem = null;
             CurrentItem = null;
             CurrentQuantity = 0;
+            SecretPriceCode = string.Empty;
             FilterItems();
         }
 
@@ -207,11 +240,13 @@ namespace inventory_management.ViewModels
                     if (CurrentItem == null)
                     {
                         CurrentQuantity = 0;
+                        SecretPriceCode = string.Empty;
                         StatusMessage = "Item not found.";
                         return;
                     }
 
                     CurrentQuantity = CurrentItem.Stock?.Quantity ?? 0;
+                    SecretPriceCode = CurrentItem.SecretPriceCode;
                     StatusMessage = "Item loaded.";
                     ItemLoaded?.Invoke();
                 }
@@ -256,20 +291,49 @@ namespace inventory_management.ViewModels
                 }
 
                 CurrentItem = item;
-                var result = await _stockService.AddStockAsync(item.Barcode, Quantity);
+                var result = await _stockService.AddStockWithPriceAsync(item.Barcode, Quantity, SecretPriceCode);
 
                 if (result.Success)
                 {
-                    ModernMessageDialog.ShowSuccess($"Stock added successfully.\nNew Quantity: {result.NewQuantity}", "Success");
                     CurrentQuantity = result.NewQuantity;
-                    if (CurrentItem?.Stock != null)
+                    
+                    if (!string.IsNullOrEmpty(result.NewBarcode))
                     {
-                        CurrentItem.Stock.Quantity = result.NewQuantity;
+                        // Automatically print the newly generated barcode with quantity printed = quantity added
+                        var printSuccess = await _printService.PrintBarcodeLabelAsync(result.NewBarcode, Quantity);
+                        
+                        string printMessage = printSuccess 
+                            ? $"Successfully printed {Quantity} copy/copies of the new barcode label." 
+                            : "Failed to automatically print barcode labels. Please check your Zebra printer connection.";
+                        
+                        ModernMessageDialog.ShowSuccess($"{result.Message}\n\n{printMessage}", "Success");
+
+                        _barcodeInput = result.NewBarcode;
+                        OnPropertyChanged(nameof(BarcodeInput));
+                        
+                        var newItem = await _stockService.FindItemByBarcodeAsync(result.NewBarcode);
+                        if (newItem != null)
+                        {
+                            CurrentItem = newItem;
+                            CurrentQuantity = newItem.Stock?.Quantity ?? 0;
+                            SecretPriceCode = newItem.SecretPriceCode;
+                        }
+                    }
+                    else
+                    {
+                        ModernMessageDialog.ShowSuccess(result.Message, "Success");
+                        if (CurrentItem?.Stock != null)
+                        {
+                            CurrentItem.Stock.Quantity = result.NewQuantity;
+                        }
                     }
                     Quantity = 1;
                     
-                    _barcodeInput = string.Empty; 
-                    OnPropertyChanged(nameof(BarcodeInput)); // Update UI without triggering search reload
+                    if (string.IsNullOrEmpty(result.NewBarcode))
+                    {
+                        _barcodeInput = string.Empty; 
+                        OnPropertyChanged(nameof(BarcodeInput)); // Update UI without triggering search reload
+                    }
                     
                     SearchText = string.Empty;
                     
@@ -291,6 +355,89 @@ namespace inventory_management.ViewModels
             {
                 _dbSemaphore.Release();
             }
+        }
+
+        [RelayCommand]
+        private async Task PrintBarcode()
+        {
+            if (CurrentItem == null || string.IsNullOrWhiteSpace(CurrentItem.Barcode))
+            {
+                StatusMessage = "No item loaded.";
+                ModernMessageDialog.ShowWarning("No item is currently loaded.", "Print Warning");
+                return;
+            }
+
+            var dialog = new SimpleInputDialog("Print Barcode", "Enter number of barcode copies to print:");
+            dialog.Owner = Application.Current.MainWindow;
+            
+            if (dialog.ShowDialog() == true)
+            {
+                if (!int.TryParse(dialog.InputValue, out int copies) || copies <= 0)
+                {
+                    MessageBox.Show(Application.Current.MainWindow, "Please enter a valid positive number for copies.", "Invalid Input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                try
+                {
+                    StatusMessage = $"Printing {copies} barcode label(s)...";
+                    var success = await _printService.PrintBarcodeLabelAsync(CurrentItem.Barcode, copies);
+                    
+                    if (success)
+                    {
+                        StatusMessage = "Barcode label printed successfully.";
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to print barcode label.";
+                        MessageBox.Show(Application.Current.MainWindow, "Printing failed. Please ensure the Zebra printer is installed and connected.", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Print error: {ex.Message}";
+                    MessageBox.Show(Application.Current.MainWindow, $"An error occurred while printing: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void UpdateBarcodeImage()
+        {
+            if (CurrentItem != null && !string.IsNullOrEmpty(CurrentItem.Barcode))
+            {
+                try
+                {
+                    var bytes = _barcodeService.GenerateBarcodeImage(CurrentItem.Barcode);
+                    BarcodeImage = BytesToImage(bytes);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error generating barcode image: {ex.Message}");
+                    BarcodeImage = null;
+                }
+            }
+            else
+            {
+                BarcodeImage = null;
+            }
+        }
+
+        private ImageSource? BytesToImage(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0) return null;
+            var image = new BitmapImage();
+            using (var mem = new MemoryStream(bytes))
+            {
+                mem.Position = 0;
+                image.BeginInit();
+                image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.UriSource = null;
+                image.StreamSource = mem;
+                image.EndInit();
+            }
+            image.Freeze();
+            return image;
         }
 
         [RelayCommand]

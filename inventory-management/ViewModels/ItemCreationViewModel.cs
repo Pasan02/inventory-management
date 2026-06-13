@@ -17,12 +17,13 @@ using Microsoft.Win32;
 
 namespace inventory_management.ViewModels
 {
-    public partial class ItemCreationViewModel : ViewModelBase
+    public partial class ItemCreationViewModel : ViewModelBase, IDisposable
     {
         private readonly InventoryDbContext _context;
         private readonly IBarcodeService _barcodeService;
         private readonly IPrintService _printService;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly IMobileCameraService _mobileCameraService;
         private bool _isAddingReferenceData;
 
         // --- Form Properties ---
@@ -32,6 +33,13 @@ namespace inventory_management.ViewModels
         {
             get => _selectedBarcode;
             set => SetProperty(ref _selectedBarcode, value);
+        }
+
+        private string _customBarcode = string.Empty;
+        public string CustomBarcode
+        {
+            get => _customBarcode;
+            set => SetProperty(ref _customBarcode, value);
         }
 
         [RelayCommand]
@@ -373,6 +381,156 @@ namespace inventory_management.ViewModels
             }
         }
 
+        private string _secretPriceCode = string.Empty;
+        public string SecretPriceCode
+        {
+            get => _secretPriceCode;
+            set => SetProperty(ref _secretPriceCode, value);
+        }
+
+        public ObservableCollection<ItemCompatibleModel> CompatibleModelsList { get; } = new();
+
+        public ObservableCollection<string> CompatibilityManufacturers { get; } = new();
+        public ObservableCollection<string> CompatibilityModels { get; } = new();
+        public ObservableCollection<string> CompatibilityBrands { get; } = new();
+
+        private string _newCompatibilityManufacturer = string.Empty;
+        public string NewCompatibilityManufacturer
+        {
+            get => _newCompatibilityManufacturer;
+            set
+            {
+                if (SetProperty(ref _newCompatibilityManufacturer, value))
+                {
+                    UpdateCompatibilityModels();
+                }
+            }
+        }
+
+        private string _newCompatibilityModel = string.Empty;
+        public string NewCompatibilityModel
+        {
+            get => _newCompatibilityModel;
+            set => SetProperty(ref _newCompatibilityModel, value);
+        }
+
+        private string _newCompatibilityBrand = string.Empty;
+        public string NewCompatibilityBrand
+        {
+            get => _newCompatibilityBrand;
+            set => SetProperty(ref _newCompatibilityBrand, value);
+        }
+
+        private string _newCompatibilityYearRange = string.Empty;
+        public string NewCompatibilityYearRange
+        {
+            get => _newCompatibilityYearRange;
+            set => SetProperty(ref _newCompatibilityYearRange, value);
+        }
+
+        private string _newCompatibilityCountryOfOrigin = string.Empty;
+        public string NewCompatibilityCountryOfOrigin
+        {
+            get => _newCompatibilityCountryOfOrigin;
+            set => SetProperty(ref _newCompatibilityCountryOfOrigin, value);
+        }
+
+        [RelayCommand]
+        private void AddCompatibleModel()
+        {
+            var manufacturer = NewCompatibilityManufacturer?.Trim();
+            var model = NewCompatibilityModel?.Trim();
+            var yearRange = NewCompatibilityYearRange?.Trim();
+            var brand = NewCompatibilityBrand?.Trim();
+            var origin = NewCompatibilityCountryOfOrigin?.Trim();
+
+            if (string.IsNullOrWhiteSpace(manufacturer) && 
+                string.IsNullOrWhiteSpace(model) && 
+                string.IsNullOrWhiteSpace(yearRange) && 
+                string.IsNullOrWhiteSpace(brand) && 
+                string.IsNullOrWhiteSpace(origin))
+            {
+                MessageBox.Show(Application.Current.MainWindow, "At least one compatibility parameter must be provided.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var exists = CompatibleModelsList.Any(c => 
+                string.Equals(c.Manufacturer ?? "", manufacturer ?? "", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Model ?? "", model ?? "", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.YearRange ?? "", yearRange ?? "", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Brand ?? "", brand ?? "", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.CountryOfOrigin ?? "", origin ?? "", StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (exists)
+            {
+                MessageBox.Show(Application.Current.MainWindow, "This compatibility configuration is already added.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var newComp = new ItemCompatibleModel
+            {
+                Manufacturer = string.IsNullOrWhiteSpace(manufacturer) ? null : manufacturer,
+                Model = string.IsNullOrWhiteSpace(model) ? null : model,
+                YearRange = string.IsNullOrWhiteSpace(yearRange) ? null : yearRange,
+                Brand = string.IsNullOrWhiteSpace(brand) ? null : brand,
+                CountryOfOrigin = string.IsNullOrWhiteSpace(origin) ? null : origin
+            };
+
+            CompatibleModelsList.Add(newComp);
+            StatusMessage = "Added compatibility link.";
+
+            // Reset fields
+            NewCompatibilityManufacturer = string.Empty;
+            NewCompatibilityModel = string.Empty;
+            NewCompatibilityYearRange = string.Empty;
+            NewCompatibilityBrand = string.Empty;
+            NewCompatibilityCountryOfOrigin = string.Empty;
+        }
+
+        [RelayCommand]
+        private void RemoveCompatibleModel(ItemCompatibleModel? model)
+        {
+            if (model != null)
+            {
+                CompatibleModelsList.Remove(model);
+                StatusMessage = "Removed compatibility link.";
+            }
+        }
+
+        private async void UpdateCompatibilityModels()
+        {
+            try
+            {
+                CompatibilityModels.Clear();
+                var mName = NewCompatibilityManufacturer?.Trim();
+
+                var allModelsQuery = _context.Models.AsNoTracking();
+                if (!string.IsNullOrWhiteSpace(mName))
+                {
+                    var manufacturer = await _context.Manufacturers
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(m => m.Name == mName);
+                    if (manufacturer != null)
+                    {
+                        allModelsQuery = allModelsQuery.Where(m => m.VehicleManufacturerId == manufacturer.Id);
+                    }
+                }
+
+                var models = await allModelsQuery
+                    .Select(m => m.Name)
+                    .Distinct()
+                    .OrderBy(n => n)
+                    .ToListAsync();
+
+                foreach (var n in models) CompatibilityModels.Add(n);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating compatibility models: {ex.Message}");
+            }
+        }
+
         // --- UI State ---
         private string _statusMessage = string.Empty;
         public string StatusMessage
@@ -381,12 +539,47 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public ItemCreationViewModel(InventoryDbContext context, IBarcodeService barcodeService, IPrintService printService, IDatabaseAvailabilityService availabilityService)
+        private string _mobileCaptureUrl = string.Empty;
+        public string MobileCaptureUrl
+        {
+            get => _mobileCaptureUrl;
+            set => SetProperty(ref _mobileCaptureUrl, value);
+        }
+
+        [RelayCommand]
+        private void CopyMobileCaptureUrl()
+        {
+            if (!string.IsNullOrEmpty(MobileCaptureUrl))
+            {
+                try
+                {
+                    Clipboard.SetText(MobileCaptureUrl);
+                    StatusMessage = "Mobile capture URL copied to clipboard!";
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Failed to copy to clipboard: {ex.Message}";
+                }
+            }
+        }
+
+        public ItemCreationViewModel(
+            InventoryDbContext context, 
+            IBarcodeService barcodeService, 
+            IPrintService printService, 
+            IDatabaseAvailabilityService availabilityService,
+            IMobileCameraService mobileCameraService)
         {
             _context = context;
             _barcodeService = barcodeService;
             _printService = printService;
             _availabilityService = availabilityService;
+            _mobileCameraService = mobileCameraService;
+            
+            // Start the local web camera server
+            _mobileCameraService.Start();
+            MobileCaptureUrl = _mobileCameraService.GetMobileCaptureUrl();
+            _mobileCameraService.ImageReceived += OnImageReceived;
             
             LoadReferenceData();
         }
@@ -425,9 +618,17 @@ namespace inventory_management.ViewModels
                 foreach (var m in manufacturers) Manufacturers.Add(m);
                 Manufacturers.Add(new VehicleManufacturer { Id = -1, Name = "+ Add New Manufacturer..." });
 
+                CompatibilityManufacturers.Clear();
+                foreach (var m in manufacturers) CompatibilityManufacturers.Add(m.Name);
+
+                CompatibilityBrands.Clear();
+                foreach (var b in brands) CompatibilityBrands.Add(b.Name);
+
                 var racks = await _context.Racks.OrderBy(r => r.LocationCode).ToListAsync();
                 foreach (var r in racks) Racks.Add(r);
                 Racks.Add(new Rack { Id = -1, LocationCode = "+ Add New Rack..." });
+
+                UpdateCompatibilityModels();
 
                 StatusMessage = string.Empty;
             }
@@ -530,6 +731,7 @@ namespace inventory_management.ViewModels
             await _context.SaveChangesAsync();
 
             Manufacturers.Add(manufacturer);
+            CompatibilityManufacturers.Add(manufacturer.Name);
             NewManufacturerName = string.Empty;
             NewManufacturerLogoPath = string.Empty;
             StatusMessage = "Manufacturer added.";
@@ -555,7 +757,15 @@ namespace inventory_management.ViewModels
             NewModelYearRange = string.Empty;
             
             SelectedBarcode = string.Empty;
+            CustomBarcode = string.Empty;
             BarcodeImage = null;
+            SecretPriceCode = string.Empty;
+            CompatibleModelsList.Clear();
+            NewCompatibilityManufacturer = string.Empty;
+            NewCompatibilityModel = string.Empty;
+            NewCompatibilityYearRange = string.Empty;
+            NewCompatibilityBrand = string.Empty;
+            NewCompatibilityCountryOfOrigin = string.Empty;
             StatusMessage = string.Empty;
         }
 
@@ -575,6 +785,24 @@ namespace inventory_management.ViewModels
 
                 StatusMessage = "Saving...";
 
+                string barcodeToUse = CustomBarcode?.Trim() ?? string.Empty;
+                bool isCustom = !string.IsNullOrWhiteSpace(barcodeToUse);
+
+                if (isCustom)
+                {
+                    var exists = await _context.Items.AnyAsync(i => i.Barcode == barcodeToUse);
+                    if (exists)
+                    {
+                        MessageBox.Show(Application.Current.MainWindow, "This custom barcode is currently in use by another active item.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        StatusMessage = "Failed: Barcode in use.";
+                        return;
+                    }
+                }
+                else
+                {
+                    barcodeToUse = "TEMP-" + Guid.NewGuid().ToString().Substring(0, 8);
+                }
+
                 // Create Item
                 var newItem = new Item
                 {
@@ -585,15 +813,26 @@ namespace inventory_management.ViewModels
                     Description = Description,
                     LowStockThreshold = LowStockThreshold,
                     RackId = SelectedRack?.Id,
-                    Barcode = "TEMP-" + Guid.NewGuid().ToString().Substring(0,8),
-                    ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath.Trim()
+                    Barcode = barcodeToUse,
+                    ImagePath = string.IsNullOrWhiteSpace(ImagePath) ? null : ImagePath.Trim(),
+                    SecretPriceCode = SecretPriceCode?.Trim() ?? string.Empty,
+                    RegisteredDate = DateTime.UtcNow
                 };
 
                 _context.Items.Add(newItem);
                 await _context.SaveChangesAsync();
 
-                // Generate real barcode
-                newItem.Barcode = _barcodeService.GenerateBarcodeString(newItem.Id);
+                if (!isCustom)
+                {
+                    newItem.Barcode = _barcodeService.GenerateBarcodeString(newItem.Id);
+                }
+
+                // Add compatibility models
+                foreach (var compModel in CompatibleModelsList)
+                {
+                    compModel.ItemId = newItem.Id;
+                    _context.ItemCompatibleModels.Add(compModel);
+                }
                 
                 var initialStock = new Stock
                 {
@@ -813,6 +1052,7 @@ namespace inventory_management.ViewModels
                         await _context.SaveChangesAsync();
 
                         Manufacturers.Insert(Manufacturers.Count - 1, newItem);
+                        CompatibilityManufacturers.Add(newItem.Name);
                         SelectedManufacturer = newItem;
                         
                         MessageBox.Show(Application.Current.MainWindow, "Manufacturer added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -854,6 +1094,7 @@ namespace inventory_management.ViewModels
                         await _context.SaveChangesAsync();
 
                         Brands.Insert(Brands.Count - 1, newItem);
+                        CompatibilityBrands.Add(newItem.Name);
                         SelectedBrand = newItem;
                         
                         MessageBox.Show(Application.Current.MainWindow, "Brand added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -944,6 +1185,7 @@ namespace inventory_management.ViewModels
 
                         Models.Insert(Models.Count - 1, newItem);
                         SelectedModel = newItem;
+                        UpdateCompatibilityModels();
                         
                         MessageBox.Show(Application.Current.MainWindow, "Vehicle Model added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
@@ -958,6 +1200,50 @@ namespace inventory_management.ViewModels
             {
                 _isAddingReferenceData = false;
             }
+        }
+
+        private void OnImageReceived(byte[] imageBytes)
+        {
+            Application.Current.Dispatcher.Invoke(async () =>
+            {
+                try
+                {
+                    // Check if bytes are valid
+                    var tempImageSource = BytesToImage(imageBytes);
+                    if (tempImageSource == null) return;
+
+                    var result = ModernMessageDialog.ShowQuestion(
+                        "A photo has been received from your mobile device. Do you want to set it as the item image?",
+                        "Mobile Photo Received");
+
+                    if (result == true)
+                    {
+                        var assetsRoot = AssetPathService.BasePath;
+                        var itemsFolder = Path.Combine(assetsRoot, "items");
+                        Directory.CreateDirectory(itemsFolder);
+
+                        var fileName = $"item-{Guid.NewGuid():N}.jpg";
+                        var relativePath = Path.Combine("items", fileName);
+                        var destination = Path.Combine(assetsRoot, relativePath);
+
+                        await File.WriteAllBytesAsync(destination, imageBytes);
+
+                        ImagePath = relativePath;
+                        StatusMessage = "Mobile image successfully approved and set.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error processing mobile photo: {ex.Message}";
+                    MessageBox.Show(Application.Current.MainWindow, $"Error saving mobile photo: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            });
+        }
+
+        public void Dispose()
+        {
+            _mobileCameraService.ImageReceived -= OnImageReceived;
+            _mobileCameraService.Stop();
         }
     }
 }

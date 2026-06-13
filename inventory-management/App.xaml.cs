@@ -32,6 +32,7 @@ namespace inventory_management
                     // SERVICES
                     services.AddSingleton<Services.IBarcodeService, Services.BarcodeService>();
                     services.AddSingleton<Services.IPrintService, Services.PrintService>();
+                    services.AddSingleton<Services.IMobileCameraService, Services.MobileCameraService>();
                     services.AddTransient<Services.IStockService, Services.StockService>();
                     services.AddTransient<IDatabaseAvailabilityService, DatabaseAvailabilityService>();
                     services.AddTransient<IBackupService, BackupService>();

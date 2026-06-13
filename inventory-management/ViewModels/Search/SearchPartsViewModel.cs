@@ -46,37 +46,24 @@ namespace inventory_management.ViewModels.Search
                 StatusMessage = "Loading parts...";
                 Parts.Clear();
 
-                // Load all registered part types
-                var partTypes = await _context.PartTypes
+                var parts = await _context.Items
+                    .Include(i => i.PartType)
+                    .Include(i => i.Stock)
                     .AsNoTracking()
+                    .GroupBy(i => new { i.PartTypeId, i.PartType.Name, i.PartType.ImagePath, i.PartType.Image })
+                    .Select(g => new PartTypeSearchRow
+                    {
+                        PartTypeId = g.Key.PartTypeId,
+                        Name = g.Key.Name,
+                        ItemCount = g.Count(),
+                        Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0),
+                        ImagePath = g.Key.ImagePath,
+                        Image = g.Key.Image
+                    })
+                    .OrderBy(r => r.Name)
                     .ToListAsync();
 
-                foreach (var partType in partTypes)
-                {
-                    // Count items and calculate quantity
-                    var items = await _context.Items
-                        .Where(i => i.PartTypeId == partType.Id)
-                        .Include(i => i.Stock)
-                        .AsNoTracking()
-                        .ToListAsync();
-
-                    var row = new PartTypeSearchRow
-                    {
-                        PartTypeId = partType.Id,
-                        Name = partType.Name,
-                        ItemCount = items.Count,
-                        Quantity = items.Sum(i => i.Stock?.Quantity ?? 0),
-                        ImagePath = partType.ImagePath,
-                        Image = partType.Image
-                    };
-
-                    Parts.Add(row);
-                }
-
-                // Sort by name
-                var sorted = Parts.OrderBy(p => p.Name).ToList();
-                Parts.Clear();
-                foreach (var part in sorted)
+                foreach (var part in parts)
                 {
                     Parts.Add(part);
                 }
