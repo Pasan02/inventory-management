@@ -150,6 +150,13 @@ namespace inventory_management.ViewModels.Search
                     groupedItems.TryGetValue(model.Id, out var modelItems);
                     modelItems ??= new List<Data.Entities.Item>();
 
+                    var compatTextList = modelItems.SelectMany(i => i.CompatibleModels)
+                        .Select(cm => cm.ToString())
+                        .Distinct()
+                        .OrderBy(n => n)
+                        .ToList();
+                    var compatText = string.Join(", ", compatTextList);
+
                     return new ModelSearchRow
                     {
                         ModelId = model.Id,
@@ -160,6 +167,7 @@ namespace inventory_management.ViewModels.Search
                         Brands = string.Join(", ", modelItems.Select(i => i.PartBrand.Name).Distinct().OrderBy(n => n)),
                         Racks = string.Join(", ", modelItems.Select(i => i.Rack != null ? i.Rack.LocationCode : string.Empty).Where(r => !string.IsNullOrWhiteSpace(r)).Distinct().OrderBy(r => r)),
                         CountriesOfOrigin = string.Join(", ", modelItems.Select(i => i.CountryOfOrigin).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().OrderBy(c => c)),
+                        CompatibleModelsText = string.IsNullOrEmpty(compatText) ? "None" : compatText,
                         ItemImagePath = modelItems.Select(i => i.ImagePath).FirstOrDefault(p => !string.IsNullOrWhiteSpace(p))
                     };
                 })

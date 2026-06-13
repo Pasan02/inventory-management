@@ -68,7 +68,7 @@ namespace inventory_management.ViewModels.Search
             set => SetProperty(ref _totalItems, value);
         }
 
-        public int PageSize { get; } = 5;
+        public int PageSize { get; } = 20;
 
         public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, PartTypeSearchRow part, ManufacturerSearchRow? manufacturer, System.Action goBack)
         {

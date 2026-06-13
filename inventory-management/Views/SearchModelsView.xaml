@@ -225,6 +225,26 @@
                                         </StackPanel>
                                     </Grid>
 
+                                    <!-- Compat Info -->
+                                    <ScrollViewer MaxHeight="60" VerticalScrollBarVisibility="Auto" Margin="0,0,0,4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" 
+                                                       Text="Compat: " 
+                                                       FontWeight="SemiBold" 
+                                                       FontSize="15"
+                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                                            <TextBlock Grid.Column="1" 
+                                                       Text="{Binding CompatibleModelsText}" 
+                                                       FontSize="15"
+                                                       Foreground="{StaticResource TextSecondaryColor}"
+                                                       TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </ScrollViewer>
+
                                     <!-- Print Button -->
                                     <Button Content="Print Barcode Label" 
                                             Command="{Binding DataContext.PrintModelBarcodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 

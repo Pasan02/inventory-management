@@ -13,5 +13,6 @@ namespace inventory_management.ViewModels.Search
         public string? ItemImagePath { get; set; }
         public string? PartTypeImagePath { get; set; }
         public string? ManufacturerLogoPath { get; set; }
+        public string CompatibleModelsText { get; set; } = string.Empty;
     }
 }

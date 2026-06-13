@@ -60,7 +60,7 @@
                 </Grid>
             </Border>
 
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                 <ScrollViewer.Resources>
                     <Style x:Key="ModernScrollThumb" TargetType="Thumb">
                         <Setter Property="Template">
@@ -106,7 +106,7 @@
                 <ItemsControl ItemsSource="{Binding Items}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" />
+                            <WrapPanel />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
@@ -162,10 +162,12 @@
                                             <Run Text="Registered: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
                                             <Run Text="{Binding RegisteredDate, StringFormat='{}{0:yyyy-MM-dd}'}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
                                         </TextBlock>
-                                        <TextBlock Margin="0,0,0,6" TextWrapping="Wrap">
-                                            <Run Text="Compat: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
-                                            <Run Text="{Binding CompatibleModelsText}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
-                                        </TextBlock>
+                                        <ScrollViewer MaxHeight="60" VerticalScrollBarVisibility="Auto" Margin="0,0,0,6">
+                                            <TextBlock TextWrapping="Wrap">
+                                                <Run Text="Compat: " FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                <Run Text="{Binding CompatibleModelsText}" FontSize="14" Foreground="{StaticResource TextPrimaryColor}"/>
+                                            </TextBlock>
+                                        </ScrollViewer>
                                         <Grid Margin="0,0,0,6">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
