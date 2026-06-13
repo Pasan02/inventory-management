@@ -125,15 +125,22 @@ namespace inventory_management.ViewModels
                 CurrentStep = CreateManufacturersStep(part);
             }, () => 
             {
-                CurrentStep = CreateAllItemsStep(part, manufacturer);
+                CurrentStep = CreateAllItemsStep(part, manufacturer, null);
+            }, (model) =>
+            {
+                CurrentStep = CreateAllItemsStep(part, manufacturer, model);
             });
         }
 
-        private ViewModelBase CreateAllItemsStep(PartTypeSearchRow part, ManufacturerSearchRow? manufacturer)
+        private ViewModelBase CreateAllItemsStep(PartTypeSearchRow part, ManufacturerSearchRow? manufacturer, ModelSearchRow? model = null)
         {
-            return new SearchAllItemsViewModel(_context, _availabilityService, _printService, part, manufacturer, () =>
+            return new SearchAllItemsViewModel(_context, _availabilityService, _printService, part, manufacturer, model, () =>
             {
-                if (manufacturer != null)
+                if (model != null && manufacturer != null)
+                {
+                    CurrentStep = CreateModelsStep(part, manufacturer);
+                }
+                else if (manufacturer != null)
                 {
                     CurrentStep = CreateModelsStep(part, manufacturer);
                 }

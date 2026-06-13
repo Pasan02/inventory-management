@@ -22,9 +22,24 @@ namespace inventory_management.ViewModels.Search
 
         public PartTypeSearchRow Part { get; }
         public ManufacturerSearchRow? Manufacturer { get; }
+        public ModelSearchRow? Model { get; }
         
         public ObservableCollection<ItemSearchRow> Items { get; } = new();
 
+        private bool _includeOutOfStock = false;
+        public bool IncludeOutOfStock
+        {
+            get => _includeOutOfStock;
+            set
+            {
+                if (SetProperty(ref _includeOutOfStock, value))
+                {
+                    CurrentPage = 1;
+                    _ = LoadItemsAsync();
+                }
+            }
+        }
+        
         private string _searchText = string.Empty;
         public string SearchText
         {
@@ -70,13 +85,14 @@ namespace inventory_management.ViewModels.Search
 
         public int PageSize { get; } = 20;
 
-        public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, PartTypeSearchRow part, ManufacturerSearchRow? manufacturer, System.Action goBack)
+        public SearchAllItemsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPrintService printService, PartTypeSearchRow part, ManufacturerSearchRow? manufacturer, ModelSearchRow? model, System.Action goBack)
         {
             _context = context;
             _availabilityService = availabilityService;
             _printService = printService;
             Part = part;
             Manufacturer = manufacturer;
+            Model = model;
             _goBack = goBack;
             
             // Start loading items
@@ -95,9 +111,16 @@ namespace inventory_management.ViewModels.Search
                     return;
                 }
 
-                StatusMessage = Manufacturer == null 
-                    ? $"Loading items for {Part.Name}..." 
-                    : $"Loading items for {Manufacturer.Name} {Part.Name}...";
+                if (Model != null)
+                {
+                    StatusMessage = $"Loading barcode variants for {Model.Name}...";
+                }
+                else
+                {
+                    StatusMessage = Manufacturer == null 
+                        ? $"Loading items for {Part.Name}..." 
+                        : $"Loading items for {Manufacturer.Name} {Part.Name}...";
+                }
                 
                 // Clear existing items on UI thread
                 if (Application.Current?.Dispatcher != null)
@@ -119,7 +142,13 @@ namespace inventory_management.ViewModels.Search
                     .Include(i => i.Stock)
                     .AsNoTracking()
                     .Where(i => i.PartTypeId == Part.PartTypeId && 
-                                (Manufacturer == null || i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId));
+                                (Manufacturer == null || i.VehicleModel.VehicleManufacturerId == Manufacturer.ManufacturerId) &&
+                                (Model == null || i.VehicleModelId == Model.ModelId));
+
+                if (!IncludeOutOfStock)
+                {
+                    query = query.Where(i => i.Stock != null && i.Stock.Quantity > 0);
+                }
 
                 // Apply DB-side search filter
                 if (!string.IsNullOrWhiteSpace(SearchText))

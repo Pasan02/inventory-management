@@ -70,9 +70,13 @@ namespace inventory_management
                     
                     await dbContext.Database.MigrateAsync();
                     await EnsureIdentitySequencesAsync(dbContext);
+                    await FixLegacyRegisteredDatesAsync(dbContext);
 
                     var integrityCheck = scope.ServiceProvider.GetRequiredService<IIntegrityCheckService>();
                     await integrityCheck.RunAsync();
+
+                    var stockService = scope.ServiceProvider.GetRequiredService<IStockService>();
+                    await stockService.CleanupOldZeroStockItemsAsync();
 
                     var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
                     
@@ -125,6 +129,17 @@ namespace inventory_management
             {
                 await context.Database.ExecuteSqlRawAsync(sql);
             }
+        }
+
+        private static async Task FixLegacyRegisteredDatesAsync(InventoryDbContext context)
+        {
+            // Set legacy dates to the stock's last updated time, or current time if there is no stock
+            var sql = @"
+                UPDATE items 
+                SET registered_date = COALESCE((SELECT last_updated FROM stock WHERE stock.item_id = items.id LIMIT 1), CURRENT_TIMESTAMP)
+                WHERE registered_date <= '0001-01-01 23:59:59';
+            ";
+            await context.Database.ExecuteSqlRawAsync(sql);
         }
     }
 }

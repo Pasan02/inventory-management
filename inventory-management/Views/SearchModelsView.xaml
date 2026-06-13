@@ -245,9 +245,9 @@
                                         </Grid>
                                     </ScrollViewer>
 
-                                    <!-- Print Button -->
-                                    <Button Content="Print Barcode Label" 
-                                            Command="{Binding DataContext.PrintModelBarcodeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
+                                    <!-- View Barcodes Button -->
+                                    <Button Content="View Barcodes" 
+                                            Command="{Binding DataContext.ViewBarcodesCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" 
                                             CommandParameter="{Binding}"
                                             Height="36" 
                                             FontSize="14" 
@@ -255,7 +255,7 @@
                                             Padding="10,6"
                                             Margin="0,10,0,0">
                                         <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                            <Style TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
                                             </Style>
                                         </Button.Style>
                                     </Button>

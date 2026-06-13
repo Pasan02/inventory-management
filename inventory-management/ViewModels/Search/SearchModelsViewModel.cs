@@ -20,6 +20,7 @@ namespace inventory_management.ViewModels.Search
         private readonly IPrintService _printService;
         private readonly System.Action _goBack;
         private readonly System.Action _viewAllItems;
+        private readonly System.Action<ModelSearchRow> _viewBarcodes;
 
         public PartTypeSearchRow Part { get; }
         public ManufacturerSearchRow Manufacturer { get; }
@@ -53,7 +54,8 @@ namespace inventory_management.ViewModels.Search
             PartTypeSearchRow part,
             ManufacturerSearchRow manufacturer,
             System.Action goBack,
-            System.Action viewAllItems)
+            System.Action viewAllItems,
+            System.Action<ModelSearchRow> viewBarcodes)
         {
             _context = context;
             _availabilityService = availabilityService;
@@ -62,6 +64,7 @@ namespace inventory_management.ViewModels.Search
             Manufacturer = manufacturer;
             _goBack = goBack;
             _viewAllItems = viewAllItems;
+            _viewBarcodes = viewBarcodes;
             ModelsView = CollectionViewSource.GetDefaultView(Models);
             ModelsView.Filter = FilterModels;
             _ = LoadModelsAsync();
@@ -212,57 +215,13 @@ namespace inventory_management.ViewModels.Search
         }
 
         [RelayCommand]
-        private async Task PrintModelBarcodeAsync(ModelSearchRow modelRow)
+        private void ViewBarcodes(ModelSearchRow model)
         {
-            if (modelRow == null) return;
-
-            try
+            if (model != null)
             {
-                var dialog = new inventory_management.Views.SimpleInputDialog("Print Barcode", "Enter number of barcode copies to print:");
-                dialog.Owner = System.Windows.Application.Current.MainWindow;
-                
-                if (dialog.ShowDialog() != true) return;
-                
-                if (!int.TryParse(dialog.InputValue, out int copies) || copies <= 0)
-                {
-                    System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Please enter a valid positive number for copies.", "Invalid Input", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-                    return;
-                }
-
-                StatusMessage = $"Printing {copies} barcode label(s) for {modelRow.Name}...";
-                // Get one item from this model to get its barcode to print (since a model might have multiple items,
-                // we'll try to get the first barcode for this specific part/manufacturer/model combination).
-                var item = await _context.Items
-                    .Include(i => i.PartBrand)
-                    .Include(i => i.PartType)
-                    .Include(i => i.VehicleModel)
-                        .ThenInclude(vm => vm.Manufacturer)
-                    .FirstOrDefaultAsync(i => i.PartTypeId == Part.PartTypeId && i.VehicleModelId == modelRow.ModelId);
-
-                if (item != null && !string.IsNullOrWhiteSpace(item.Barcode))
-                {
-                    var success = await _printService.PrintBarcodeLabelAsync(item.Barcode, copies);
-                    if (success)
-                    {
-                        StatusMessage = $"Barcode label printed successfully for {modelRow.Name}.";
-                    }
-                    else
-                    {
-                        StatusMessage = $"Failed to print barcode label for {modelRow.Name}.";
-                        System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Printing failed. Please ensure the Zebra printer is installed and connected.", "Print Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-                    }
-                }
-                else
-                {
-                    StatusMessage = $"No item with barcode found for {modelRow.Name}.";
-                    System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "No barcode has been generated yet for this model.", "Print Warning", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Print error: {ex.Message}";
-                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, $"An error occurred while printing: {ex.Message}", "Print Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                _viewBarcodes(model);
             }
         }
+
     }
 }

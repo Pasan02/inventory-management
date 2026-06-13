@@ -29,7 +29,15 @@
                 <TextBlock Text="{Binding Part.Name}" 
                            FontSize="28" 
                            FontWeight="Bold" 
-                           Foreground="{StaticResource TextPrimaryColor}"/>
+                           Foreground="{StaticResource TextPrimaryColor}"
+                           Margin="0,0,20,0"/>
+                           
+                <!-- Include Out of Stock Checkbox -->
+                <CheckBox Content="Include Out-of-Stock Items"
+                          IsChecked="{Binding IncludeOutOfStock}"
+                          VerticalAlignment="Center"
+                          FontSize="16"
+                          Foreground="{StaticResource TextSecondaryColor}"/>
             </StackPanel>
 
             <!-- Search Box -->

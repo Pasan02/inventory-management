@@ -73,6 +73,8 @@ namespace inventory_management.Services
                 .ThenInclude(m => m.Manufacturer)
                 .Include(i => i.CompatibleModels)
                 .AsNoTracking()
+                .OrderByDescending(i => i.Stock != null && i.Stock.Quantity > 0 ? 1 : 0)
+                .ThenByDescending(i => i.RegisteredDate)
                 .FirstOrDefaultAsync(i => 
                     i.Barcode.ToLower() == normalized ||
                     i.PartType.Name.ToLower().Contains(normalized) ||
@@ -337,30 +339,8 @@ namespace inventory_management.Services
 
                 transaction.ChecksumHash = StockTransactionHasher.ComputeChecksum(transaction);
 
-                if (newQuantity == 0)
-                {
-                    // MUST write physical mirror log before db records are deleted
-                    await WriteMirrorLogAsync(transaction, item.Barcode, newQuantity);
-
-                    // Delete transactions
-                    var txs = await _context.Transactions.Where(t => t.ItemId == item.Id).ToListAsync();
-                    _context.Transactions.RemoveRange(txs);
-
-                    // Delete compatibility models
-                    var comps = await _context.ItemCompatibleModels.Where(c => c.ItemId == item.Id).ToListAsync();
-                    _context.ItemCompatibleModels.RemoveRange(comps);
-
-                    // Delete stock
-                    _context.Stocks.Remove(item.Stock);
-
-                    // Delete item
-                    _context.Items.Remove(item);
-                }
-                else
-                {
-                    _context.Transactions.Add(transaction);
-                    await WriteMirrorLogAsync(transaction, item.Barcode, newQuantity);
-                }
+                _context.Transactions.Add(transaction);
+                await WriteMirrorLogAsync(transaction, item.Barcode, newQuantity);
 
                 await _context.SaveChangesAsync();
 
@@ -401,6 +381,35 @@ namespace inventory_management.Services
                 transaction.ChecksumHash);
 
             await File.AppendAllTextAsync(logPath, line + Environment.NewLine);
+        }
+
+        public async Task CleanupOldZeroStockItemsAsync()
+        {
+            var availability = await _availabilityService.GetStatusAsync();
+            if (!availability.IsAvailable) return;
+
+            var thresholdDate = DateTime.UtcNow.AddMonths(-6);
+
+            var oldItems = await _context.Items
+                .Include(i => i.Stock)
+                .Where(i => i.Stock != null && i.Stock.Quantity <= 0 && i.Stock.LastUpdated < thresholdDate)
+                .ToListAsync();
+
+            if (!oldItems.Any()) return;
+
+            foreach (var item in oldItems)
+            {
+                var txs = await _context.Transactions.Where(t => t.ItemId == item.Id).ToListAsync();
+                _context.Transactions.RemoveRange(txs);
+
+                var comps = await _context.ItemCompatibleModels.Where(c => c.ItemId == item.Id).ToListAsync();
+                _context.ItemCompatibleModels.RemoveRange(comps);
+
+                _context.Stocks.Remove(item.Stock);
+                _context.Items.Remove(item);
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }

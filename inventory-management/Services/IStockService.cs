@@ -12,5 +12,6 @@ namespace inventory_management.Services
         Task<StockOperationResult> AddStockAsync(string barcode, int quantity);
         Task<StockOperationResult> AddStockWithPriceAsync(string barcode, int quantity, string secretPriceCode);
         Task<StockOperationResult> RemoveStockAsync(string barcode, int quantity);
+        Task CleanupOldZeroStockItemsAsync();
     }
 }
