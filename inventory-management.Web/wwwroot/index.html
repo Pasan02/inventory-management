@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpine Inventory Management System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Fonts Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Local Styling -->
+    <link rel="stylesheet" href="app.css">
+    <!-- Local Barcode Scanner Script -->
+    <script src="html5-qrcode.min.js"></script>
+</head>
+<body>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden">
+        <i id="toast-icon" class="fa-solid fa-circle-info"></i>
+        <span id="toast-message">Notification message</span>
+    </div>
+
+    <!-- Live Barcode Scanner Modal Overlay -->
+    <div id="scanner-modal" class="modal-overlay hidden">
+        <div class="modal-card scanner-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-barcode"></i> Live Camera Scan</h3>
+                <button onclick="closeBarcodeScanner()" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="interactive-scanner-container">
+                    <div id="qr-reader"></div>
+                </div>
+                <p class="scanner-instruction">Position the barcode inside the camera viewer. Ensure good lighting.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Container -->
+    <div id="login-container" class="page-container auth-wrapper">
+        <div class="card-border auth-card">
+            <div class="brand-logo">
+                <h2>Alpine Auto A/C</h2>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-with-action">
+                        <input type="password" id="password" placeholder="Enter password" required autocomplete="current-password">
+                        <button type="button" onclick="togglePasswordVisibility()" class="action-addon-btn" title="Toggle Password Visibility">
+                            <i id="password-toggle-icon" class="fa-solid fa-eye-slash"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="main-wrapper hidden">
+        <!-- Top Navigation (Matches WPF replica back & refresh buttons) -->
+        <header class="top-navigation">
+            <div class="nav-btn-container" id="back-btn-container">
+                <button id="nav-back-btn" class="btn btn-secondary btn-sm hidden" onclick="handleBackNavigation()">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </button>
+            </div>
+            <div class="nav-btn-container" id="refresh-btn-container">
+                <button id="nav-refresh-btn" class="btn btn-secondary btn-sm hidden" onclick="handleRefreshClick()">
+                    <i class="fa-solid fa-rotate"></i> Refresh
+                </button>
+            </div>
+            <div class="system-status" style="margin-left: auto;">
+                <span class="status-indicator"></span>
+                <span class="status-text">Server Online</span>
+            </div>
+        </header>
+
+        <!-- Home / Menu Tab -->
+        <section id="tab-home" class="tab-content">
+            <!-- Welcome Block -->
+            <div class="welcome-block card-border">
+                <div class="welcome-text">
+                    <h2>Alpine Auto A/C</h2>
+                    <p>Select an action below to get started</p>
+                </div>
+                <img src="/assets/logo/logo.jpeg" alt="Alpine Logo" class="welcome-logo" onerror="this.style.display='none'">
+            </div>
+
+            <!-- WPF 3x2 Grid Buttons -->
+            <div class="menu-grid">
+                <div class="compact-card" onclick="switchTab('add-stock')">
+                    <button class="menu-btn add-stock-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Stock</span>
+                        <p>Increase inventory quantities</p>
+                    </button>
+                </div>
+                <div class="compact-card" onclick="switchTab('remove-stock')">
+                    <button class="menu-btn remove-stock-btn">
+                        <i class="fa-solid fa-minus"></i>
+                        <span>Remove Stock</span>
+                        <p>Decrease inventory quantities</p>
+                    </button>
+                </div>
+                <div class="compact-card" onclick="switchTab('search')">
+                    <button class="menu-btn search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span>Search / Items</span>
+                        <p>Find and view inventory</p>
+                    </button>
+                </div>
+                <div class="compact-card" onclick="switchTab('create-item')">
+                    <button class="menu-btn new-item-btn">
+                        <i class="fa-solid fa-circle-plus"></i>
+                        <span>New Item</span>
+                        <p>Add new inventory item</p>
+                    </button>
+                </div>
+                <div class="compact-card" onclick="switchTab('reports')">
+                    <button class="menu-btn reports-btn">
+                        <i class="fa-solid fa-chart-column"></i>
+                        <span>Reports</span>
+                        <p>View analytics and reports</p>
+                    </button>
+                </div>
+                <div class="compact-card" onclick="handleLogout()">
+                    <button class="menu-btn signout-btn">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Sign Out</span>
+                        <p>Log out of your account</p>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search / Items Tab -->
+        <section id="tab-search" class="tab-content hidden">
+            <div class="content-body">
+                
+                <!-- Search Step 1: Select Part Type -->
+                <div id="search-step-parts" class="search-step card-border">
+                    <h2 class="search-step-title">Select Part Type</h2>
+                    
+                    <!-- Quick Barcode Scan/Search bar (Web Additional Scanner Option) -->
+                    <div class="compact-card" style="margin-bottom: 25px; border-style: dashed;">
+                        <label for="search-quick-scan-input" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 15px; color: var(--text-primary);">Quick Barcode Scan / Lookup</label>
+                        <div class="input-with-action">
+                            <input type="text" id="search-quick-scan-input" placeholder="Scan barcode or type exact barcode..." onchange="handleQuickScan(this.value)">
+                            <button type="button" onclick="startBarcodeScanner('search-quick-scan-input')" class="action-addon-btn" title="Scan with Phone Camera">
+                                <i class="fa-solid fa-camera"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="search-parts-list" class="cards-grid">
+                        <!-- Populated dynamically with Part Types -->
+                    </div>
+                    <div id="search-parts-status" class="status-msg"></div>
+                </div>
+
+                <!-- Search Step 2: Select Vehicle Manufacturer -->
+                <div id="search-step-manufacturers" class="search-step card-border hidden">
+                    <div class="step-header-row">
+                        <h2 class="search-step-title">Select Manufacturer for <span id="search-selected-part-name" style="color: var(--primary);">Part</span></h2>
+                        <button onclick="handleViewAllItems()" class="btn btn-primary btn-sm">View All Items</button>
+                    </div>
+                    <div id="search-manufacturers-list" class="cards-grid">
+                        <!-- Populated dynamically with Manufacturers -->
+                    </div>
+                    <div id="search-manufacturers-status" class="status-msg"></div>
+                </div>
+
+                <!-- Search Step 3: Select Vehicle Model -->
+                <div id="search-step-models" class="search-step card-border hidden">
+                    <h2 class="search-step-title">Select Model for <span id="search-selected-mfr-name" style="color: var(--primary);">Mfr</span> <span id="search-selected-part-name-2" style="color: var(--primary);">Part</span></h2>
+                    
+                    <!-- Search Filter Box -->
+                    <div class="compact-card" style="margin-bottom: 25px;">
+                        <div class="input-with-action">
+                            <input type="text" id="search-models-filter" placeholder="Search models by name or brand..." oninput="handleFilterModels(this.value)">
+                            <span class="action-addon-btn" style="pointer-events: none;"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        </div>
+                    </div>
+
+                    <div id="search-models-list" class="cards-grid">
+                        <!-- Populated dynamically with Models -->
+                    </div>
+                    <div id="search-models-status" class="status-msg"></div>
+                </div>
+
+                <!-- Search Step 4: Items View -->
+                <div id="search-step-items" class="search-step card-border hidden">
+                    <div class="step-header-row" style="margin-bottom: 20px; align-items: center; gap: 20px; flex-wrap: wrap;">
+                        <h2 class="search-step-title" style="margin: 0;">All Items for <span id="search-final-title" style="color: var(--primary);">Selection</span></h2>
+                        <div class="checkbox-group" style="margin: 0; padding: 0;">
+                            <input type="checkbox" id="search-include-out-of-stock" onchange="toggleIncludeOutOfStock(this.checked)">
+                            <label for="search-include-out-of-stock" style="font-weight: 600; font-size: 16px; color: var(--text-secondary);">Include Out-of-Stock Items</label>
+                        </div>
+                    </div>
+
+                    <!-- Search Filter Box -->
+                    <div class="compact-card" style="margin-bottom: 25px;">
+                        <div class="input-with-action">
+                            <input type="text" id="search-items-filter" placeholder="Search items by brand, description, or barcode..." oninput="handleFilterItems(this.value)">
+                            <span class="action-addon-btn" style="pointer-events: none;"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        </div>
+                    </div>
+
+                    <div id="search-items-list" class="items-grid">
+                        <!-- Populated dynamically with Item cards -->
+                    </div>
+
+                    <!-- Pagination controls -->
+                    <div class="pagination-row">
+                        <button onclick="searchFirstPage()" class="btn btn-secondary btn-sm" title="First Page"><i class="fa-solid fa-angles-left"></i></button>
+                        <button onclick="searchPrevPage()" class="btn btn-secondary btn-sm" title="Previous Page"><i class="fa-solid fa-angle-left"></i></button>
+                        <span id="search-pagination-info" class="pagination-info">Page 1 of 1</span>
+                        <button onclick="searchNextPage()" class="btn btn-secondary btn-sm" title="Next Page"><i class="fa-solid fa-angle-right"></i></button>
+                        <button onclick="searchLastPage()" class="btn btn-secondary btn-sm" title="Last Page"><i class="fa-solid fa-angles-right"></i></button>
+                    </div>
+
+                    <div id="search-items-status" class="status-msg"></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Add Stock Tab -->
+        <section id="tab-add-stock" class="tab-content hidden">
+            <div class="content-body">
+                <div class="stock-view-layout">
+                    <!-- Left Column: Inputs (2/3 width) -->
+                    <div class="stock-inputs-col card-border form-card">
+                        <h3>Receive Inventory Stock</h3>
+                        <form id="add-stock-form" onsubmit="handleAddStock(event)">
+                            <div class="form-group">
+                                <label for="add-search">Search Item by Barcode</label>
+                                <div class="input-with-action" style="position: relative;">
+                                    <input type="text" id="add-search" placeholder="Type to search barcode..." autocomplete="off" oninput="handleStockSearch('add')">
+                                    <span class="action-addon-btn" style="pointer-events: none;"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                    <!-- Custom search ListBox dropdown overlay -->
+                                    <div id="add-search-listbox" class="stock-search-listbox hidden"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="add-barcode">Scan / Enter Barcode</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="add-barcode" placeholder="Barcode value" required oninput="handleBarcodeManualInput('add')" onchange="handleBarcodeManualInput('add')">
+                                    <button type="button" onclick="startBarcodeScanner('add-barcode')" class="action-addon-btn" title="Scan with Phone Camera"><i class="fa-solid fa-camera"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="add-quantity">Quantity to Add</label>
+                                <input type="number" id="add-quantity" min="1" value="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="add-price-code">Pcode</label>
+                                <input type="text" id="add-price-code" placeholder="Enter secret price code (e.g. ABCXYZ)">
+                            </div>
+
+                            <div class="form-actions" style="margin-top: 30px;">
+                                <button type="button" class="btn btn-secondary btn-block" style="background-color: #000; color: #fff; font-weight: bold;" onclick="resetAddStockForm()">Reset</button>
+                                <button type="submit" class="btn btn-primary btn-block">Add Stock</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Details (1/3 width) -->
+                    <div class="stock-details-col card-border hidden" id="add-details-panel">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Remove Stock Tab -->
+        <section id="tab-remove-stock" class="tab-content hidden">
+            <div class="content-body">
+                <div class="stock-view-layout">
+                    <!-- Left Column: Inputs (2/3 width) -->
+                    <div class="stock-inputs-col card-border form-card">
+                        <h3>Issue / Remove Inventory Stock</h3>
+                        <form id="remove-stock-form" onsubmit="handleRemoveStock(event)">
+                            <div class="form-group">
+                                <label for="remove-search">Search Item by Barcode</label>
+                                <div class="input-with-action" style="position: relative;">
+                                    <input type="text" id="remove-search" placeholder="Type to search barcode..." autocomplete="off" oninput="handleStockSearch('remove')">
+                                    <span class="action-addon-btn" style="pointer-events: none;"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                    <!-- Custom search ListBox dropdown overlay -->
+                                    <div id="remove-search-listbox" class="stock-search-listbox hidden"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="remove-barcode">Selected Barcode</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="remove-barcode" placeholder="Barcode value" required oninput="handleBarcodeManualInput('remove')" onchange="handleBarcodeManualInput('remove')">
+                                    <button type="button" onclick="startBarcodeScanner('remove-barcode')" class="action-addon-btn" title="Scan with Phone Camera"><i class="fa-solid fa-camera"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="remove-quantity">Quantity to Remove</label>
+                                <input type="number" id="remove-quantity" min="1" value="1" required>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="remove-replacement">
+                                <label for="remove-replacement" style="font-size: 16px;">Is Replacement / Stock Correction (Exclude from Order Queue)</label>
+                            </div>
+
+                            <div class="form-actions" style="margin-top: 30px;">
+                                <button type="button" class="btn btn-secondary btn-block" style="background-color: #000; color: #fff; font-weight: bold;" onclick="resetRemoveStockForm()">Reset</button>
+                                <button type="submit" class="btn btn-primary btn-block">Remove Stock</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Details (1/3 width) -->
+                    <div class="stock-details-col card-border hidden" id="remove-details-panel">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Create New Item Tab -->
+        <section id="tab-create-item" class="tab-content hidden">
+            <div class="content-body">
+                <div class="card-border form-card-large">
+                    <h3>Register New Part Definition</h3>
+                    <form id="create-item-form" onsubmit="handleCreateItem(event)">
+                        <div class="form-grid-2">
+                            <!-- Left Column: Dropdowns & Details -->
+                            <div class="form-column">
+                                <div class="form-group">
+                                    <label for="create-part-type">Part Type</label>
+                                    <div class="select-with-add">
+                                        <select id="create-part-type" required onchange="checkAddSelection(this, 'PartType')">
+                                            <option value="">-- Select Part Type --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="create-brand">Part Brand</label>
+                                    <div class="select-with-add">
+                                        <select id="create-brand" required onchange="checkAddSelection(this, 'Brand')">
+                                            <option value="">-- Select Brand --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="create-manufacturer">Vehicle Manufacturer</label>
+                                    <div class="select-with-add">
+                                        <select id="create-manufacturer" required onchange="onManufacturerChanged(this.value)">
+                                            <option value="">-- Select Manufacturer --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="create-model">Vehicle Model</label>
+                                    <div class="select-with-add">
+                                        <select id="create-model" required onchange="checkAddSelection(this, 'Model')">
+                                            <option value="">-- Select Model (Select Manufacturer first) --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group flex-1">
+                                        <label for="create-origin">Country of Origin</label>
+                                        <input type="text" id="create-origin" placeholder="Japan, Thailand, etc." required>
+                                    </div>
+                                    <div class="form-group flex-1">
+                                        <label for="create-rack">Storage Rack / Location</label>
+                                        <select id="create-rack" onchange="checkAddSelection(this, 'Rack')">
+                                            <option value="">-- Select Rack (Optional) --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Image, Barcode, Thresholds -->
+                            <div class="form-column">
+                                <div class="form-group">
+                                    <label for="create-description">Item Description</label>
+                                    <textarea id="create-description" rows="2" placeholder="Specific notes, measurements, fitting notes..."></textarea>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group flex-1">
+                                        <label for="create-custom-barcode">Custom Barcode (Optional)</label>
+                                        <input type="text" id="create-custom-barcode" placeholder="Leave blank to auto-generate">
+                                    </div>
+                                    <div class="form-group flex-1">
+                                        <label for="create-threshold">Low Stock Threshold</label>
+                                        <input type="number" id="create-threshold" min="1" value="5" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="create-price-code">Secret Price Code (Optional)</label>
+                                    <input type="text" id="create-price-code" placeholder="Buying price cipher code">
+                                </div>
+
+                                <!-- Image upload / Mobile Camera Capture -->
+                                <div class="form-group">
+                                    <label>Part Image</label>
+                                    <div class="image-uploader-panel">
+                                        <div class="image-preview-area">
+                                            <img id="create-image-preview" src="" alt="Part Preview" class="hidden">
+                                            <div id="image-upload-placeholder" class="upload-placeholder">
+                                                <i class="fa-regular fa-image"></i>
+                                                <span>No image selected</span>
+                                            </div>
+                                        </div>
+                                        <div class="uploader-buttons">
+                                            <button type="button" class="btn btn-secondary file-upload-btn">
+                                                <i class="fa-solid fa-file-image"></i> Choose File
+                                                <input type="file" id="create-image-file" accept="image/*" onchange="handleImageFileChange(event)">
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="triggerMobileCameraCapture()">
+                                                <i class="fa-solid fa-camera"></i> Use Phone Camera
+                                                <input type="file" id="create-camera-file" accept="image/*" capture="camera" class="hidden" onchange="handleImageFileChange(event)">
+                                            </button>
+                                        </div>
+                                        <input type="hidden" id="create-image-path">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compatibility Models Builder Section -->
+                        <div class="compatibility-builder-section">
+                            <h4>Vehicle Compatibility Links</h4>
+                            <div class="comp-form-row">
+                                <input type="text" id="comp-manufacturer" placeholder="Manufacturer (e.g. Toyota)" list="compat-manufacturers-list">
+                                <input type="text" id="comp-model" placeholder="Model (e.g. Hilux)" list="compat-models-list">
+                                <input type="text" id="comp-year" placeholder="Year Range (e.g. 2015-2020)">
+                                <input type="text" id="comp-brand" placeholder="Brand (e.g. Denso)" list="compat-brands-list">
+                                <input type="text" id="comp-origin" placeholder="Country (e.g. Japan)">
+                                <button type="button" class="btn btn-secondary" onclick="addCompatibilityRow()"><i class="fa-solid fa-plus"></i> Link</button>
+
+                                <!-- Auto Suggest Lists -->
+                                <datalist id="compat-manufacturers-list"></datalist>
+                                <datalist id="compat-models-list"></datalist>
+                                <datalist id="compat-brands-list"></datalist>
+                            </div>
+
+                            <div class="comp-list-table">
+                                <table id="compatibility-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Manufacturer</th>
+                                            <th>Model</th>
+                                            <th>Year Range</th>
+                                            <th>Brand</th>
+                                            <th>Country</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="compatibility-tbody">
+                                        <tr>
+                                            <td colspan="6" class="no-data-cell">No compatibility links added yet.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Print barcode selection after save -->
+                        <div id="save-success-panel" class="success-alert-panel hidden">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <div class="alert-content">
+                                <h5>Item Saved Successfully!</h5>
+                                <p>Barcode: <strong id="saved-barcode-display"></strong></p>
+                                <div class="print-addon-actions">
+                                    <label for="saved-print-copies">Copies to Print:</label>
+                                    <input type="number" id="saved-print-copies" min="1" value="1">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="printSavedBarcode()"><i class="fa-solid fa-print"></i> Print Label</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="resetCreateItemForm()">Reset Form</button>
+                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Register Item</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reports Tab -->
+        <section id="tab-reports" class="tab-content hidden">
+            <div class="content-body">
+                <!-- Tab Menu for Reports -->
+                <div class="reports-nav">
+                    <button class="report-nav-btn active" onclick="switchReportSubTab('ordering-queue')">Order Queue (Recent Removed)</button>
+                    <button class="report-nav-btn" onclick="switchReportSubTab('ordered-items')">Ordered Items</button>
+                    <button class="report-nav-btn" onclick="switchReportSubTab('snapshot')">Stock Snapshot</button>
+                    <button class="report-nav-btn" onclick="switchReportSubTab('low-stock')">Low Stock</button>
+                    <button class="report-nav-btn" onclick="switchReportSubTab('transactions')">Recent Transactions</button>
+                </div>
+
+                <!-- Order Queue (Recent Removed) Report -->
+                <div id="report-subtab-ordering-queue" class="report-section-body card-border table-container">
+                    <div class="table-header">
+                        <h3>Order Queue (Recent Removed)</h3>
+                        <button onclick="placeSelectedOrders()" class="btn btn-primary btn-sm" style="background-color: #0078D4; color: white; font-weight: bold;"><i class="fa-solid fa-cart-shopping"></i> Send Selected to Ordered Tab</button>
+                    </div>
+                    <div class="scroll-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="select-all-pending" onchange="toggleSelectAll('pending', this.checked)"></th>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Barcode</th>
+                                    <th>Qty Removed</th>
+                                    <th>Removed Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-pending-tbody">
+                                <tr><td colspan="9" class="loading-cell">Loading reports...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Ordered Items Report -->
+                <div id="report-subtab-ordered-items" class="report-section-body card-border table-container hidden">
+                    <div class="table-header">
+                        <h3>Ordered Items</h3>
+                        <button onclick="arriveSelectedOrders()" class="btn btn-success btn-sm" style="background-color: #2E7D32; color: white; font-weight: bold;"><i class="fa-solid fa-box-open"></i> Mark Selected as Arrived</button>
+                    </div>
+                    <div class="scroll-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="select-all-ordered" onchange="toggleSelectAll('ordered', this.checked)"></th>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Barcode</th>
+                                    <th>Qty Ordered</th>
+                                    <th>Order Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-ordered-tbody">
+                                <tr><td colspan="9" class="loading-cell">Loading reports...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Snapshot Report -->
+                <div id="report-subtab-snapshot" class="report-section-body card-border table-container hidden">
+                    <div class="table-header">
+                        <h3>Current Stock Snapshot Report</h3>
+                    </div>
+                    <div class="scroll-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Description</th>
+                                    <th>Cross-Reference</th>
+                                    <th>Rack</th>
+                                    <th>Qty</th>
+                                    <th>Low</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-snapshot-tbody">
+                                <tr><td colspan="9" class="loading-cell">Loading reports...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Low Stock Report -->
+                <div id="report-subtab-low-stock" class="report-section-body card-border table-container hidden">
+                    <div class="table-header">
+                        <h3>Low Stock Alert Items</h3>
+                    </div>
+                    <div class="scroll-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Description</th>
+                                    <th>Cross-Reference</th>
+                                    <th>Rack</th>
+                                    <th>Qty</th>
+                                    <th>Low</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-low-stock-tbody">
+                                <tr><td colspan="9" class="loading-cell">Loading reports...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Transactions Report -->
+                <div id="report-subtab-transactions" class="report-section-body card-border table-container hidden">
+                    <div class="table-header">
+                        <h3>Recent 200 Stock Transactions</h3>
+                    </div>
+                    <div class="scroll-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Barcode</th>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Action Type</th>
+                                    <th>Qty Change</th>
+                                    <th>Machine Name</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-transactions-tbody">
+                                <tr><td colspan="9" class="loading-cell">Loading reports...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Quick Reference Item Addition Modal -->
+    <div id="ref-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="ref-modal-title">Add Reference Data</h3>
+                <button onclick="closeRefModal()" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="ref-form" onsubmit="handleRefSubmit(event)">
+                    <div class="form-group">
+                        <label id="ref-input-label" for="ref-input-name">Name</label>
+                        <input type="text" id="ref-input-name" required placeholder="Enter name">
+                    </div>
+                    <!-- Extra input fields dynamically enabled -->
+                    <div id="ref-model-fields" class="form-group hidden">
+                        <label for="ref-input-year">Model Year Range (e.g. 2012-2018)</label>
+                        <input type="text" id="ref-input-year" placeholder="Optional year range">
+                    </div>
+                    <div id="ref-image-fields" class="form-group hidden">
+                        <label>Upload Image/Logo (Optional)</label>
+                        <div class="modal-file-upload">
+                            <input type="file" id="ref-input-image" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeRefModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Local PDF Generation Libraries -->
+    <script src="jspdf.umd.min.js"></script>
+    <script src="jspdf.plugin.autotable.min.js"></script>
+    <!-- Local Application Javascript -->
+    <script src="app.js"></script>
+</body>
+</html>
