@@ -237,39 +237,50 @@
         <!-- Add Stock Tab -->
         <section id="tab-add-stock" class="tab-content hidden">
             <div class="content-body">
-                <div class="card-border form-card">
-                    <h3>Receive Inventory Stock</h3>
-                    <form id="add-stock-form" onsubmit="handleAddStock(event)">
-                        <div class="form-row">
-                            <div class="form-group flex-3">
-                                <label for="add-barcode">Item Barcode</label>
-                                <div class="input-with-action">
-                                    <input type="text" id="add-barcode" placeholder="Scan or enter barcode" required onchange="lookupAddStockItem(this.value)">
-                                    <button type="button" onclick="startBarcodeScanner('add-barcode')" class="action-addon-btn"><i class="fa-solid fa-camera"></i></button>
+                <div class="stock-view-layout">
+                    <!-- Left Column: Inputs (2/3 width) -->
+                    <div class="stock-inputs-col card-border form-card">
+                        <h3>Receive Inventory Stock</h3>
+                        <form id="add-stock-form" onsubmit="handleAddStock(event)">
+                            <div class="form-group">
+                                <label for="add-search">Search Item by Barcode</label>
+                                <div class="input-with-action" style="position: relative;">
+                                    <input type="text" id="add-search" placeholder="Type to search barcode..." autocomplete="off" oninput="handleStockSearch('add')">
+                                    <span class="action-addon-btn" style="pointer-events: none;"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                    <!-- Custom search ListBox dropdown overlay -->
+                                    <div id="add-search-listbox" class="stock-search-listbox hidden"></div>
                                 </div>
                             </div>
-                            <div class="form-group flex-1">
+
+                            <div class="form-group">
+                                <label for="add-barcode">Scan / Enter Barcode</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="add-barcode" placeholder="Barcode value" required oninput="handleBarcodeManualInput('add')" onchange="handleBarcodeManualInput('add')">
+                                    <button type="button" onclick="startBarcodeScanner('add-barcode')" class="action-addon-btn" title="Scan with Phone Camera"><i class="fa-solid fa-camera"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="add-quantity">Quantity to Add</label>
                                 <input type="number" id="add-quantity" min="1" value="1" required>
                             </div>
-                        </div>
 
-                        <!-- Looked up item detail card -->
-                        <div id="add-item-preview" class="item-mini-preview hidden">
-                            <!-- Populated dynamically -->
-                        </div>
+                            <div class="form-group">
+                                <label for="add-price-code">Pcode</label>
+                                <input type="text" id="add-price-code" placeholder="Enter secret price code (e.g. ABCXYZ)">
+                            </div>
 
-                        <div class="form-group">
-                            <label for="add-price-code">Secret Price Code (Optional)</label>
-                            <input type="text" id="add-price-code" placeholder="Enter secret price code (e.g. ABCXYZ)">
-                            <small class="field-hint">Entering a different price code or adding in a new month will generate a new batch item record automatically.</small>
-                        </div>
+                            <div class="form-actions" style="margin-top: 30px;">
+                                <button type="button" class="btn btn-secondary btn-block" style="background-color: #000; color: #fff; font-weight: bold;" onclick="resetAddStockForm()">Reset</button>
+                                <button type="submit" class="btn btn-primary btn-block">Add Stock</button>
+                            </div>
+                        </form>
+                    </div>
 
-                        <div class="form-actions">
-                            <button type="reset" class="btn btn-secondary" onclick="resetAddStockForm()">Clear</button>
-                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Add Stock</button>
-                        </div>
-                    </form>
+                    <!-- Right Column: Details (1/3 width) -->
+                    <div class="stock-details-col card-border hidden" id="add-details-panel">
+                        <!-- Populated dynamically via JS -->
+                    </div>
                 </div>
             </div>
         </section>
@@ -277,38 +288,50 @@
         <!-- Remove Stock Tab -->
         <section id="tab-remove-stock" class="tab-content hidden">
             <div class="content-body">
-                <div class="card-border form-card">
-                    <h3>Issue / Remove Inventory Stock</h3>
-                    <form id="remove-stock-form" onsubmit="handleRemoveStock(event)">
-                        <div class="form-row">
-                            <div class="form-group flex-3">
-                                <label for="remove-barcode">Item Barcode</label>
-                                <div class="input-with-action">
-                                    <input type="text" id="remove-barcode" placeholder="Scan or enter barcode" required onchange="lookupRemoveStockItem(this.value)">
-                                    <button type="button" onclick="startBarcodeScanner('remove-barcode')" class="action-addon-btn"><i class="fa-solid fa-camera"></i></button>
+                <div class="stock-view-layout">
+                    <!-- Left Column: Inputs (2/3 width) -->
+                    <div class="stock-inputs-col card-border form-card">
+                        <h3>Issue / Remove Inventory Stock</h3>
+                        <form id="remove-stock-form" onsubmit="handleRemoveStock(event)">
+                            <div class="form-group">
+                                <label for="remove-search">Search Item by Barcode</label>
+                                <div class="input-with-action" style="position: relative;">
+                                    <input type="text" id="remove-search" placeholder="Type to search barcode..." autocomplete="off" oninput="handleStockSearch('remove')">
+                                    <span class="action-addon-btn" style="pointer-events: none;"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                    <!-- Custom search ListBox dropdown overlay -->
+                                    <div id="remove-search-listbox" class="stock-search-listbox hidden"></div>
                                 </div>
                             </div>
-                            <div class="form-group flex-1">
+
+                            <div class="form-group">
+                                <label for="remove-barcode">Selected Barcode</label>
+                                <div class="input-with-action">
+                                    <input type="text" id="remove-barcode" placeholder="Barcode value" required oninput="handleBarcodeManualInput('remove')" onchange="handleBarcodeManualInput('remove')">
+                                    <button type="button" onclick="startBarcodeScanner('remove-barcode')" class="action-addon-btn" title="Scan with Phone Camera"><i class="fa-solid fa-camera"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="remove-quantity">Quantity to Remove</label>
                                 <input type="number" id="remove-quantity" min="1" value="1" required>
                             </div>
-                        </div>
 
-                        <!-- Looked up item detail card -->
-                        <div id="remove-item-preview" class="item-mini-preview hidden">
-                            <!-- Populated dynamically -->
-                        </div>
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="remove-replacement">
+                                <label for="remove-replacement" style="font-size: 16px;">Is Replacement / Stock Correction (Exclude from Order Queue)</label>
+                            </div>
 
-                        <div class="form-group checkbox-group">
-                            <input type="checkbox" id="remove-replacement">
-                            <label for="remove-replacement">Is Replacement transaction (e.g. warranty / direct swapping)?</label>
-                        </div>
+                            <div class="form-actions" style="margin-top: 30px;">
+                                <button type="button" class="btn btn-secondary btn-block" style="background-color: #000; color: #fff; font-weight: bold;" onclick="resetRemoveStockForm()">Reset</button>
+                                <button type="submit" class="btn btn-primary btn-block">Remove Stock</button>
+                            </div>
+                        </form>
+                    </div>
 
-                        <div class="form-actions">
-                            <button type="reset" class="btn btn-secondary" onclick="resetRemoveStockForm()">Clear</button>
-                            <button type="submit" class="btn btn-danger"><i class="fa-solid fa-minus"></i> Remove Stock</button>
-                        </div>
-                    </form>
+                    <!-- Right Column: Details (1/3 width) -->
+                    <div class="stock-details-col card-border hidden" id="remove-details-panel">
+                        <!-- Populated dynamically via JS -->
+                    </div>
                 </div>
             </div>
         </section>
@@ -488,14 +511,71 @@
             <div class="content-body">
                 <!-- Tab Menu for Reports -->
                 <div class="reports-nav">
-                    <button class="report-nav-btn active" onclick="switchReportSubTab('snapshot')">Stock Snapshot</button>
-                    <button class="report-nav-btn" onclick="switchReportSubTab('low-stock')">Low Stock Alerts</button>
+                    <button class="report-nav-btn active" onclick="switchReportSubTab('ordering-queue')">Order Queue (Recent Removed)</button>
+                    <button class="report-nav-btn" onclick="switchReportSubTab('ordered-items')">Ordered Items</button>
+                    <button class="report-nav-btn" onclick="switchReportSubTab('snapshot')">Stock Snapshot</button>
+                    <button class="report-nav-btn" onclick="switchReportSubTab('low-stock')">Low Stock</button>
                     <button class="report-nav-btn" onclick="switchReportSubTab('transactions')">Recent Transactions</button>
-                    <button class="report-nav-btn" onclick="switchReportSubTab('ordering')">Order Tracking</button>
+                </div>
+
+                <!-- Order Queue (Recent Removed) Report -->
+                <div id="report-subtab-ordering-queue" class="report-section-body card-border table-container">
+                    <div class="table-header">
+                        <h3>Order Queue (Recent Removed)</h3>
+                        <button onclick="placeSelectedOrders()" class="btn btn-primary btn-sm" style="background-color: #0078D4; color: white; font-weight: bold;"><i class="fa-solid fa-cart-shopping"></i> Send Selected to Ordered Tab</button>
+                    </div>
+                    <div class="scroll-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="select-all-pending" onchange="toggleSelectAll('pending', this.checked)"></th>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Barcode</th>
+                                    <th>Qty Removed</th>
+                                    <th>Removed Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-pending-tbody">
+                                <tr><td colspan="9" class="loading-cell">Loading reports...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Ordered Items Report -->
+                <div id="report-subtab-ordered-items" class="report-section-body card-border table-container hidden">
+                    <div class="table-header">
+                        <h3>Ordered Items</h3>
+                        <button onclick="arriveSelectedOrders()" class="btn btn-success btn-sm" style="background-color: #2E7D32; color: white; font-weight: bold;"><i class="fa-solid fa-box-open"></i> Mark Selected as Arrived</button>
+                    </div>
+                    <div class="scroll-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="select-all-ordered" onchange="toggleSelectAll('ordered', this.checked)"></th>
+                                    <th>Type</th>
+                                    <th>Brand</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Barcode</th>
+                                    <th>Qty Ordered</th>
+                                    <th>Order Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-ordered-tbody">
+                                <tr><td colspan="9" class="loading-cell">Loading reports...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Snapshot Report -->
-                <div id="report-subtab-snapshot" class="report-section-body card-border table-container">
+                <div id="report-subtab-snapshot" class="report-section-body card-border table-container hidden">
                     <div class="table-header">
                         <h3>Current Stock Snapshot Report</h3>
                     </div>
@@ -503,15 +583,15 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Part Description</th>
-                                    <th>Part Type</th>
+                                    <th>Type</th>
                                     <th>Brand</th>
-                                    <th>Manufacturer / Model</th>
-                                    <th>Country</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Description</th>
+                                    <th>Cross-Reference</th>
                                     <th>Rack</th>
-                                    <th>Total Quantity</th>
-                                    <th>Barcodes</th>
-                                    <th>Compatible Models</th>
+                                    <th>Qty</th>
+                                    <th>Low</th>
                                 </tr>
                             </thead>
                             <tbody id="report-snapshot-tbody">
@@ -530,15 +610,15 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Part Description</th>
-                                    <th>Part Type</th>
+                                    <th>Type</th>
                                     <th>Brand</th>
-                                    <th>Manufacturer / Model</th>
-                                    <th>Country</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Description</th>
+                                    <th>Cross-Reference</th>
                                     <th>Rack</th>
-                                    <th>Quantity</th>
-                                    <th>Threshold</th>
-                                    <th>Barcodes</th>
+                                    <th>Qty</th>
+                                    <th>Low</th>
                                 </tr>
                             </thead>
                             <tbody id="report-low-stock-tbody">
@@ -557,75 +637,21 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Timestamp (UTC)</th>
+                                    <th>Timestamp</th>
                                     <th>Barcode</th>
-                                    <th>Part Description</th>
-                                    <th>Part Type</th>
-                                    <th>Manufacturer / Model</th>
+                                    <th>Description</th>
                                     <th>Type</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Action Type</th>
                                     <th>Qty Change</th>
-                                    <th>Operator Station</th>
+                                    <th>Machine Name</th>
                                 </tr>
                             </thead>
                             <tbody id="report-transactions-tbody">
-                                <tr><td colspan="8" class="loading-cell">Loading reports...</td></tr>
+                                <tr><td colspan="9" class="loading-cell">Loading reports...</td></tr>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-
-                <!-- Order Tracking Report -->
-                <div id="report-subtab-ordering" class="report-section-body hidden">
-                    <div class="orders-grid">
-                        <!-- Left Column: Pending Ordering -->
-                        <div class="card-border table-container">
-                            <div class="table-header">
-                                <h3>Pending Items to Order</h3>
-                                <button onclick="placeSelectedOrders()" class="btn btn-primary btn-sm"><i class="fa-solid fa-cart-shopping"></i> Order Selected</button>
-                            </div>
-                            <div class="scroll-table-wrapper">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th><input type="checkbox" id="select-all-pending" onchange="toggleSelectAll('pending', this.checked)"></th>
-                                            <th>Part</th>
-                                            <th>Manufacturer / Model</th>
-                                            <th>Rack</th>
-                                            <th>Qty to Order</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="report-pending-tbody">
-                                        <tr><td colspan="6" class="loading-cell">Loading...</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Right Column: Ordered Items -->
-                        <div class="card-border table-container">
-                            <div class="table-header">
-                                <h3>Active Orders (Awaiting Delivery)</h3>
-                                <button onclick="arriveSelectedOrders()" class="btn btn-success btn-sm"><i class="fa-solid fa-box-open"></i> Receive Selected</button>
-                            </div>
-                            <div class="scroll-table-wrapper">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th><input type="checkbox" id="select-all-ordered" onchange="toggleSelectAll('ordered', this.checked)"></th>
-                                            <th>Part</th>
-                                            <th>Manufacturer / Model</th>
-                                            <th>Qty Ordered</th>
-                                            <th>Ordered Time</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="report-ordered-tbody">
-                                        <tr><td colspan="6" class="loading-cell">Loading...</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

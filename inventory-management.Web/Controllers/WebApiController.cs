@@ -78,6 +78,22 @@ namespace inventory_management.Web.Controllers
             return Ok(item);
         }
 
+        [HttpGet("barcode/image")]
+        public IActionResult GetBarcodeImage([FromQuery] string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return BadRequest(new { message = "Text is required." });
+            try
+            {
+                var bytes = _barcodeService.GenerateBarcodeImage(text);
+                if (bytes == null || bytes.Length == 0) return NotFound();
+                return File(bytes, "image/png");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
         [HttpGet("inventory/metadata")]
         public async Task<IActionResult> GetMetadata()
         {
@@ -280,6 +296,14 @@ namespace inventory_management.Web.Controllers
 
             if (result.Success)
             {
+                if (request.OrderIds != null && request.OrderIds.Any())
+                {
+                    foreach (var id in request.OrderIds)
+                    {
+                        await _stockService.MarkOrderAsArrivedAsync(id);
+                    }
+                }
+
                 return Ok(new
                 {
                     success = true,
@@ -640,6 +664,7 @@ namespace inventory_management.Web.Controllers
         public int Quantity { get; set; }
         public string? SecretPriceCode { get; set; }
         public bool IsReplacement { get; set; }
+        public List<int>? OrderIds { get; set; }
     }
 
     public class OrderIdsRequest

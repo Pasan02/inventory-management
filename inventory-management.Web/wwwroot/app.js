@@ -22,6 +22,24 @@ let searchItemsTotalPages = 1;
 const SEARCH_PAGE_SIZE = 20;
 let allInventoryItems = [];
 
+// Stock views state
+let addStockCurrentItem = null;
+let removeStockCurrentItem = null;
+let addStockDebounceTimeout = null;
+let removeStockDebounceTimeout = null;
+let addStockPendingOrderIds = [];
+
+function formatLocalDateTime(dateStr) {
+    if (!dateStr) return "-";
+    const date = new Date(dateStr);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
+
 // Password Visibility Toggle for Login Page
 function togglePasswordVisibility() {
     const passwordInput = document.getElementById("password");
@@ -1059,26 +1077,156 @@ function closeBarcodeScanner() {
 }
 
 // RECEIVE / ADD STOCK LOGIC
-async function lookupAddStockItem(barcode) {
-    if (!barcode) return;
+async function ensureInventoryItems() {
+    if (!allInventoryItems || allInventoryItems.length === 0) {
+        try {
+            const response = await fetch(`${API_BASE}/inventory/items`);
+            if (response.ok) {
+                allInventoryItems = await response.json();
+            }
+        } catch (e) {}
+    }
+}
+
+// Search matching barcodes as user types (emulates WPF search textbox/listbox)
+async function handleStockSearch(type) {
+    await ensureInventoryItems();
+    const searchVal = document.getElementById(`${type}-search`).value.trim().toLowerCase();
+    const listbox = document.getElementById(`${type}-search-listbox`);
+    
+    if (!searchVal) {
+        listbox.innerHTML = "";
+        listbox.classList.add("hidden");
+        return;
+    }
+    
+    const matches = allInventoryItems.filter(item => 
+        item.barcode.toLowerCase().includes(searchVal)
+    );
+    
+    if (matches.length === 0) {
+        listbox.innerHTML = '<div class="listbox-item disabled-item">No matching barcodes</div>';
+        listbox.classList.remove("hidden");
+        return;
+    }
+    
+    listbox.innerHTML = "";
+    matches.slice(0, 10).forEach(item => {
+        const div = document.createElement("div");
+        div.className = "listbox-item";
+        div.innerText = item.barcode;
+        div.onclick = () => {
+            document.getElementById(`${type}-search`).value = item.barcode;
+            document.getElementById(`${type}-barcode`).value = item.barcode;
+            listbox.classList.add("hidden");
+            lookupStockItem(type, item.barcode);
+        };
+        listbox.appendChild(div);
+    });
+    listbox.classList.remove("hidden");
+}
+
+// Debounce manual typing in barcode fields
+function handleBarcodeManualInput(type) {
+    const barcodeVal = document.getElementById(`${type}-barcode`).value.trim();
+    
+    if (type === 'add' && addStockDebounceTimeout) clearTimeout(addStockDebounceTimeout);
+    if (type === 'remove' && removeStockDebounceTimeout) clearTimeout(removeStockDebounceTimeout);
+    
+    const timeout = setTimeout(() => {
+        lookupStockItem(type, barcodeVal);
+    }, 250); // WPF 250ms delay
+    
+    if (type === 'add') addStockDebounceTimeout = timeout;
+    else removeStockDebounceTimeout = timeout;
+}
+
+// Core lookup item details logic
+async function lookupStockItem(type, barcode) {
+    const detailsPanel = document.getElementById(`${type}-details-panel`);
+    if (!barcode) {
+        if (type === 'add') addStockCurrentItem = null;
+        else removeStockCurrentItem = null;
+        detailsPanel.innerHTML = "";
+        detailsPanel.classList.add("hidden");
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_BASE}/inventory/search?q=${encodeURIComponent(barcode)}`);
-        const previewDiv = document.getElementById("add-item-preview");
         if (response.ok) {
             const item = await response.json();
-            previewDiv.innerHTML = `
-                <img src="${item.imagePath ? '/' + item.imagePath : '/assets/logo/logo.jpeg'}" class="preview-img" onerror="this.src='/assets/logo/logo.jpeg'">
-                <div class="preview-details">
-                    <h4>${item.partType?.name} (${item.partBrand?.name})</h4>
-                    <p>Model: ${item.vehicleModel?.manufacturer?.name} ${item.vehicleModel?.name} | Stock: ${item.stock?.quantity || 0} units</p>
-                </div>
-            `;
-            previewDiv.classList.remove("hidden");
+            if (type === 'add') addStockCurrentItem = item;
+            else removeStockCurrentItem = item;
+            
+            const currentQuantity = item.stock ? item.stock.quantity : 0;
+            const regDate = item.registeredDate ? new Date(item.registeredDate).toISOString().split('T')[0] : "-";
+            const pcode = item.secretPriceCode || "-";
+            
+            let compatItemsHtml = "";
+            if (item.compatibleModels && item.compatibleModels.length > 0) {
+                compatItemsHtml = item.compatibleModels.map(cm => {
+                    const text = `${cm.manufacturer || ''} ${cm.model || ''} ${cm.yearRange || ''} ${cm.brand || ''} ${cm.countryOfOrigin || ''}`.trim().replace(/\s+/g, ' ');
+                    return `<li>• ${text}</li>`;
+                }).join('');
+            } else {
+                compatItemsHtml = "<li>No compatibility links</li>";
+            }
+            
+            if (type === 'add') {
+                detailsPanel.innerHTML = `
+                    <h4 style="font-weight: bold; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Item Details</h4>
+                    <div class="detail-row">Part Type: ${item.partType?.name || 'N/A'}</div>
+                    <div class="detail-row">Brand: ${item.partBrand?.name || 'N/A'}</div>
+                    <div class="detail-row">Make: ${item.vehicleModel?.manufacturer?.name || 'N/A'}</div>
+                    <div class="detail-row">Model: ${item.vehicleModel?.name || 'N/A'}</div>
+                    <div class="detail-row">Rack: ${item.rack?.locationCode || '-'}</div>
+                    <div class="detail-row">Registered Date: ${regDate}</div>
+                    <div class="detail-row" style="font-weight: 600;">Pcode: ${pcode}</div>
+                    <div class="detail-row" style="font-weight: bold; font-size: 16px; margin-top: 15px; margin-bottom: 15px;">Current Stock: ${currentQuantity}</div>
+                    
+                    <div style="border-top: 1px solid #eaeaea; border-bottom: 1px solid #eaeaea; padding: 15px 0; margin: 15px 0; text-align: center;">
+                        <img src="${API_BASE}/barcode/image?text=${encodeURIComponent(item.barcode)}" alt="Barcode Image" style="height: 60px; max-width: 100%; display: block; margin: 0 auto 5px;">
+                        <div style="font-weight: bold; font-size: 15px; margin-bottom: 12px;">${item.barcode}</div>
+                        <button type="button" class="btn btn-secondary btn-sm btn-block" onclick="printBarcodeFromDetail('${item.barcode}')" style="font-weight: bold;"><i class="fa-solid fa-print"></i> Print Barcode Label</button>
+                    </div>
+                    
+                    <div style="font-weight: bold; margin-bottom: 8px;">Compatible Models:</div>
+                    <ul class="compat-bullets-list" style="list-style: none; padding-left: 0; font-size: 13px; max-height: 150px; overflow-y: auto;">
+                        ${compatItemsHtml}
+                    </ul>
+                `;
+            } else {
+                detailsPanel.innerHTML = `
+                    <h4 style="font-weight: bold; margin-bottom: 15px; font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Item Details</h4>
+                    <div class="detail-row">Part Type: ${item.partType?.name || 'N/A'}</div>
+                    <div class="detail-row">Brand: ${item.partBrand?.name || 'N/A'}</div>
+                    <div class="detail-row">Make: ${item.vehicleModel?.manufacturer?.name || 'N/A'}</div>
+                    <div class="detail-row">Model: ${item.vehicleModel?.name || 'N/A'}</div>
+                    <div class="detail-row">Rack: ${item.rack?.locationCode || '-'}</div>
+                    <div class="detail-row">Registered Date: ${regDate}</div>
+                    <div class="detail-row" style="font-weight: 600;">Pcode: ${pcode}</div>
+                    <div class="detail-row" style="font-weight: bold; font-size: 16px; margin-top: 15px; margin-bottom: 15px;">Current Stock: ${currentQuantity}</div>
+                    
+                    <div style="font-weight: bold; margin-bottom: 8px;">Compatible Models:</div>
+                    <ul class="compat-bullets-list" style="list-style: none; padding-left: 0; font-size: 13px; max-height: 150px; overflow-y: auto;">
+                        ${compatItemsHtml}
+                    </ul>
+                `;
+            }
+            detailsPanel.classList.remove("hidden");
         } else {
-            previewDiv.innerHTML = '<span class="danger-text"><i class="fa-solid fa-triangle-exclamation"></i> Barcode not found. Verify or register item first.</span>';
-            previewDiv.classList.remove("hidden");
+            if (type === 'add') addStockCurrentItem = null;
+            else removeStockCurrentItem = null;
+            detailsPanel.innerHTML = '<span class="danger-text"><i class="fa-solid fa-triangle-exclamation"></i> Barcode not found. Verify or register item first.</span>';
+            detailsPanel.classList.remove("hidden");
         }
-    } catch(e) {}
+    } catch(e) {
+        if (type === 'add') addStockCurrentItem = null;
+        else removeStockCurrentItem = null;
+        detailsPanel.innerHTML = "";
+        detailsPanel.classList.add("hidden");
+    }
 }
 
 async function handleAddStock(event) {
@@ -1091,12 +1239,19 @@ async function handleAddStock(event) {
         const response = await fetch(`${API_BASE}/inventory/stock/add`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ barcode, quantity, secretPriceCode: secretCode })
+            body: JSON.stringify({ 
+                barcode, 
+                quantity, 
+                secretPriceCode: secretCode,
+                orderIds: addStockPendingOrderIds 
+            })
         });
         const data = await response.json();
         if (response.ok && data.success) {
             showToast(data.message, "success");
             resetAddStockForm();
+            const refreshResponse = await fetch(`${API_BASE}/inventory/items`);
+            if (refreshResponse.ok) allInventoryItems = await refreshResponse.json();
         } else {
             showToast(data.message || "Failed to add stock.", "danger");
         }
@@ -1107,32 +1262,17 @@ async function handleAddStock(event) {
 
 function resetAddStockForm() {
     document.getElementById("add-stock-form").reset();
-    document.getElementById("add-item-preview").classList.add("hidden");
+    document.getElementById("add-search").value = "";
+    document.getElementById("add-search-listbox").innerHTML = "";
+    document.getElementById("add-search-listbox").classList.add("hidden");
+    const detailsPanel = document.getElementById("add-details-panel");
+    detailsPanel.innerHTML = "";
+    detailsPanel.classList.add("hidden");
+    addStockCurrentItem = null;
+    addStockPendingOrderIds = [];
 }
 
 // ISSUE / REMOVE STOCK LOGIC
-async function lookupRemoveStockItem(barcode) {
-    if (!barcode) return;
-    try {
-        const response = await fetch(`${API_BASE}/inventory/search?q=${encodeURIComponent(barcode)}`);
-        const previewDiv = document.getElementById("remove-item-preview");
-        if (response.ok) {
-            const item = await response.json();
-            previewDiv.innerHTML = `
-                <img src="${item.imagePath ? '/' + item.imagePath : '/assets/logo/logo.jpeg'}" class="preview-img" onerror="this.src='/assets/logo/logo.jpeg'">
-                <div class="preview-details">
-                    <h4>${item.partType?.name} (${item.partBrand?.name})</h4>
-                    <p>Model: ${item.vehicleModel?.manufacturer?.name} ${item.vehicleModel?.name} | Stock: ${item.stock?.quantity || 0} units</p>
-                </div>
-            `;
-            previewDiv.classList.remove("hidden");
-        } else {
-            previewDiv.innerHTML = '<span class="danger-text"><i class="fa-solid fa-triangle-exclamation"></i> Barcode not found.</span>';
-            previewDiv.classList.remove("hidden");
-        }
-    } catch(e) {}
-}
-
 async function handleRemoveStock(event) {
     event.preventDefault();
     const barcode = document.getElementById("remove-barcode").value;
@@ -1149,6 +1289,8 @@ async function handleRemoveStock(event) {
         if (response.ok && data.success) {
             showToast(data.message, "success");
             resetRemoveStockForm();
+            const refreshResponse = await fetch(`${API_BASE}/inventory/items`);
+            if (refreshResponse.ok) allInventoryItems = await refreshResponse.json();
         } else {
             showToast(data.message || "Failed to remove stock.", "danger");
         }
@@ -1159,7 +1301,13 @@ async function handleRemoveStock(event) {
 
 function resetRemoveStockForm() {
     document.getElementById("remove-stock-form").reset();
-    document.getElementById("remove-item-preview").classList.add("hidden");
+    document.getElementById("remove-search").value = "";
+    document.getElementById("remove-search-listbox").innerHTML = "";
+    document.getElementById("remove-search-listbox").classList.add("hidden");
+    const detailsPanel = document.getElementById("remove-details-panel");
+    detailsPanel.innerHTML = "";
+    detailsPanel.classList.add("hidden");
+    removeStockCurrentItem = null;
 }
 
 // CREATE NEW PART LAYOUT LOGIC
@@ -1342,10 +1490,8 @@ function resetCreateItemForm() {
     savedBarcode = null;
 }
 
-// SYSTEM REPORTS LOGIC
-let activeReportSubTab = "snapshot";
-let reportsCache = null;
-
+// SYSTE// REPORTS TABS SWITCHING
+let activeReportSubTab = "ordering-queue"; // Default tab in WPF is Order Queue
 function switchReportSubTab(subTabId) {
     activeReportSubTab = subTabId;
     document.querySelectorAll(".report-section-body").forEach(el => el.classList.add("hidden"));
@@ -1384,15 +1530,15 @@ function renderSnapshotReport(snapshot) {
     snapshot.forEach(row => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td><strong>${row.description || 'N/A'}</strong></td>
             <td>${row.partType}</td>
             <td>${row.brand}</td>
-            <td>${row.manufacturer} ${row.model}</td>
-            <td>${row.countryOfOrigin}</td>
+            <td>${row.manufacturer}</td>
+            <td>${row.model}</td>
+            <td><strong>${row.description || 'N/A'}</strong></td>
+            <td><small>${row.compatibleModelsText}</small></td>
             <td>${row.rack || '-'}</td>
             <td><strong>${row.quantity}</strong></td>
-            <td><small class="barcode-badge">${row.barcode}</small></td>
-            <td><small>${row.compatibleModelsText}</small></td>
+            <td>${row.lowStockThreshold}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -1409,15 +1555,15 @@ function renderLowStockReport(lowStock) {
     lowStock.forEach(row => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td><strong>${row.description || 'N/A'}</strong></td>
             <td>${row.partType}</td>
             <td>${row.brand}</td>
-            <td>${row.manufacturer} ${row.model}</td>
-            <td>${row.countryOfOrigin}</td>
+            <td>${row.manufacturer}</td>
+            <td>${row.model}</td>
+            <td><strong>${row.description || 'N/A'}</strong></td>
+            <td><small>${row.compatibleModelsText}</small></td>
             <td>${row.rack || '-'}</td>
             <td class="danger-text"><strong>${row.quantity}</strong></td>
             <td>${row.lowStockThreshold}</td>
-            <td><small class="barcode-badge">${row.barcode}</small></td>
         `;
         tbody.appendChild(tr);
     });
@@ -1427,12 +1573,12 @@ function renderTransactionsReport(txs) {
     const tbody = document.getElementById("report-transactions-tbody");
     tbody.innerHTML = "";
     if (txs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="no-data-cell">No transactions recorded.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="no-data-cell">No transactions recorded.</td></tr>';
         return;
     }
 
     txs.forEach(tx => {
-        const date = new Date(tx.timestamp).toLocaleString();
+        const dateStr = formatLocalDateTime(tx.timestamp);
         const tr = document.createElement("tr");
         
         let actionClass = "success-text";
@@ -1440,11 +1586,12 @@ function renderTransactionsReport(txs) {
         else if (tx.actionType === "REPLACEMENT") actionClass = "warning-text";
 
         tr.innerHTML = `
-            <td><small>${date}</small></td>
+            <td><small>${dateStr}</small></td>
             <td><span class="barcode-badge">${tx.barcode}</span></td>
             <td>${tx.description || 'N/A'}</td>
             <td>${tx.partType}</td>
-            <td>${tx.manufacturer} ${tx.model}</td>
+            <td>${tx.manufacturer}</td>
+            <td>${tx.model}</td>
             <td><strong class="${actionClass}">${tx.actionType}</strong></td>
             <td><strong>${tx.quantityChange}</strong></td>
             <td><small class="text-muted">${tx.machineName}</small></td>
@@ -1458,17 +1605,21 @@ function renderOrderingReport(pending, ordered) {
     const pendBody = document.getElementById("report-pending-tbody");
     pendBody.innerHTML = "";
     if (pending.length === 0) {
-        pendBody.innerHTML = '<tr><td colspan="6" class="no-data-cell">No pending orders.</td></tr>';
+        pendBody.innerHTML = '<tr><td colspan="9" class="no-data-cell">No pending orders.</td></tr>';
     } else {
-        pending.forEach((row, i) => {
+        pending.forEach((row) => {
+            const dateStr = formatLocalDateTime(row.createdAt);
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td><input type="checkbox" class="pending-chk" data-ids="${row.orderIds.join(',')}"></td>
-                <td><strong>${row.description}</strong> (${row.partType})</td>
-                <td>${row.manufacturer} ${row.model}</td>
-                <td>${row.rack || '-'}</td>
-                <td><strong>${row.quantity} units</strong></td>
-                <td><button onclick="placeSingleOrder([${row.orderIds.join(',')}])" class="btn btn-secondary btn-sm"><i class="fa-solid fa-cart-shopping"></i> Order</button></td>
+                <td>${row.partType}</td>
+                <td>${row.brand}</td>
+                <td>${row.manufacturer}</td>
+                <td>${row.model}</td>
+                <td><span class="barcode-badge">${row.barcode}</span></td>
+                <td><strong>${row.quantity}</strong></td>
+                <td><small>${dateStr}</small></td>
+                <td><button onclick="placeSingleOrder([${row.orderIds.join(',')}])" class="btn btn-primary btn-sm" style="background-color: #0078D4; color: white; font-weight: bold; border: none; padding: 2px 10px; font-size: 12px; height: 28px; width: 70px;">Order</button></td>
             `;
             pendBody.appendChild(tr);
         });
@@ -1478,18 +1629,21 @@ function renderOrderingReport(pending, ordered) {
     const ordBody = document.getElementById("report-ordered-tbody");
     ordBody.innerHTML = "";
     if (ordered.length === 0) {
-        ordBody.innerHTML = '<tr><td colspan="6" class="no-data-cell">No active orders.</td></tr>';
+        ordBody.innerHTML = '<tr><td colspan="9" class="no-data-cell">No active orders.</td></tr>';
     } else {
-        ordered.forEach((row, i) => {
-            const date = new Date(row.orderedAt).toLocaleDateString();
+        ordered.forEach((row) => {
+            const dateStr = formatLocalDateTime(row.orderedAt);
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td><input type="checkbox" class="ordered-chk" data-ids="${row.orderIds.join(',')}"></td>
-                <td><strong>${row.description}</strong> (${row.partType})</td>
-                <td>${row.manufacturer} ${row.model}</td>
-                <td><strong>${row.quantity} units</strong></td>
-                <td>${date}</td>
-                <td><button onclick="arriveSingleOrder([${row.orderIds.join(',')}])" class="btn btn-secondary btn-sm"><i class="fa-solid fa-box-open"></i> Arrive</button></td>
+                <td>${row.partType}</td>
+                <td>${row.brand}</td>
+                <td>${row.manufacturer}</td>
+                <td>${row.model}</td>
+                <td><span class="barcode-badge">${row.barcode}</span></td>
+                <td><strong>${row.quantity}</strong></td>
+                <td><small>${dateStr}</small></td>
+                <td><button onclick="navigateToArriveOrder('${row.barcode}', ${row.quantity}, [${row.orderIds.join(',')}])" class="btn btn-success btn-sm" style="background-color: #2E7D32; color: white; font-weight: bold; border: none; padding: 2px 10px; font-size: 12px; height: 28px; width: 70px;">Arrived</button></td>
             `;
             ordBody.appendChild(tr);
         });
@@ -1503,7 +1657,6 @@ function toggleSelectAll(type, checked) {
 
 // Place / Arrive order API updates
 async function placeSingleOrder(orderIds) {
-    // Collect the item details being ordered BEFORE placing it (to capture metadata)
     const itemsToOrder = [];
     if (reportsCache && reportsCache.pendingOrders) {
         reportsCache.pendingOrders.forEach(row => {
@@ -1523,7 +1676,6 @@ async function placeSingleOrder(orderIds) {
         if (response.ok) {
             showToast("Order status successfully updated to 'Ordered'", "success");
             
-            // Generate PDF Slip for these ordered items
             if (itemsToOrder.length > 0) {
                 generateOrderPDF(itemsToOrder);
             }
@@ -1562,6 +1714,15 @@ async function arriveSingleOrder(orderIds) {
     } catch(e) {}
 }
 
+function navigateToArriveOrder(barcode, quantity, orderIds) {
+    const firstBarcode = barcode.split(',')[0].trim();
+    switchTab("add-stock");
+    document.getElementById("add-barcode").value = firstBarcode;
+    document.getElementById("add-quantity").value = quantity;
+    addStockPendingOrderIds = orderIds || [];
+    lookupStockItem("add", firstBarcode);
+}
+
 async function arriveSelectedOrders() {
     const checked = Array.from(document.querySelectorAll(".ordered-chk:checked"));
     if (checked.length === 0) {
@@ -1582,63 +1743,54 @@ function generateOrderPDF(orderItems) {
         
         // Title block
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(22);
-        doc.setTextColor(37, 99, 235); // Primary Blue
-        doc.text("Alpine Auto A/C", 14, 22);
+        doc.setFontSize(18);
+        doc.setTextColor(30, 58, 138); // Navy
+        doc.text("ALPINE AUTO A/C", 14, 20);
         
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(14);
-        doc.setTextColor(30, 41, 59); // Slate dark
-        doc.text("Purchase Order Slip", 14, 30);
+        doc.setFontSize(22);
+        doc.setTextColor(0, 0, 0);
+        doc.text("PURCHASE ORDER SLIP", 14, 30);
         
         // Date and Time (Local)
+        doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139); // Gray slate
-        const dateStr = new Date().toLocaleString();
-        doc.text(`Generated: ${dateStr}`, 14, 40);
-        doc.text("Status: Forwarded to Ordered Queue", 14, 46);
+        doc.setTextColor(100, 116, 139);
+        const dateStr = formatLocalDateTime(new Date().toISOString());
+        doc.text(`Placed Date/Time: ${dateStr}`, 14, 40);
         
         // Horizontal line separator
-        doc.setDrawColor(226, 232, 240); // Border slate color
+        doc.setDrawColor(226, 232, 240);
         doc.setLineWidth(0.5);
-        doc.line(14, 50, 196, 50);
+        doc.line(14, 46, 196, 46);
         
-        // Headers and Rows mapping
-        const headers = [["Part Description", "Vehicle Fitment", "Rack Location", "Qty to Order"]];
+        // Headers and Rows mapping matching WPF PDF exactly
+        const headers = [["Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed"]];
         const data = orderItems.map(item => [
-            `${item.description || item.partType || "N/A"}\n(${item.brand || "N/A"})`,
-            `${item.manufacturer || "N/A"} ${item.model || "N/A"}`,
-            item.rack || "Unallocated",
-            `${item.quantity} units`
+            item.partType || "N/A",
+            item.brand || "N/A",
+            item.manufacturer || "N/A",
+            item.model || "N/A",
+            item.barcode || "N/A",
+            `${item.quantity}`,
+            formatLocalDateTime(item.createdAt)
         ]);
         
         // Draw Table
         doc.autoTable({
-            startY: 55,
+            startY: 50,
             head: headers,
             body: data,
             theme: "grid",
-            headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: "bold" }, // WPF primary black button styling
-            styles: { fontSize: 10, cellPadding: 6, valign: "middle" },
+            headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: "bold" },
+            styles: { fontSize: 9, cellPadding: 4, valign: "middle" },
             columnStyles: {
-                0: { cellWidth: 65 },
-                1: { cellWidth: 55 },
-                2: { cellWidth: 35 },
-                3: { cellWidth: 27, halign: "right" }
+                5: { halign: "center" }
             }
         });
         
-        const finalY = doc.lastAutoTable.finalY || 80;
-        
-        // Footer signature/stamp area
-        doc.setFontSize(9);
-        doc.setTextColor(148, 163, 184); // light gray
-        doc.text("Generated by Alpine Inventory Web Application (Offline Local Mode)", 14, finalY + 15);
-        
-        // Save PDF with timestamp
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        doc.save(`Alpine_Order_${timestamp}.pdf`);
         showToast("PDF Order slip generated and downloaded successfully!", "success");
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        doc.save(`Purchase_Order_${timestamp}.pdf`);
     } catch (e) {
         console.error("PDF generation error", e);
         showToast("Error generating PDF: " + e.message, "danger");
