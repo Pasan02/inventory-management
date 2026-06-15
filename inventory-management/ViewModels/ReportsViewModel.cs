@@ -16,6 +16,7 @@ namespace inventory_management.ViewModels
     {
         private readonly InventoryDbContext _context;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly IPdfService _pdfService;
 
         public ObservableCollection<ReportItemRow> StockSnapshot { get; } = new();
         public ObservableCollection<ReportItemRow> LowStockItems { get; } = new();
@@ -62,10 +63,11 @@ namespace inventory_management.ViewModels
             }
         }
 
-        public ReportsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService)
+        public ReportsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPdfService pdfService)
         {
             _context = context;
             _availabilityService = availabilityService;
+            _pdfService = pdfService;
             _ = LoadReports();
         }
 
@@ -310,6 +312,10 @@ namespace inventory_management.ViewModels
                 }
 
                 await _context.SaveChangesAsync();
+                
+                // Generate PDF Order Sheet
+                await GenerateOrderPdfAndOpenAsync(new List<ReportOrderRow> { row });
+
                 await LoadReports();
                 StatusMessage = "Order placed successfully.";
             }
@@ -345,6 +351,10 @@ namespace inventory_management.ViewModels
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Generate PDF Order Sheet
+                await GenerateOrderPdfAndOpenAsync(selectedRows);
+
                 await LoadReports();
                 StatusMessage = "Selected orders placed successfully.";
             }
@@ -352,6 +362,49 @@ namespace inventory_management.ViewModels
             {
                 System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, $"Failed to place selected orders: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        private async Task GenerateOrderPdfAndOpenAsync(List<ReportOrderRow> items)
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = $"Purchase_Order_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}",
+                DefaultExt = ".pdf",
+                Filter = "PDF documents (*.pdf)|*.pdf",
+                Title = "Save Purchase Order PDF"
+            };
+
+            bool? result = dialog.ShowDialog(System.Windows.Application.Current.MainWindow);
+            if (result == true)
+            {
+                string filePath = dialog.FileName;
+                StatusMessage = "Generating PDF...";
+                
+                bool success = await _pdfService.GenerateOrderPdfAsync(filePath, items);
+                if (success)
+                {
+                    StatusMessage = "PDF generated successfully.";
+                    try
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath)
+                        {
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, 
+                            $"PDF saved successfully, but failed to open it automatically: {ex.Message}", 
+                            "Information", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    }
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, 
+                        "Failed to generate PDF document.", 
+                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
             }
         }
 

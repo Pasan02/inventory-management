@@ -37,7 +37,8 @@ namespace inventory_management
                     services.AddTransient<IDatabaseAvailabilityService, DatabaseAvailabilityService>();
                     services.AddTransient<IBackupService, BackupService>();
                     services.AddTransient<IIntegrityCheckService, IntegrityCheckService>();
-                    services.AddTransient<IAuthenticationService, AuthenticationService>();
+                    services.AddTransient<Services.IAuthenticationService, AuthenticationService>();
+                    services.AddTransient<Services.IPdfService, Services.PdfService>();
                     services.AddHostedService<BackupHostedService>();
 
                     // VIEW MODELS

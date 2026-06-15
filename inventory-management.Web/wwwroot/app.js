@@ -3,11 +3,39 @@
 const API_BASE = "/api";
 let currentUser = null;
 let metadataCache = null;
-let currentActiveTab = "dashboard";
+let currentActiveTab = "home";
 let activeScannerInputId = null;
 let html5QrCode = null;
 let searchDebounceTimeout = null;
 let createdItemCompatibilityList = [];
+
+// Hierarchical Search Step Navigation State
+let currentSearchStep = "parts"; // parts, manufacturers, models, items
+let selectedSearchPart = null;
+let selectedSearchManufacturer = null;
+let selectedSearchModel = null;
+let searchFilterTextModels = "";
+let searchFilterTextItems = "";
+let searchIncludeOutOfStock = false;
+let searchItemsPage = 1;
+let searchItemsTotalPages = 1;
+const SEARCH_PAGE_SIZE = 20;
+let allInventoryItems = [];
+
+// Password Visibility Toggle for Login Page
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById("password");
+    const icon = document.getElementById("password-toggle-icon");
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+    } else {
+        passwordInput.type = "password";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    }
+}
 
 // App Startup
 document.addEventListener("DOMContentLoaded", () => {
@@ -117,33 +145,57 @@ function switchTab(tabId) {
     
     // Update active tab contents
     document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
-    document.getElementById(`tab-${tabId}`).classList.remove("hidden");
+    const targetTab = document.getElementById(`tab-${tabId}`);
+    if (targetTab) targetTab.classList.remove("hidden");
 
-    // Update nav links
-    document.querySelectorAll(".nav-link").forEach(el => el.classList.remove("active"));
-    
-    // Find active nav-link elements
-    const link = Array.from(document.querySelectorAll(".nav-link")).find(el => 
-        el.getAttribute("onclick").includes(`'${tabId}'`)
-    );
-    if (link) link.classList.add("active");
-
-    // Page Title
-    const titleMap = {
-        "dashboard": "Dashboard Metrics",
-        "search": "Inventory Search & Item View",
-        "add-stock": "Receive Inventory Stock",
-        "remove-stock": "Issue / Remove Stock",
-        "create-item": "Register New Part",
-        "reports": "System Inventory Reports"
-    };
-    document.getElementById("page-title").innerText = titleMap[tabId] || "Inventory System";
+    // Manage top navigation buttons
+    const backBtn = document.getElementById("nav-back-btn");
+    const refreshBtn = document.getElementById("nav-refresh-btn");
+    if (tabId === "home") {
+        if (backBtn) backBtn.classList.add("hidden");
+        if (refreshBtn) refreshBtn.classList.add("hidden");
+    } else {
+        if (backBtn) backBtn.classList.remove("hidden");
+        if (refreshBtn) refreshBtn.classList.remove("hidden");
+    }
 
     // Tab-specific initializations
-    if (tabId === "dashboard") loadDashboardStats();
-    if (tabId === "search") loadAllItems();
-    if (tabId === "reports") loadReportsData();
-    if (tabId === "create-item") resetCreateItemForm();
+    if (tabId === "search") {
+        currentSearchStep = "parts";
+        selectedSearchPart = null;
+        selectedSearchManufacturer = null;
+        selectedSearchModel = null;
+        searchFilterTextModels = "";
+        searchFilterTextItems = "";
+        searchItemsPage = 1;
+        switchSearchStep("parts");
+        loadAllItems();
+    }
+    if (tabId === "reports") {
+        loadReportsData();
+    }
+    if (tabId === "create-item") {
+        resetCreateItemForm();
+    }
+}
+
+function handleRefreshClick() {
+    if (currentActiveTab === "search") {
+        loadAllItems();
+        showToast("Search items list refreshed", "info");
+    } else if (currentActiveTab === "reports") {
+        loadReportsData();
+        showToast("Reports data refreshed", "info");
+    } else if (currentActiveTab === "create-item") {
+        loadMetadata();
+        showToast("Metadata lists refreshed", "info");
+    } else if (currentActiveTab === "add-stock") {
+        loadMetadata();
+        showToast("Stock items refreshed", "info");
+    } else if (currentActiveTab === "remove-stock") {
+        loadMetadata();
+        showToast("Stock items refreshed", "info");
+    }
 }
 
 // DASHBOARD STATS LOGIC
@@ -366,137 +418,575 @@ async function handleRefSubmit(event) {
 
 // INVENTORY ITEMS SEARCH & TABLES LOGIC
 async function loadAllItems() {
-    const tbody = document.getElementById("items-table-body");
-    tbody.innerHTML = '<tr><td colspan="8" class="loading-cell">Loading items...</td></tr>';
-
     try {
         const response = await fetch(`${API_BASE}/inventory/items`);
         if (!response.ok) throw new Error();
-        const items = await response.json();
+        allInventoryItems = await response.json();
 
-        document.getElementById("items-count-badge").innerText = `${items.length} Items`;
-        renderItemsTable(items);
+        // Dynamically render the current active search step
+        if (currentSearchStep === "parts") {
+            renderSearchParts();
+        } else if (currentSearchStep === "manufacturers") {
+            renderSearchManufacturers();
+        } else if (currentSearchStep === "models") {
+            renderSearchModels();
+        } else if (currentSearchStep === "items") {
+            renderSearchItems();
+        }
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="8" class="danger-text text-center">Failed to load items list.</td></tr>';
+        showToast("Failed to load inventory items.", "danger");
     }
 }
 
-function renderItemsTable(items) {
-    const tbody = document.getElementById("items-table-body");
-    tbody.innerHTML = "";
+function switchSearchStep(step) {
+    currentSearchStep = step;
+    
+    // Hide all search steps
+    document.querySelectorAll(".search-step").forEach(el => el.classList.add("hidden"));
+    
+    // Show current search step
+    const target = document.getElementById(`search-step-${step}`);
+    if (target) target.classList.remove("hidden");
 
-    if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="no-data-cell">No items in inventory.</td></tr>';
+    // Manage top navigation buttons based on search step
+    const backBtn = document.getElementById("nav-back-btn");
+    const refreshBtn = document.getElementById("nav-refresh-btn");
+    
+    if (step === "parts") {
+        if (backBtn) backBtn.classList.add("hidden");
+    } else {
+        if (backBtn) backBtn.classList.remove("hidden");
+    }
+    
+    if (refreshBtn) refreshBtn.classList.remove("hidden");
+}
+
+function handleBackNavigation() {
+    if (currentActiveTab === "search") {
+        const internallyNavigated = goBackSearchStep();
+        if (!internallyNavigated) {
+            switchTab("home");
+        }
+    } else {
+        switchTab("home");
+    }
+}
+
+function goBackSearchStep() {
+    if (currentSearchStep === "items") {
+        if (selectedSearchModel) {
+            currentSearchStep = "models";
+            selectedSearchModel = null;
+            renderSearchModels();
+            switchSearchStep("models");
+        } else if (selectedSearchManufacturer) {
+            currentSearchStep = "models";
+            renderSearchModels();
+            switchSearchStep("models");
+        } else {
+            currentSearchStep = "manufacturers";
+            renderSearchManufacturers();
+            switchSearchStep("manufacturers");
+        }
+        return true;
+    } else if (currentSearchStep === "models") {
+        currentSearchStep = "manufacturers";
+        selectedSearchManufacturer = null;
+        renderSearchManufacturers();
+        switchSearchStep("manufacturers");
+        return true;
+    } else if (currentSearchStep === "manufacturers") {
+        currentSearchStep = "parts";
+        selectedSearchPart = null;
+        renderSearchParts();
+        switchSearchStep("parts");
+        return true;
+    }
+    return false; // at parts page, go back to home
+}
+
+function renderSearchParts() {
+    const container = document.getElementById("search-parts-list");
+    container.innerHTML = "";
+    
+    // Group allInventoryItems by PartType
+    const partGroups = {};
+    allInventoryItems.forEach(item => {
+        if (!item.partType) return;
+        const pt = item.partType;
+        if (!partGroups[pt.id]) {
+            partGroups[pt.id] = {
+                id: pt.id,
+                name: pt.name,
+                imagePath: pt.imagePath,
+                itemCount: 0,
+                quantity: 0
+            };
+        }
+        partGroups[pt.id].itemCount++;
+        partGroups[pt.id].quantity += (item.stock ? item.stock.quantity : 0);
+    });
+    
+    const partsArray = Object.values(partGroups).sort((a, b) => a.name.localeCompare(b.name));
+    
+    if (partsArray.length === 0) {
+        document.getElementById("search-parts-status").innerText = "No parts found.";
         return;
     }
-
-    items.forEach(item => {
-        const tr = document.createElement("tr");
-
-        // Image
-        const imgCell = document.createElement("td");
-        imgCell.className = "item-img-cell";
-        const img = document.createElement("img");
-        img.className = "table-thumb";
-        img.src = item.imagePath ? `/${item.imagePath}` : "/assets/logo/logo.jpeg";
-        img.onerror = () => { img.src = "/assets/logo/logo.jpeg"; };
-        imgCell.appendChild(img);
-        tr.appendChild(imgCell);
-
-        // Barcode
-        const barCell = document.createElement("td");
-        barCell.innerHTML = `<span class="barcode-badge">${item.barcode}</span>`;
-        tr.appendChild(barCell);
-
-        // Description
-        const descCell = document.createElement("td");
-        descCell.innerText = item.description || "No description";
-        tr.appendChild(descCell);
-
-        // Part Type
-        const typeCell = document.createElement("td");
-        typeCell.innerText = item.partType ? item.partType.name : "N/A";
-        tr.appendChild(typeCell);
-
-        // Brand
-        const brandCell = document.createElement("td");
-        brandCell.innerText = item.partBrand ? item.partBrand.name : "N/A";
-        tr.appendChild(brandCell);
-
-        // Manufacturer / Model
-        const modelCell = document.createElement("td");
-        const manName = item.vehicleModel && item.vehicleModel.manufacturer ? item.vehicleModel.manufacturer.name : "N/A";
-        const modName = item.vehicleModel ? item.vehicleModel.name : "N/A";
-        modelCell.innerText = `${manName} ${modName}`;
-        tr.appendChild(modelCell);
-
-        // Rack / Location
-        const rackCell = document.createElement("td");
-        rackCell.innerText = item.rack ? item.rack.locationCode : "Unallocated";
-        tr.appendChild(rackCell);
-
-        // Stock qty badge
-        const stockCell = document.createElement("td");
-        const qty = item.stock ? item.stock.quantity : 0;
-        const threshold = item.lowStockThreshold || 5;
-
-        let badgeClass = "in-stock";
-        if (qty === 0) badgeClass = "out-stock";
-        else if (qty <= threshold) badgeClass = "low-stock";
-
-        stockCell.innerHTML = `<span class="stock-badge ${badgeClass}">${qty} units</span>`;
-        tr.appendChild(stockCell);
-
-        tr.onclick = () => showSingleItemDetail(item);
-        tr.style.cursor = "pointer";
-
-        tbody.appendChild(tr);
+    document.getElementById("search-parts-status").innerText = `${partsArray.length} parts available.`;
+    
+    partsArray.forEach(part => {
+        const card = document.createElement("div");
+        card.className = "compact-card search-card";
+        card.style.cursor = "pointer";
+        card.onclick = () => selectSearchPartType(part);
+        
+        const imgSrc = part.imagePath ? `/${part.imagePath}` : "/assets/logo/logo.jpeg";
+        
+        card.innerHTML = `
+            <img src="${imgSrc}" class="search-card-thumb" onerror="this.src='/assets/logo/logo.jpeg'">
+            <div class="search-card-details">
+                <h3>${part.name}</h3>
+                <p class="search-card-meta">${part.itemCount} items | ${part.quantity} units in stock</p>
+            </div>
+        `;
+        container.appendChild(card);
     });
 }
 
-function showSingleItemDetail(item) {
-    const container = document.getElementById("search-single-result");
-    container.classList.remove("hidden");
-    container.innerHTML = `
-        <div class="result-image-panel">
-            <img src="${item.imagePath ? '/' + item.imagePath : '/assets/logo/logo.jpeg'}" alt="Item Image" class="result-img" onerror="this.src='/assets/logo/logo.jpeg'">
-            <button onclick="printBarcodeFromDetail('${item.barcode}')" class="btn btn-secondary btn-block btn-sm"><i class="fa-solid fa-print"></i> Print Label</button>
-        </div>
-        <div class="result-info-panel">
-            <div class="result-header">
-                <h2>${item.partType?.name} - ${item.partBrand?.name}</h2>
-                <p>${item.description || 'No description provided.'}</p>
+function selectSearchPartType(part) {
+    selectedSearchPart = part;
+    document.getElementById("search-selected-part-name").innerText = part.name;
+    document.getElementById("search-selected-part-name-2").innerText = part.name;
+    
+    currentSearchStep = "manufacturers";
+    renderSearchManufacturers();
+    switchSearchStep("manufacturers");
+}
+
+function renderSearchManufacturers() {
+    const container = document.getElementById("search-manufacturers-list");
+    container.innerHTML = "";
+    
+    if (!selectedSearchPart) return;
+    
+    // Group matching items by Manufacturer
+    const mfrGroups = {};
+    allInventoryItems.forEach(item => {
+        if (item.partTypeId !== selectedSearchPart.id) return;
+        if (!item.vehicleModel || !item.vehicleModel.manufacturer) return;
+        
+        const mfr = item.vehicleModel.manufacturer;
+        if (!mfrGroups[mfr.id]) {
+            mfrGroups[mfr.id] = {
+                id: mfr.id,
+                name: mfr.name,
+                logoPath: mfr.logoPath,
+                itemCount: 0,
+                quantity: 0
+            };
+        }
+        mfrGroups[mfr.id].itemCount++;
+        mfrGroups[mfr.id].quantity += (item.stock ? item.stock.quantity : 0);
+    });
+    
+    const mfrArray = Object.values(mfrGroups).sort((a, b) => a.name.localeCompare(b.name));
+    
+    if (mfrArray.length === 0) {
+        document.getElementById("search-manufacturers-status").innerText = "No manufacturers found.";
+        return;
+    }
+    document.getElementById("search-manufacturers-status").innerText = `${mfrArray.length} manufacturers available.`;
+    
+    mfrArray.forEach(mfr => {
+        const card = document.createElement("div");
+        card.className = "compact-card search-card";
+        card.style.cursor = "pointer";
+        card.onclick = () => selectSearchManufacturer(mfr);
+        
+        const imgSrc = mfr.logoPath ? `/${mfr.logoPath}` : "/assets/logo/logo.jpeg";
+        
+        card.innerHTML = `
+            <img src="${imgSrc}" class="search-card-thumb" onerror="this.src='/assets/logo/logo.jpeg'">
+            <div class="search-card-details">
+                <h3>${mfr.name}</h3>
+                <p class="search-card-meta">${mfr.itemCount} items | ${mfr.quantity} units in stock</p>
             </div>
-            <div class="result-meta-grid">
-                <div class="meta-item">
-                    <span class="meta-label">Barcode</span>
-                    <span class="meta-value barcode-badge" style="width:fit-content">${item.barcode}</span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-label">Current Stock</span>
-                    <span class="meta-value">${item.stock?.quantity || 0} units (Threshold: ${item.lowStockThreshold})</span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-label">Rack Location</span>
-                    <span class="meta-value">${item.rack?.locationCode || 'Unallocated'}</span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-label">Country of Origin</span>
-                    <span class="meta-value">${item.countryOfOrigin || 'N/A'}</span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-label">Vehicle Fitment</span>
-                    <span class="meta-value">${item.vehicleModel?.manufacturer?.name} ${item.vehicleModel?.name}</span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-label">Buying Cipher (Secret Price)</span>
-                    <span class="meta-value">${item.secretPriceCode || 'None'}</span>
-                </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function selectSearchManufacturer(mfr) {
+    selectedSearchManufacturer = mfr;
+    document.getElementById("search-selected-mfr-name").innerText = mfr.name;
+    
+    currentSearchStep = "models";
+    document.getElementById("search-models-filter").value = "";
+    searchFilterTextModels = "";
+    renderSearchModels();
+    switchSearchStep("models");
+}
+
+function handleViewAllItems() {
+    selectedSearchManufacturer = null;
+    selectedSearchModel = null;
+    
+    currentSearchStep = "items";
+    document.getElementById("search-items-filter").value = "";
+    searchFilterTextItems = "";
+    searchItemsPage = 1;
+    document.getElementById("search-final-title").innerText = selectedSearchPart.name;
+    renderSearchItems();
+    switchSearchStep("items");
+}
+
+function renderSearchModels() {
+    const container = document.getElementById("search-models-list");
+    container.innerHTML = "";
+    
+    if (!selectedSearchPart || !selectedSearchManufacturer) return;
+    
+    // 1. Get all models of the selected manufacturer
+    const mfrModels = (metadataCache && metadataCache.models) 
+        ? metadataCache.models.filter(m => m.vehicleManufacturerId === selectedSearchManufacturer.id)
+        : [];
+        
+    // 2. Get items matching part type and selected manufacturer (directly or via compatibility)
+    const matchingItems = allInventoryItems.filter(item => {
+        if (item.partTypeId !== selectedSearchPart.id) return false;
+        
+        const directMatch = item.vehicleModel && item.vehicleModel.vehicleManufacturerId === selectedSearchManufacturer.id;
+        
+        const compatMatch = item.compatibleModels && item.compatibleModels.some(cm => 
+            cm.manufacturer && cm.manufacturer.toLowerCase() === selectedSearchManufacturer.name.toLowerCase()
+        );
+        
+        return directMatch || compatMatch;
+    });
+    
+    // 3. For each model of the manufacturer, find associated items
+    const modelRows = mfrModels.map(model => {
+        const modelItems = [];
+        
+        matchingItems.forEach(item => {
+            // Direct model match
+            if (item.vehicleModelId === model.id) {
+                modelItems.push(item);
+                return;
+            }
+            
+            // Compatibility model match
+            const isCompat = item.compatibleModels && item.compatibleModels.some(cm => 
+                cm.manufacturer && cm.manufacturer.toLowerCase() === selectedSearchManufacturer.name.toLowerCase() &&
+                cm.model && cm.model.toLowerCase() === model.name.toLowerCase()
+            );
+            if (isCompat) {
+                modelItems.push(item);
+            }
+        });
+        
+        // Calculate fields
+        const qty = modelItems.reduce((acc, i) => acc + (i.stock ? i.stock.quantity : 0), 0);
+        const uniqueBrands = [...new Set(modelItems.map(i => i.partBrand ? i.partBrand.name : null).filter(Boolean))].sort();
+        const uniqueRacks = [...new Set(modelItems.map(i => i.rack ? i.rack.locationCode : null).filter(Boolean))].sort();
+        const uniqueOrigins = [...new Set(modelItems.map(i => i.countryOfOrigin).filter(Boolean))].sort();
+        
+        const compatList = [...new Set(modelItems.flatMap(i => i.compatibleModels ? i.compatibleModels.map(cm => {
+            let parts = [];
+            if (cm.manufacturer) parts.push(cm.manufacturer);
+            if (cm.model) parts.push(cm.model);
+            if (cm.yearRange) parts.push(cm.yearRange);
+            if (cm.brand) parts.push(cm.brand);
+            if (cm.countryOfOrigin) parts.push(cm.countryOfOrigin);
+            return parts.join(" ");
+        }) : []))].sort();
+        
+        const firstImg = modelItems.map(i => i.imagePath).find(p => p) || "";
+        
+        return {
+            id: model.id,
+            name: model.name,
+            yearRange: model.yearRange || "",
+            itemCount: modelItems.length,
+            quantity: qty,
+            brands: uniqueBrands.join(", ") || "None",
+            racks: uniqueRacks.join(", ") || "Unallocated",
+            origins: uniqueOrigins.join(", ") || "N/A",
+            compatText: compatList.join(", ") || "None",
+            imagePath: firstImg
+        };
+    });
+    
+    // Sort model rows by name
+    modelRows.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Filter rows based on search filter
+    const filteredRows = modelRows.filter(row => {
+        if (!searchFilterTextModels) return true;
+        const q = searchFilterTextModels.toLowerCase();
+        return row.name.toLowerCase().includes(q) || row.brands.toLowerCase().includes(q);
+    });
+    
+    if (filteredRows.length === 0) {
+        document.getElementById("search-models-status").innerText = "No models found.";
+        return;
+    }
+    document.getElementById("search-models-status").innerText = `${filteredRows.length} models available.`;
+    
+    filteredRows.forEach(row => {
+        const card = document.createElement("div");
+        card.className = "compact-card search-model-card";
+        
+        const imgSrc = row.imagePath ? `/${row.imagePath}` : "/assets/logo/logo.jpeg";
+        
+        card.innerHTML = `
+            <div class="model-image-panel" onclick='selectSearchModel(${JSON.stringify(row).replace(/'/g, "&#39;")})' style="cursor:pointer;">
+                <img src="${imgSrc}" class="model-thumb" onerror="this.src='/assets/logo/logo.jpeg'">
             </div>
-        </div>
-    `;
-    // Scroll container into view
-    container.scrollIntoView({ behavior: "smooth" });
+            <div class="model-details-panel">
+                <h3 onclick='selectSearchModel(${JSON.stringify(row).replace(/'/g, "&#39;")})' style="cursor:pointer;">${row.name}</h3>
+                <p class="model-year">${row.yearRange || 'All Years'}</p>
+                <div class="model-meta-grid">
+                    <div><strong>Available:</strong> ${row.quantity} units</div>
+                    <div><strong>Brand:</strong> ${row.brands}</div>
+                    <div><strong>Rack:</strong> ${row.racks}</div>
+                    <div><strong>Origin:</strong> ${row.origins}</div>
+                </div>
+                <div class="model-compat-scroll">
+                    <strong>Compat:</strong> ${row.compatText}
+                </div>
+                <button onclick="viewModelBarcodes(${row.id}, '${row.name.replace(/'/g, "\\'")}')" class="btn btn-secondary btn-sm btn-block" style="margin-top: 10px;">View Barcodes</button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function selectSearchModel(model) {
+    selectedSearchModel = model;
+    document.getElementById("search-final-title").innerText = `${selectedSearchManufacturer.name} ${model.name} ${selectedSearchPart.name}`;
+    
+    currentSearchStep = "items";
+    document.getElementById("search-items-filter").value = "";
+    searchFilterTextItems = "";
+    searchItemsPage = 1;
+    renderSearchItems();
+    switchSearchStep("items");
+}
+
+function viewModelBarcodes(modelId, modelName) {
+    const mockModel = { id: modelId, name: modelName };
+    selectSearchModel(mockModel);
+}
+
+function renderSearchItems() {
+    const container = document.getElementById("search-items-list");
+    container.innerHTML = "";
+    
+    if (!selectedSearchPart) return;
+    
+    // Filter matching items
+    let filteredItems = allInventoryItems.filter(item => {
+        // Part Type match
+        if (item.partTypeId !== selectedSearchPart.id) return false;
+        
+        // Manufacturer match
+        if (selectedSearchManufacturer && (!item.vehicleModel || item.vehicleModel.vehicleManufacturerId !== selectedSearchManufacturer.id)) {
+            return false;
+        }
+        
+        // Model match
+        if (selectedSearchModel && item.vehicleModelId !== selectedSearchModel.id) {
+            return false;
+        }
+        
+        return true;
+    });
+    
+    // Out of stock filter
+    if (!searchIncludeOutOfStock) {
+        filteredItems = filteredItems.filter(item => item.stock && item.stock.quantity > 0);
+    }
+    
+    // Text search filter
+    if (searchFilterTextItems) {
+        const q = searchFilterTextItems.toLowerCase();
+        filteredItems = filteredItems.filter(item => {
+            const modelName = item.vehicleModel ? item.vehicleModel.name.toLowerCase() : "";
+            const brandName = item.partBrand ? item.partBrand.name.toLowerCase() : "";
+            const mfrName = item.vehicleModel && item.vehicleModel.manufacturer ? item.vehicleModel.manufacturer.name.toLowerCase() : "";
+            const desc = item.description ? item.description.toLowerCase() : "";
+            const code = item.barcode ? item.barcode.toLowerCase() : "";
+            
+            const compatMatch = item.compatibleModels && item.compatibleModels.some(cm => {
+                const cmMfr = cm.manufacturer ? cm.manufacturer.toLowerCase() : "";
+                const cmMod = cm.model ? cm.model.toLowerCase() : "";
+                const cmBrd = cm.brand ? cm.brand.toLowerCase() : "";
+                const cmOri = cm.countryOfOrigin ? cm.countryOfOrigin.toLowerCase() : "";
+                const cmYr = cm.yearRange ? cm.yearRange.toLowerCase() : "";
+                return cmMfr.includes(q) || cmMod.includes(q) || cmBrd.includes(q) || cmOri.includes(q) || cmYr.includes(q);
+            });
+            
+            return modelName.includes(q) || brandName.includes(q) || mfrName.includes(q) || desc.includes(q) || code.includes(q) || compatMatch;
+        });
+    }
+    
+    // Sort items by vehicle model name and brand
+    filteredItems.sort((a, b) => {
+        const modelA = a.vehicleModel ? a.vehicleModel.name : "";
+        const modelB = b.vehicleModel ? b.vehicleModel.name : "";
+        const brandA = a.partBrand ? a.partBrand.name : "";
+        const brandB = b.partBrand ? b.partBrand.name : "";
+        
+        const cmp = modelA.localeCompare(modelB);
+        if (cmp !== 0) return cmp;
+        return brandA.localeCompare(brandB);
+    });
+    
+    // Pagination calculation
+    const totalItems = filteredItems.length;
+    searchItemsTotalPages = Math.max(1, Math.ceil(totalItems / SEARCH_PAGE_SIZE));
+    
+    if (searchItemsPage > searchItemsTotalPages) {
+        searchItemsPage = searchItemsTotalPages;
+    }
+    
+    // Render status
+    if (totalItems === 0) {
+        document.getElementById("search-items-status").innerText = "No items found.";
+        document.getElementById("search-pagination-info").innerText = "Page 1 of 1";
+        return;
+    }
+    document.getElementById("search-items-status").innerText = `Showing ${Math.min(totalItems, (searchItemsPage - 1) * SEARCH_PAGE_SIZE + 1)}-${Math.min(totalItems, searchItemsPage * SEARCH_PAGE_SIZE)} of ${totalItems} items.`;
+    document.getElementById("search-pagination-info").innerText = `Page ${searchItemsPage} of ${searchItemsTotalPages}`;
+    
+    // Slice items for current page
+    const pageItems = filteredItems.slice((searchItemsPage - 1) * SEARCH_PAGE_SIZE, searchItemsPage * SEARCH_PAGE_SIZE);
+    
+    pageItems.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "compact-card search-item-detail-card";
+        
+        const imgSrc = item.imagePath ? `/${item.imagePath}` : "/assets/logo/logo.jpeg";
+        const qty = item.stock ? item.stock.quantity : 0;
+        const brandName = item.partBrand ? item.partBrand.name : "N/A";
+        const mfrName = item.vehicleModel && item.vehicleModel.manufacturer ? item.vehicleModel.manufacturer.name : "N/A";
+        const modelName = item.vehicleModel ? item.vehicleModel.name : "N/A";
+        const rackLoc = item.rack ? item.rack.locationCode : "Unallocated";
+        const regDateStr = item.registeredDate ? new Date(item.registeredDate).toLocaleDateString() : "N/A";
+        
+        const compatTextList = item.compatibleModels ? item.compatibleModels.map(cm => {
+            let parts = [];
+            if (cm.manufacturer) parts.push(cm.manufacturer);
+            if (cm.model) parts.push(cm.model);
+            if (cm.yearRange) parts.push(cm.yearRange);
+            if (cm.brand) parts.push(cm.brand);
+            if (cm.countryOfOrigin) parts.push(cm.countryOfOrigin);
+            return parts.join(" ");
+        }) : [];
+        const compatText = compatTextList.join(", ") || "None";
+        
+        card.innerHTML = `
+            <div class="item-detail-image-panel">
+                <img src="${imgSrc}" class="item-detail-thumb" onerror="this.src='/assets/logo/logo.jpeg'">
+            </div>
+            <div class="item-detail-info-panel">
+                <h3>${modelName}</h3>
+                <div class="item-detail-grid">
+                    <div><strong>Manufacturer:</strong> ${mfrName}</div>
+                    <div><strong>Brand:</strong> ${brandName}</div>
+                    <div><strong>Origin:</strong> ${item.countryOfOrigin || 'N/A'}</div>
+                    <div><strong>Pcode:</strong> ${item.secretPriceCode || 'None'}</div>
+                    <div><strong>Registered:</strong> ${regDateStr}</div>
+                    <div><strong>Rack:</strong> ${rackLoc}</div>
+                    <div><strong>Stock:</strong> <span class="stock-badge ${qty === 0 ? 'out-stock' : qty <= item.lowStockThreshold ? 'low-stock' : 'in-stock'}">${qty} units</span></div>
+                    <div><strong>Barcode:</strong> <span class="barcode-badge">${item.barcode}</span></div>
+                </div>
+                <div class="item-detail-compat">
+                    <strong>Compat:</strong> ${compatText}
+                </div>
+                <button onclick="printBarcodeFromDetail('${item.barcode}')" class="btn btn-secondary btn-sm btn-block" style="margin-top: 15px;"><i class="fa-solid fa-print"></i> Print Barcode Label</button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function searchFirstPage() {
+    if (searchItemsPage > 1) {
+        searchItemsPage = 1;
+        renderSearchItems();
+    }
+}
+function searchPrevPage() {
+    if (searchItemsPage > 1) {
+        searchItemsPage--;
+        renderSearchItems();
+    }
+}
+function searchNextPage() {
+    if (searchItemsPage < searchItemsTotalPages) {
+        searchItemsPage++;
+        renderSearchItems();
+    }
+}
+function searchLastPage() {
+    if (searchItemsPage < searchItemsTotalPages) {
+        searchItemsPage = searchItemsTotalPages;
+        renderSearchItems();
+    }
+}
+
+function handleFilterModels(val) {
+    searchFilterTextModels = val;
+    renderSearchModels();
+}
+function handleFilterItems(val) {
+    searchFilterTextItems = val;
+    searchItemsPage = 1;
+    renderSearchItems();
+}
+function toggleIncludeOutOfStock(val) {
+    searchIncludeOutOfStock = val;
+    searchItemsPage = 1;
+    renderSearchItems();
+}
+
+async function handleQuickScan(barcode) {
+    if (!barcode) return;
+    try {
+        const response = await fetch(`${API_BASE}/inventory/search?q=${encodeURIComponent(barcode)}`);
+        if (response.ok) {
+            const item = await response.json();
+            
+            // Navigate straight to Step 4 and filter only this item!
+            selectedSearchPart = item.partType ? { id: item.partTypeId, name: item.partType.name } : { id: item.partTypeId, name: "Part" };
+            selectedSearchManufacturer = item.vehicleModel && item.vehicleModel.manufacturer ? { id: item.vehicleModel.manufacturer.id, name: item.vehicleModel.manufacturer.name } : null;
+            selectedSearchModel = item.vehicleModel ? { id: item.vehicleModelId, name: item.vehicleModel.name } : null;
+            
+            document.getElementById("search-final-title").innerText = item.barcode;
+            currentSearchStep = "items";
+            
+            // Clear filters and set text search to exact barcode
+            document.getElementById("search-items-filter").value = item.barcode;
+            searchFilterTextItems = item.barcode;
+            searchIncludeOutOfStock = true;
+            document.getElementById("search-include-out-of-stock").checked = true;
+            searchItemsPage = 1;
+            
+            renderSearchItems();
+            switchSearchStep("items");
+            
+            showToast("Item found and filtered by barcode!", "success");
+        } else {
+            showToast("Barcode not found in inventory.", "warning");
+        }
+    } catch (e) {
+        showToast("Error looking up barcode.", "danger");
+    }
+    // Clear the quick scan input
+    document.getElementById("search-quick-scan-input").value = "";
 }
 
 async function printBarcodeFromDetail(barcode) {
@@ -515,53 +1005,13 @@ async function printBarcodeFromDetail(barcode) {
             body: JSON.stringify({ barcode: barcode, copies: parsed })
         });
         if (response.ok) {
-            showToast("Print command successfully sent to host Zebra printer.", "success");
+            showToast("Print command successfully sent to Zebra printer.", "success");
         } else {
             showToast("Failed to communicate print command.", "danger");
         }
     } catch(e) {
         showToast("Printer communication error.", "danger");
     }
-}
-
-// Debounced text search
-function debounceSearch() {
-    clearTimeout(searchDebounceTimeout);
-    searchDebounceTimeout = setTimeout(executeSearch, 300);
-}
-
-async function executeSearch() {
-    const q = document.getElementById("search-input").value.trim();
-    if (!q) {
-        document.getElementById("search-single-result").classList.add("hidden");
-        loadAllItems();
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE}/inventory/search?q=${encodeURIComponent(q)}`);
-        if (response.ok) {
-            const item = await response.json();
-            showSingleItemDetail(item);
-            // Re-render items table highlighting the single matching record
-            renderItemsTable([item]);
-        } else {
-            // If search has no single exact match, query items list filtering locally
-            const itemsRes = await fetch(`${API_BASE}/inventory/items`);
-            if (itemsRes.ok) {
-                const all = await itemsRes.json();
-                const filtered = all.filter(i => 
-                    i.barcode.toLowerCase().includes(q.toLowerCase()) ||
-                    i.description?.toLowerCase().includes(q.toLowerCase()) ||
-                    i.partType?.name.toLowerCase().includes(q.toLowerCase()) ||
-                    i.partBrand?.name.toLowerCase().includes(q.toLowerCase()) ||
-                    i.vehicleModel?.name.toLowerCase().includes(q.toLowerCase()) ||
-                    i.vehicleModel?.manufacturer?.name.toLowerCase().includes(q.toLowerCase())
-                );
-                renderItemsTable(filtered);
-            }
-        }
-    } catch(e) {}
 }
 
 // BARCODE SCANNING INTEGRATION
@@ -1053,6 +1503,17 @@ function toggleSelectAll(type, checked) {
 
 // Place / Arrive order API updates
 async function placeSingleOrder(orderIds) {
+    // Collect the item details being ordered BEFORE placing it (to capture metadata)
+    const itemsToOrder = [];
+    if (reportsCache && reportsCache.pendingOrders) {
+        reportsCache.pendingOrders.forEach(row => {
+            const hasMatch = row.orderIds.some(id => orderIds.includes(id));
+            if (hasMatch) {
+                itemsToOrder.push(row);
+            }
+        });
+    }
+
     try {
         const response = await fetch(`${API_BASE}/reports/orders/place`, {
             method: "POST",
@@ -1061,9 +1522,19 @@ async function placeSingleOrder(orderIds) {
         });
         if (response.ok) {
             showToast("Order status successfully updated to 'Ordered'", "success");
+            
+            // Generate PDF Slip for these ordered items
+            if (itemsToOrder.length > 0) {
+                generateOrderPDF(itemsToOrder);
+            }
+            
             loadReportsData();
+        } else {
+            showToast("Failed to place order.", "danger");
         }
-    } catch(e) {}
+    } catch(e) {
+        showToast("Error connecting to server.", "danger");
+    }
 }
 
 async function placeSelectedOrders() {
@@ -1100,4 +1571,76 @@ async function arriveSelectedOrders() {
 
     const orderIds = checked.flatMap(chk => chk.getAttribute("data-ids").split(',').map(Number));
     await arriveSingleOrder(orderIds);
+}
+
+function generateOrderPDF(orderItems) {
+    if (!orderItems || orderItems.length === 0) return;
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Title block
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.setTextColor(37, 99, 235); // Primary Blue
+        doc.text("Alpine Auto A/C", 14, 22);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(14);
+        doc.setTextColor(30, 41, 59); // Slate dark
+        doc.text("Purchase Order Slip", 14, 30);
+        
+        // Date and Time (Local)
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139); // Gray slate
+        const dateStr = new Date().toLocaleString();
+        doc.text(`Generated: ${dateStr}`, 14, 40);
+        doc.text("Status: Forwarded to Ordered Queue", 14, 46);
+        
+        // Horizontal line separator
+        doc.setDrawColor(226, 232, 240); // Border slate color
+        doc.setLineWidth(0.5);
+        doc.line(14, 50, 196, 50);
+        
+        // Headers and Rows mapping
+        const headers = [["Part Description", "Vehicle Fitment", "Rack Location", "Qty to Order"]];
+        const data = orderItems.map(item => [
+            `${item.description || item.partType || "N/A"}\n(${item.brand || "N/A"})`,
+            `${item.manufacturer || "N/A"} ${item.model || "N/A"}`,
+            item.rack || "Unallocated",
+            `${item.quantity} units`
+        ]);
+        
+        // Draw Table
+        doc.autoTable({
+            startY: 55,
+            head: headers,
+            body: data,
+            theme: "grid",
+            headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: "bold" }, // WPF primary black button styling
+            styles: { fontSize: 10, cellPadding: 6, valign: "middle" },
+            columnStyles: {
+                0: { cellWidth: 65 },
+                1: { cellWidth: 55 },
+                2: { cellWidth: 35 },
+                3: { cellWidth: 27, halign: "right" }
+            }
+        });
+        
+        const finalY = doc.lastAutoTable.finalY || 80;
+        
+        // Footer signature/stamp area
+        doc.setFontSize(9);
+        doc.setTextColor(148, 163, 184); // light gray
+        doc.text("Generated by Alpine Inventory Web Application (Offline Local Mode)", 14, finalY + 15);
+        
+        // Save PDF with timestamp
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        doc.save(`Alpine_Order_${timestamp}.pdf`);
+        showToast("PDF Order slip generated and downloaded successfully!", "success");
+    } catch (e) {
+        console.error("PDF generation error", e);
+        showToast("Error generating PDF: " + e.message, "danger");
+    }
 }
