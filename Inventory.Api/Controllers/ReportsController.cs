@@ -97,5 +97,65 @@ namespace Inventory.Api.Controllers
 
             return Ok(pending);
         }
+        [HttpGet("orders/arrived")]
+        public async Task<IActionResult> GetArrivedOrders()
+        {
+            var orderTrackings = await _context.OrderTrackings
+                .Include(o => o.Item)
+                    .ThenInclude(i => i.PartType)
+                .Include(o => o.Item)
+                    .ThenInclude(i => i.PartBrand)
+                .Include(o => o.Item)
+                    .ThenInclude(i => i.VehicleModel)
+                        .ThenInclude(m => m.Manufacturer)
+                .Where(o => o.Status == "Ordered")
+                .OrderByDescending(o => o.CreatedAt)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var arrived = orderTrackings
+                .GroupBy(o => new { o.ItemId })
+                .Select(g =>
+                {
+                    var first = g.First();
+                    return new 
+                    {
+                        ItemName = first.Item.Description,
+                        Barcode = first.Item.Barcode,
+                        TotalQuantity = g.Sum(o => o.Quantity),
+                        OrderIds = g.Select(o => o.Id).ToList(),
+                        CreatedAt = g.Max(o => o.CreatedAt)
+                    };
+                })
+                .ToList();
+
+            return Ok(arrived);
+        }
+
+        [HttpGet("activity")]
+        public async Task<IActionResult> GetActivityLog()
+        {
+            var transactions = await _context.Transactions
+                .Include(t => t.Item)
+                    .ThenInclude(i => i.PartType)
+                .Include(t => t.Item)
+                    .ThenInclude(i => i.VehicleModel)
+                        .ThenInclude(vm => vm.Manufacturer)
+                .AsNoTracking()
+                .OrderByDescending(t => t.Timestamp)
+                .Take(200)
+                .Select(t => new
+                {
+                    Timestamp = t.Timestamp,
+                    Barcode = t.Item.Barcode,
+                    Description = t.Item.Description,
+                    ActionType = t.ActionType,
+                    QuantityChange = t.QuantityChange,
+                    MachineName = t.MachineName
+                })
+                .ToListAsync();
+
+            return Ok(transactions);
+        }
     }
 }

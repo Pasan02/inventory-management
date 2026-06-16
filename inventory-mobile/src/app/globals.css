@@ -1,18 +1,18 @@
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --secondary: #e2e8f0;
-  --secondary-hover: #cbd5e1;
-  --accent: #8b5cf6;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --surface: #ffffff;
-  --surface-hover: #f1f5f9;
-  --border: #e2e8f0;
-  --ring: rgba(59, 130, 246, 0.5);
+  --background: #FAF5FF;
+  --foreground: #4C1D95;
+  --primary: #7C3AED;
+  --primary-hover: #6D28D9;
+  --secondary: #A78BFA;
+  --secondary-hover: #8B5CF6;
+  --accent: #F97316;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --surface: #FFFFFF;
+  --surface-hover: #F5F3FF;
+  --border: #E9D5FF;
+  --ring: rgba(124, 58, 237, 0.5);
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -27,15 +27,15 @@
   :root {
     --background: #0f172a;
     --foreground: #f8fafc;
-    --primary: #60a5fa;
-    --primary-hover: #3b82f6;
-    --secondary: #1e293b;
-    --secondary-hover: #334155;
-    --accent: #a78bfa;
+    --primary: #A78BFA;
+    --primary-hover: #8B5CF6;
+    --secondary: #4C1D95;
+    --secondary-hover: #5B21B6;
+    --accent: #F97316;
     --surface: #1e293b;
     --surface-hover: #334155;
     --border: #334155;
-    --ring: rgba(96, 165, 250, 0.5);
+    --ring: rgba(167, 139, 250, 0.5);
   }
 }
 
@@ -48,7 +48,7 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-fira-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -60,6 +60,9 @@ a {
 }
 
 /* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-fira-code), monospace;
+}
 h1 { font-size: 2.25rem; font-weight: 700; letter-spacing: -0.025em; margin-bottom: 1rem; }
 h2 { font-size: 1.875rem; font-weight: 600; letter-spacing: -0.025em; margin-bottom: 0.75rem; }
 h3 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
@@ -73,21 +76,29 @@ p { margin-bottom: 1rem; color: var(--foreground); opacity: 0.9; }
   padding: 1rem;
 }
 
-/* Glassmorphism Surface */
+/* Glassmorphism Surface -> Data-Dense Surface */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
+}
+
+/* Hover effect on clickable panels */
+.hover-panel {
+  cursor: pointer;
+  transition: var(--transition);
+}
+.hover-panel:hover {
+  background: var(--surface-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 @media (prefers-color-scheme: dark) {
   .glass-panel {
-    background: rgba(30, 41, 59, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(30, 41, 59, 0.9);
   }
 }
 
@@ -96,13 +107,14 @@ p { margin-bottom: 1rem; color: var(--foreground); opacity: 0.9; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   font-weight: 600;
-  border-radius: var(--radius-md);
+  font-family: var(--font-fira-code), monospace;
+  border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
   transition: var(--transition);
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 .btn:active { transform: scale(0.98); }
 .btn:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
@@ -113,15 +125,24 @@ p { margin-bottom: 1rem; color: var(--foreground); opacity: 0.9; }
 }
 .btn-primary:hover {
   background-color: var(--primary-hover);
-  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+  box-shadow: 0 4px 14px 0 rgba(124, 58, 237, 0.39);
 }
 
 .btn-secondary {
   background-color: var(--secondary);
-  color: var(--foreground);
+  color: #fff;
 }
 .btn-secondary:hover {
   background-color: var(--secondary-hover);
+}
+
+.btn-accent {
+  background-color: var(--accent);
+  color: #fff;
+}
+.btn-accent:hover {
+  background-color: #EA580C;
+  box-shadow: 0 4px 14px 0 rgba(249, 115, 22, 0.39);
 }
 
 /* Inputs */
@@ -137,12 +158,12 @@ p { margin-bottom: 1rem; color: var(--foreground); opacity: 0.9; }
   color: var(--foreground);
 }
 .input-control {
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background-color: var(--surface);
   color: var(--foreground);
-  font-size: 1rem;
+  font-size: 0.875rem;
   transition: var(--transition);
 }
 .input-control:focus {
@@ -173,23 +194,41 @@ p { margin-bottom: 1rem; color: var(--foreground); opacity: 0.9; }
   gap: 0.25rem;
   color: var(--foreground);
   opacity: 0.6;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-fira-code), monospace;
   transition: var(--transition);
 }
 .nav-item.active {
   color: var(--primary);
   opacity: 1;
 }
-.nav-item svg {
-  width: 24px;
-  height: 24px;
+
+/* Data Dense Tables/Lists */
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+.data-row:last-child {
+  border-bottom: none;
+}
+.data-label {
+  opacity: 0.7;
+  font-weight: 500;
+}
+.data-value {
+  font-weight: 600;
+  font-family: var(--font-fira-code), monospace;
 }
 
 /* Animations */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-slide-up {
-  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

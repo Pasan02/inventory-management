@@ -21,7 +21,7 @@ builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IBarcodeService, BarcodeService>();
 builder.Services.AddScoped<IPrintService, PrintService>();
-builder.Services.AddSingleton<IDatabaseAvailabilityService, DatabaseAvailabilityService>();
+builder.Services.AddScoped<IDatabaseAvailabilityService, DatabaseAvailabilityService>();
 
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "DefaultSecretKeyThatIsAtLeast32BytesLong!";
