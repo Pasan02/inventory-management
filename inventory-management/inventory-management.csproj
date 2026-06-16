@@ -36,4 +36,8 @@
     <Resource Include="assets\logo\logo.jpeg" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Inventory.Core\Inventory.Core.csproj" />
+  </ItemGroup>
+
 </Project>
