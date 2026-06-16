@@ -17,20 +17,26 @@ namespace Inventory.Api.Controllers
             _context = context;
         }
 
-        private string? GetImageBase64(string? imagePath)
+        [HttpGet("images")]
+        [AllowAnonymous]
+        public IActionResult GetImage([FromQuery] string path)
         {
-            if (string.IsNullOrWhiteSpace(imagePath)) return null;
+            if (string.IsNullOrWhiteSpace(path)) return BadRequest();
             try
             {
-                var fullPath = inventory_management.Services.AssetPathService.GetAbsolutePath(imagePath);
+                var fullPath = inventory_management.Services.AssetPathService.GetAbsolutePath(path);
                 if (System.IO.File.Exists(fullPath))
                 {
-                    var bytes = System.IO.File.ReadAllBytes(fullPath);
-                    return Convert.ToBase64String(bytes);
+                    var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+                    if (!provider.TryGetContentType(fullPath, out var contentType))
+                    {
+                        contentType = "application/octet-stream";
+                    }
+                    return PhysicalFile(fullPath, contentType);
                 }
             }
             catch { /* ignore */ }
-            return null;
+            return NotFound();
         }
 
         [HttpGet("parts")]
@@ -46,7 +52,7 @@ namespace Inventory.Api.Controllers
                     Name = g.Key.Name,
                     ItemCount = g.Count(),
                     ImagePath = g.Key.ImagePath,
-                    ImageBase64 = g.Key.Image != null ? Convert.ToBase64String(g.Key.Image) : null
+                    ImageUrl = g.Key.ImagePath != null ? $"/api/search/images?path={Uri.EscapeDataString(g.Key.ImagePath)}" : null
                 })
                 .OrderBy(r => r.Name)
                 .ToListAsync();
@@ -69,7 +75,7 @@ namespace Inventory.Api.Controllers
                     Name = g.Key.Name,
                     ItemCount = g.Count(),
                     LogoPath = g.Key.LogoPath,
-                    LogoBase64 = g.Key.Logo != null ? Convert.ToBase64String(g.Key.Logo) : null
+                    LogoUrl = g.Key.LogoPath != null ? $"/api/search/images?path={Uri.EscapeDataString(g.Key.LogoPath)}" : null
                 })
                 .OrderBy(r => r.Name)
                 .ToListAsync();
@@ -105,7 +111,7 @@ namespace Inventory.Api.Controllers
                 m.YearRange,
                 m.ItemCount,
                 m.Quantity,
-                ImageBase64 = GetImageBase64(m.ImagePath)
+                ImageUrl = m.ImagePath != null ? $"/api/search/images?path={Uri.EscapeDataString(m.ImagePath)}" : null
             }).ToList();
 
             return Ok(models);
@@ -147,7 +153,7 @@ namespace Inventory.Api.Controllers
                 i.CountryOfOrigin,
                 i.SecretPriceCode,
                 i.RegisteredDate,
-                ImageBase64 = GetImageBase64(i.ImagePath)
+                ImageUrl = i.ImagePath != null ? $"/api/search/images?path={Uri.EscapeDataString(i.ImagePath)}" : null
             }).ToList();
 
             return Ok(items);
@@ -189,7 +195,7 @@ namespace Inventory.Api.Controllers
                 i.CountryOfOrigin,
                 i.SecretPriceCode,
                 i.RegisteredDate,
-                ImageBase64 = GetImageBase64(i.ImagePath)
+                ImageUrl = i.ImagePath != null ? $"/api/search/images?path={Uri.EscapeDataString(i.ImagePath)}" : null
             }).ToList();
 
             return Ok(items);
@@ -231,7 +237,7 @@ namespace Inventory.Api.Controllers
                 i.CountryOfOrigin,
                 i.SecretPriceCode,
                 i.RegisteredDate,
-                ImageBase64 = GetImageBase64(i.ImagePath)
+                ImageUrl = i.ImagePath != null ? $"/api/search/images?path={Uri.EscapeDataString(i.ImagePath)}" : null
             }).ToList();
 
             return Ok(items);
@@ -242,7 +248,7 @@ namespace Inventory.Api.Controllers
         {
             query = query.ToLower();
             var items = await _context.Items
-                .Where(i => i.Barcode.ToLower().Contains(query) || i.Description.ToLower().Contains(query))
+                .Where(i => EF.Functions.ILike(i.Barcode, $"%{query}%") || EF.Functions.ILike(i.Description, $"%{query}%"))
                 .Take(20)
                 .Select(i => new { barcode = i.Barcode, description = i.Description })
                 .ToListAsync();
