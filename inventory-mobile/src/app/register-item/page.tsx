@@ -39,8 +39,25 @@ export default function RegisterItemPage() {
   const [modalInput1, setModalInput1] = useState("");
   const [modalInput2, setModalInput2] = useState(""); // For year range or other extra field
 
+  const latestManufacturerId = useRef<number | null>(null);
+
   useEffect(() => {
+    let isMounted = true;
+    const fetchReferenceData = async () => {
+      try {
+        const data = await fetchWithAuth("/api/items/reference-data");
+        if (isMounted) {
+          setPartTypes(data.partTypes);
+          setBrands(data.brands);
+          setManufacturers(data.manufacturers);
+          setRacks(data.racks);
+        }
+      } catch (err: any) {
+        if (isMounted) setError(err.message);
+      }
+    };
     fetchReferenceData();
+    return () => { isMounted = false; };
   }, []);
 
   const fetchWithAuth = async (path: string, options: any = {}) => {
@@ -60,24 +77,17 @@ export default function RegisterItemPage() {
     return await res.json();
   };
 
-  const fetchReferenceData = async () => {
-    try {
-      const data = await fetchWithAuth("/api/items/reference-data");
-      setPartTypes(data.partTypes);
-      setBrands(data.brands);
-      setManufacturers(data.manufacturers);
-      setRacks(data.racks);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
   const fetchModelsForManufacturer = async (mId: number) => {
+    latestManufacturerId.current = mId;
     try {
       const data = await fetchWithAuth(`/api/items/models/${mId}`);
-      setModels(data);
+      if (latestManufacturerId.current === mId) {
+        setModels(data);
+      }
     } catch (err: any) {
-      setError(err.message);
+      if (latestManufacturerId.current === mId) {
+        setError(err.message);
+      }
     }
   };
 

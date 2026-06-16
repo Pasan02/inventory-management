@@ -27,6 +27,14 @@ function AddStockContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const autocompleteTimeout = useRef<NodeJS.Timeout | null>(null);
+  const autocompleteAbortController = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (autocompleteTimeout.current) clearTimeout(autocompleteTimeout.current);
+      if (autocompleteAbortController.current) autocompleteAbortController.current.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (initialBarcode) {
@@ -55,17 +63,26 @@ function AddStockContent() {
     setSearchQuery(query);
     if (autocompleteTimeout.current) clearTimeout(autocompleteTimeout.current);
     
+    if (autocompleteAbortController.current) {
+      autocompleteAbortController.current.abort();
+    }
+    
     if (query.trim().length < 2) {
       setSuggestions([]);
       return;
     }
 
     autocompleteTimeout.current = setTimeout(async () => {
+      autocompleteAbortController.current = new AbortController();
       try {
-        const data = await fetchWithAuth(`/api/search/autocomplete/${encodeURIComponent(query)}`);
+        const data = await fetchWithAuth(`/api/search/autocomplete/${encodeURIComponent(query)}`, {
+          signal: autocompleteAbortController.current.signal
+        });
         setSuggestions(data);
-      } catch (err) {
-        // silently ignore autocomplete errors
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          // silently ignore autocomplete errors
+        }
       }
     }, 300);
   };
