@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import BarcodeScanner from "@/components/BarcodeScanner";
 
-export default function RemoveStockPage() {
+function RemoveStockContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialBarcode = searchParams?.get("barcode") || "";
@@ -13,6 +14,8 @@ export default function RemoveStockPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  const [showScanner, setShowScanner] = useState(false);
   
   const [item, setItem] = useState<any>(null);
 
@@ -89,12 +92,13 @@ export default function RemoveStockPage() {
     if (!item) return;
     setLoading(true); setError(null); setSuccess(null);
     try {
-      await fetchWithAuth("/api/stock/remove", {
+      const result = await fetchWithAuth("/api/stock/remove", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ barcode: item.barcode, quantity, actionType: "REMOVE" })
       });
-      setSuccess(`Successfully removed ${quantity} from ${item.barcode}`);
+      alert(result.message || `Successfully removed ${quantity} from ${item.barcode}`);
+      setBarcode("");
       handleLookup(item.barcode); // Refresh item details
       setQuantity(1);
     } catch (err: any) {
@@ -158,29 +162,48 @@ export default function RemoveStockPage() {
               onChange={(e) => setBarcode(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleLookup(barcode); }}
             />
+            <button className="btn btn-secondary" onClick={() => setShowScanner(true)}>
+              📷
+            </button>
             <button className="btn btn-secondary" onClick={() => handleLookup(barcode)}>Lookup</button>
           </div>
         </div>
       </div>
 
+      {showScanner && (
+        <BarcodeScanner 
+          onResult={(result) => {
+            setBarcode(result);
+            setShowScanner(false);
+            handleLookup(result);
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
       {error && <div className="glass-panel" style={{ color: "var(--danger)", textAlign: "center", marginBottom: "1rem" }}>{error}</div>}
       {success && <div className="glass-panel" style={{ color: "var(--success)", textAlign: "center", marginBottom: "1rem" }}>{success}</div>}
 
       {item && (
-        <form onSubmit={handleRemoveStock} className="glass-panel animate-slide-up" style={{ borderTop: "4px solid var(--danger)" }}>
-          <h2 style={{ fontSize: "1.25rem", color: "var(--primary)", marginBottom: "1rem" }}>{item.description}</h2>
+        <form onSubmit={handleRemoveStock} className="glass-panel animate-slide-up" style={{ padding: "1.5rem", border: "1px solid var(--border)", borderTop: "4px solid var(--danger)", background: "var(--surface)", borderRadius: "var(--radius-lg)" }}>
+          <h2 style={{ fontSize: "1.25rem", color: "var(--primary)", marginBottom: "0.25rem" }}>{item.description}</h2>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "0.25rem", fontSize: "0.95rem" }}>{item?.partType?.name} - {item?.partBrand?.name}</p>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem", fontSize: "0.95rem" }}>{item?.vehicleModel?.manufacturer?.name} {item?.vehicleModel?.name}</p>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", background: "var(--bg-main)", border: "1px solid var(--border)", padding: "1rem", borderRadius: "var(--radius-md)", marginBottom: "1.5rem" }}>
+            <div>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "block" }}>Current Stock</span>
+              <span style={{ fontSize: "1.5rem", fontWeight: "700", color: "var(--primary)" }}>{item.stock?.quantity || 0}</span>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "block" }}>Location</span>
+              <span style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--text-primary)" }}>{item.rack?.locationCode || 'N/A'}</span>
+            </div>
+          </div>
           
           <div className="data-row">
             <span className="data-label">Barcode</span>
             <span className="data-value">{item.barcode}</span>
-          </div>
-          <div className="data-row">
-            <span className="data-label">Current Stock</span>
-            <span className="data-value" style={{ color: "var(--primary)", fontSize: "1.25rem" }}>{item.stock?.quantity || 0}</span>
-          </div>
-          <div className="data-row">
-            <span className="data-label">Rack Location</span>
-            <span className="data-value">{item.rack?.locationCode || 'N/A'}</span>
           </div>
 
           <div style={{ marginTop: "1.5rem" }}>
@@ -203,5 +226,13 @@ export default function RemoveStockPage() {
         </form>
       )}
     </div>
+  );
+}
+
+export default function RemoveStockPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "2rem", textAlign: "center" }}>Loading...</div>}>
+      <RemoveStockContent />
+    </Suspense>
   );
 }

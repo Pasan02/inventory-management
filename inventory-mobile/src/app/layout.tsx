@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Fira_Code, Fira_Sans } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 
-const firaCode = Fira_Code({ subsets: ["latin"], variable: "--font-fira-code" });
-const firaSans = Fira_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-fira-sans" });
+const outfit = Outfit({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700", "800"], variable: "--font-sans" });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -11,18 +10,18 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FAF5FF" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+    { media: "(prefers-color-scheme: light)", color: "#F8FAFC" },
+    { media: "(prefers-color-scheme: dark)", color: "#F8FAFC" },
   ],
 };
 
 export const metadata: Metadata = {
-  title: "Inventory Mobile",
-  description: "Enterprise Data Dashboard",
+  title: "Alpine Auto A/C",
+  description: "Alpine Inventory Management System",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Inventory",
+    title: "Alpine Inventory",
   },
 };
 
@@ -35,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${firaSans.variable} ${firaCode.variable}`}>
+      <body className={`${outfit.variable}`}>
         {children}
         <BottomNav />
       </body>

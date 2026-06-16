@@ -48,6 +48,68 @@ namespace Inventory.Api.Controllers
             return Ok(models);
         }
 
+        public class CreatePartTypeRequest { public string Name { get; set; } = string.Empty; }
+        public class CreateManufacturerRequest { public string Name { get; set; } = string.Empty; }
+        public class CreateBrandRequest { public string Name { get; set; } = string.Empty; }
+        public class CreateRackRequest { public string LocationCode { get; set; } = string.Empty; }
+        public class CreateModelRequest { public string Name { get; set; } = string.Empty; public int ManufacturerId { get; set; } public string? YearRange { get; set; } }
+
+        [HttpPost("reference-data/part-types")]
+        public async Task<IActionResult> CreatePartType([FromBody] CreatePartTypeRequest req)
+        {
+            var name = req.Name.Trim();
+            if (await _context.PartTypes.AnyAsync(p => p.Name == name)) return BadRequest(new { message = "Part type already exists" });
+            var partType = new PartType { Name = name };
+            _context.PartTypes.Add(partType);
+            await _context.SaveChangesAsync();
+            return Ok(new { id = partType.Id, name = partType.Name });
+        }
+
+        [HttpPost("reference-data/manufacturers")]
+        public async Task<IActionResult> CreateManufacturer([FromBody] CreateManufacturerRequest req)
+        {
+            var name = req.Name.Trim();
+            if (await _context.Manufacturers.AnyAsync(m => m.Name == name)) return BadRequest(new { message = "Manufacturer already exists" });
+            var m = new VehicleManufacturer { Name = name };
+            _context.Manufacturers.Add(m);
+            await _context.SaveChangesAsync();
+            return Ok(new { id = m.Id, name = m.Name });
+        }
+
+        [HttpPost("reference-data/brands")]
+        public async Task<IActionResult> CreateBrand([FromBody] CreateBrandRequest req)
+        {
+            var name = req.Name.Trim();
+            if (await _context.PartBrands.AnyAsync(b => b.Name == name)) return BadRequest(new { message = "Brand already exists" });
+            var b = new PartBrand { Name = name };
+            _context.PartBrands.Add(b);
+            await _context.SaveChangesAsync();
+            return Ok(new { id = b.Id, name = b.Name });
+        }
+
+        [HttpPost("reference-data/racks")]
+        public async Task<IActionResult> CreateRack([FromBody] CreateRackRequest req)
+        {
+            var code = req.LocationCode.Trim();
+            if (await _context.Racks.AnyAsync(r => r.LocationCode == code)) return BadRequest(new { message = "Rack already exists" });
+            var r = new Rack { LocationCode = code };
+            _context.Racks.Add(r);
+            await _context.SaveChangesAsync();
+            return Ok(new { id = r.Id, locationCode = r.LocationCode });
+        }
+
+        [HttpPost("reference-data/models")]
+        public async Task<IActionResult> CreateModel([FromBody] CreateModelRequest req)
+        {
+            var name = req.Name.Trim();
+            if (await _context.Models.AnyAsync(m => m.Name == name && m.VehicleManufacturerId == req.ManufacturerId)) 
+                return BadRequest(new { message = "Model already exists for this manufacturer" });
+            var m = new VehicleModel { Name = name, VehicleManufacturerId = req.ManufacturerId, YearRange = req.YearRange?.Trim() };
+            _context.Models.Add(m);
+            await _context.SaveChangesAsync();
+            return Ok(new { id = m.Id, name = m.Name, yearRange = m.YearRange });
+        }
+
         public class CreateItemRequest
         {
             public int PartTypeId { get; set; }
@@ -97,8 +159,8 @@ namespace Inventory.Api.Controllers
                     PartTypeId = request.PartTypeId,
                     PartBrandId = request.PartBrandId,
                     VehicleModelId = request.VehicleModelId,
-                    CountryOfOrigin = request.CountryOfOrigin,
-                    Description = request.Description,
+                    CountryOfOrigin = string.IsNullOrWhiteSpace(request.CountryOfOrigin) ? "N/A" : request.CountryOfOrigin,
+                    Description = string.IsNullOrWhiteSpace(request.Description) ? "N/A" : request.Description,
                     LowStockThreshold = request.LowStockThreshold,
                     RackId = request.RackId,
                     Barcode = barcodeToUse,
@@ -142,6 +204,42 @@ namespace Inventory.Api.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while saving the item." });
+            }
+        }
+
+        [HttpPost("{barcode}/image")]
+        public async Task<IActionResult> UploadItemImage(string barcode, IFormFile image)
+        {
+            try
+            {
+                var item = await _context.Items.FirstOrDefaultAsync(i => i.Barcode == barcode);
+                if (item == null) return NotFound(new { message = "Item not found" });
+
+                if (image == null || image.Length == 0) return BadRequest(new { message = "No image provided" });
+
+                var assetsRoot = AssetPathService.BasePath;
+                var itemsFolder = Path.Combine(assetsRoot, "items");
+                Directory.CreateDirectory(itemsFolder);
+
+                var extension = Path.GetExtension(image.FileName);
+                if (string.IsNullOrEmpty(extension)) extension = ".jpg";
+                var fileName = $"item-{Guid.NewGuid():N}{extension}";
+                var relativePath = Path.Combine("items", fileName);
+                var destination = Path.Combine(assetsRoot, relativePath);
+
+                using (var stream = new FileStream(destination, FileMode.Create))
+                {
+                    await image.CopyToAsync(stream);
+                }
+
+                item.ImagePath = relativePath;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Image uploaded successfully", imagePath = relativePath });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while uploading the image." });
             }
         }
     }

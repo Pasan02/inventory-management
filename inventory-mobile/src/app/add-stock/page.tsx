@@ -1,19 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import BarcodeScanner from "@/components/BarcodeScanner";
 
-export default function AddStockPage() {
+function AddStockContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialBarcode = searchParams?.get("barcode") || "";
+  const initialQuantity = searchParams?.get("quantity") ? parseInt(searchParams.get("quantity")!) : 1;
+  const initialOrderIds = searchParams?.get("orderIds") || "";
 
   const [barcode, setBarcode] = useState(initialBarcode);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(initialQuantity);
+  const [orderIds, setOrderIds] = useState(initialOrderIds);
   const [pcode, setPcode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  const [showScanner, setShowScanner] = useState(false);
   
   const [item, setItem] = useState<any>(null);
 
@@ -91,18 +97,79 @@ export default function AddStockPage() {
     if (!item) return;
     setLoading(true); setError(null); setSuccess(null);
     try {
-      await fetchWithAuth("/api/stock/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ barcode: item.barcode, quantity, actionType: "ADD" })
-      });
-      setSuccess(`Successfully added ${quantity} to ${item.barcode}`);
-      handleLookup(item.barcode); // Refresh item details
-      setQuantity(1);
+      let result;
+      if (pcode.trim()) {
+        result = await fetchWithAuth("/api/stock/add-with-price", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ barcode: item.barcode, quantity, secretPriceCode: pcode.trim() })
+        });
+      } else {
+        result = await fetchWithAuth("/api/stock/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ barcode: item.barcode, quantity })
+        });
+      }
+
+      if (result.success) {
+        if (result.newBarcode) {
+          // PCode changed, new barcode generated
+          try {
+            await fetchWithAuth("/api/print/barcode", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ barcode: result.newBarcode, copies: quantity })
+            });
+            alert(`${result.message}\n\nSuccessfully printed ${quantity} barcode label(s) for the new item.`);
+          } catch (e) {
+            alert(`${result.message}\n\nFailed to automatically print barcode labels. Please check your Zebra printer connection.`);
+          }
+          
+          setBarcode(result.newBarcode);
+          handleLookup(result.newBarcode);
+        } else {
+          // Standard update
+          alert(result.message || `Successfully added ${quantity} to ${item.barcode}`);
+          setBarcode("");
+          handleLookup(item.barcode);
+        }
+        
+        // Clear pending orders if any
+        if (orderIds) {
+          const ids = orderIds.split(',').filter(id => id.trim() !== "");
+          for (const id of ids) {
+            try {
+              await fetchWithAuth(`/api/stock/orders/${id}/arrive`, { method: "POST" });
+            } catch (err) {
+              console.error("Failed to mark order as arrived", id, err);
+            }
+          }
+          setOrderIds("");
+        }
+
+        setQuantity(1);
+      } else {
+        setError(result.message || "Failed to add stock.");
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePrintBarcode = async () => {
+    if (!item) return;
+    try {
+      const response = await fetchWithAuth("/api/print/barcode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barcode: item.barcode, copies: 1 })
+      });
+      alert("Print job sent to local printer successfully!");
+    } catch (e) {
+      alert("Error printing: " + (e as Error).message);
     }
   };
 
@@ -114,6 +181,17 @@ export default function AddStockPage() {
         </button>
         <h1 style={{ margin: 0, fontSize: "1.5rem", color: "var(--primary)" }}>Add Stock</h1>
       </div>
+
+      {orderIds && (
+        <div className="glass-panel slide-in" style={{ borderLeft: "4px solid var(--warning)", marginBottom: "1.5rem" }}>
+          <p style={{ margin: 0, color: "var(--warning)", fontWeight: "bold" }}>
+            Fulfilling Order ({orderIds.split(',').length} items)
+          </p>
+          <p style={{ margin: "0.5rem 0 0 0", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+            Adding this stock will automatically mark these items as arrived.
+          </p>
+        </div>
+      )}
 
       <div className="glass-panel" style={{ marginBottom: "1.5rem", position: "relative" }}>
         <div className="input-group">
@@ -160,30 +238,58 @@ export default function AddStockPage() {
               onChange={(e) => setBarcode(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleLookup(barcode); }}
             />
+            <button className="btn btn-secondary" onClick={() => setShowScanner(true)}>
+              📷
+            </button>
             <button className="btn btn-secondary" onClick={() => handleLookup(barcode)}>Lookup</button>
           </div>
         </div>
       </div>
 
+      {showScanner && (
+        <BarcodeScanner 
+          onResult={(result) => {
+            setBarcode(result);
+            setShowScanner(false);
+            handleLookup(result);
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
       {error && <div className="glass-panel" style={{ color: "var(--danger)", textAlign: "center", marginBottom: "1rem" }}>{error}</div>}
       {success && <div className="glass-panel" style={{ color: "var(--success)", textAlign: "center", marginBottom: "1rem" }}>{success}</div>}
 
       {item && (
-        <form onSubmit={handleAddStock} className="glass-panel animate-slide-up">
-          <h2 style={{ fontSize: "1.25rem", color: "var(--primary)", marginBottom: "1rem" }}>{item.description}</h2>
+        <form onSubmit={handleAddStock} className="glass-panel animate-slide-up" style={{ padding: "1.5rem", border: "1px solid var(--border)", background: "var(--surface)", borderRadius: "var(--radius-lg)" }}>
+          <h2 style={{ fontSize: "1.25rem", color: "var(--primary)", marginBottom: "0.25rem" }}>{item.description}</h2>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "0.25rem", fontSize: "0.95rem" }}>{item?.partType?.name} - {item?.partBrand?.name}</p>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem", fontSize: "0.95rem" }}>{item?.vehicleModel?.manufacturer?.name} {item?.vehicleModel?.name}</p>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", background: "var(--bg-main)", border: "1px solid var(--border)", padding: "1rem", borderRadius: "var(--radius-md)", marginBottom: "1.5rem" }}>
+            <div>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "block" }}>Current Stock</span>
+              <span style={{ fontSize: "1.5rem", fontWeight: "700", color: "var(--primary)" }}>{item.stock?.quantity || 0}</span>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "block" }}>Location</span>
+              <span style={{ fontSize: "1.1rem", fontWeight: "600", color: "var(--text-primary)" }}>{item.rack?.locationCode || 'N/A'}</span>
+            </div>
+          </div>
           
           <div className="data-row">
             <span className="data-label">Barcode</span>
             <span className="data-value">{item.barcode}</span>
           </div>
-          <div className="data-row">
-            <span className="data-label">Current Stock</span>
-            <span className="data-value" style={{ color: "var(--primary)", fontSize: "1.25rem" }}>{item.stock?.quantity || 0}</span>
-          </div>
-          <div className="data-row">
-            <span className="data-label">Rack Location</span>
-            <span className="data-value">{item.rack?.locationCode || 'N/A'}</span>
-          </div>
+
+          <button 
+            type="button" 
+            className="btn btn-secondary" 
+            style={{ width: "100%", marginTop: "0.5rem", fontSize: "0.9rem", padding: "0.6rem" }} 
+            onClick={handlePrintBarcode}
+          >
+            🖨️ Print Barcode Label
+          </button>
 
           <div style={{ marginTop: "1.5rem" }}>
             <div className="input-group">
@@ -215,5 +321,13 @@ export default function AddStockPage() {
         </form>
       )}
     </div>
+  );
+}
+
+export default function AddStockPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "2rem", textAlign: "center" }}>Loading...</div>}>
+      <AddStockContent />
+    </Suspense>
   );
 }

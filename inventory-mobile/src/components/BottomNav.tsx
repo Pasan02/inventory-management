@@ -18,6 +18,10 @@ export default function BottomNav() {
     {
       href: "/reports",
       label: "Reports"
+    },
+    {
+      href: "/register-item",
+      label: "Register"
     }
   ];
 
