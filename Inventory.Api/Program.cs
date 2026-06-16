@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseWindowsService();
 
 // Add services to the container.
 builder.Services.AddControllers()
