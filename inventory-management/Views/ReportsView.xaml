@@ -146,8 +146,8 @@
                                 Height="36" 
                                 Padding="15,0" 
                                 FontSize="14"
-                                Background="#F3F4F6" 
-                                Foreground="Black" 
+                                Background="#0078D4" 
+                                Foreground="White" 
                                 FontWeight="Bold"
                                 Margin="0,0,10,0" />
                         <Button Content="Print Report" 
@@ -155,8 +155,8 @@
                                 Height="36" 
                                 Padding="15,0" 
                                 FontSize="14"
-                                Background="#F3F4F6" 
-                                Foreground="Black" 
+                                Background="#0078D4" 
+                                Foreground="White" 
                                 FontWeight="Bold"
                                 Margin="0,0,10,0" />
                         <Button Content="Mark Selected as Arrived" 

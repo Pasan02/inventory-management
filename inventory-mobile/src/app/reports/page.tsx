@@ -99,6 +99,12 @@ export default function ReportsPage() {
         body: JSON.stringify({ orderIds: allIds })
       });
       alert("Orders placed successfully.");
+      
+      const now = new Date().toISOString();
+      const selectedItems = data.filter(d => selectedIds.has(d.orderIds[0]));
+      const itemsToPrint = selectedItems.map(item => ({...item, orderedAt: now}));
+      handleGeneratePDF("download", itemsToPrint);
+
       fetchData("pending");
     } catch (err: any) {
       alert("Failed to place orders: " + err.message);
@@ -131,59 +137,84 @@ export default function ReportsPage() {
     }
   };
 
-  const handleGeneratePDF = (action: "download" | "print") => {
-    const selectedItems = data.filter(d => selectedIds.has(d.orderIds[0]));
-    if (selectedItems.length === 0) return;
+  const handleGeneratePDF = (action: "download" | "print", itemsToPrint?: any[]) => {
+    const items = itemsToPrint || (activeTab === "ordered" ? data : data.filter(d => selectedIds.has(d.orderIds[0])));
+    if (items.length === 0) {
+        alert("No items to process.");
+        return;
+    }
     
     try {
-        const doc = new jsPDF();
+        const doc = new jsPDF({ format: 'a4' });
         
-        // Title block
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-        doc.setTextColor(30, 58, 138); // Navy
-        doc.text("ALPINE AUTO A/C", 14, 20);
-        
-        doc.setFontSize(22);
-        doc.setTextColor(0, 0, 0);
-        doc.text("PURCHASE ORDER SLIP", 14, 30);
-        
-        // Date and Time (Local)
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
-        doc.setTextColor(100, 116, 139);
-        const dateStr = new Date().toLocaleString();
-        doc.text(`Placed Date/Time: ${dateStr}`, 14, 40);
-        
-        // Horizontal line separator
-        doc.setDrawColor(226, 232, 240);
-        doc.setLineWidth(0.5);
-        doc.line(14, 46, 196, 46);
-        
-        // Headers and Rows mapping matching WPF PDF exactly
-        const headers = [["Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed"]];
-        const rows = selectedItems.map(item => [
-            item.partType || "N/A",
-            item.brand || "N/A",
-            item.manufacturer || "N/A",
-            item.model || "N/A",
-            item.barcode || "N/A",
-            `${item.quantity || item.totalQuantity || 0}`,
-            item.createdAt ? new Date(item.createdAt).toLocaleString() : "N/A"
-        ]);
-        
-        // Draw Table
-        autoTable(doc, {
-            startY: 50,
-            head: headers,
-            body: rows,
-            theme: "grid",
-            headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: "bold" },
-            styles: { fontSize: 9, cellPadding: 4, valign: "middle" },
-            columnStyles: {
-                5: { halign: "center" }
+        // Group items by orderedAt
+        const groupedItems = items.reduce((acc, item) => {
+            const key = item.orderedAt ? new Date(item.orderedAt).toLocaleString('sv').substring(0, 16) : new Date().toLocaleString('sv').substring(0, 16);
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(item);
+            return acc;
+        }, {} as Record<string, any[]>);
+
+        let isFirstPage = true;
+
+        for (const [key, groupItems] of Object.entries(groupedItems) as [string, any[]][]) {
+            if (!isFirstPage) {
+                doc.addPage();
             }
-        });
+            isFirstPage = false;
+
+            const orderTimeText = groupItems[0].orderedAt ? new Date(groupItems[0].orderedAt).toLocaleString() : new Date().toLocaleString();
+
+            // Title block
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(18);
+            doc.setTextColor(30, 58, 138); // Navy
+            doc.text("ALPINE AUTO A/C", 14, 20);
+            
+            doc.setFontSize(22);
+            doc.setTextColor(0, 0, 0);
+            doc.text("PURCHASE ORDER SLIP", 14, 30);
+            
+            // Date and Time (Local)
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(10);
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Placed Date/Time: ${orderTimeText}`, 14, 40);
+
+            // Print footer
+            const currentPrintTime = new Date().toLocaleString();
+            doc.text(`Printed on: ${currentPrintTime}`, 14, 285);
+            
+            // Horizontal line separator
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.5);
+            doc.line(14, 46, 196, 46);
+            
+            // Headers and Rows mapping matching WPF PDF exactly
+            const headers = [["Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed"]];
+            const rows = groupItems.map((item: any) => [
+                item.partType || "N/A",
+                item.brand || "N/A",
+                item.manufacturer || "N/A",
+                item.model || "N/A",
+                item.barcode || "N/A",
+                `${item.quantity || item.totalQuantity || 0}`,
+                item.createdAt ? new Date(item.createdAt).toLocaleString() : "N/A"
+            ]);
+            
+            // Draw Table
+            autoTable(doc, {
+                startY: 50,
+                head: headers,
+                body: rows,
+                theme: "grid",
+                headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: "bold" },
+                styles: { fontSize: 9, cellPadding: 4, valign: "middle" },
+                columnStyles: {
+                    5: { halign: "center" }
+                }
+            });
+        }
         
         if (action === "download") {
             const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -384,7 +415,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Sticky Action Bar for Pending / Ordered multi-select */}
-      {(activeTab === "pending" || activeTab === "ordered") && selectedIds.size > 0 && (
+      {((activeTab === "pending" && selectedIds.size > 0) || (activeTab === "ordered" && data.length > 0)) && (
         <div className="slide-in" style={{ 
           position: "fixed", 
           bottom: "70px", 
@@ -401,7 +432,13 @@ export default function ReportsPage() {
           zIndex: 50
         }}>
           <div>
-            <span style={{ fontWeight: "bold", color: "var(--primary)" }}>{selectedIds.size}</span> selected
+            {activeTab === "ordered" ? (
+              <span style={{ fontSize: "0.85rem", color: "var(--text-dim)" }}>
+                {selectedIds.size > 0 ? <><span style={{ fontWeight: "bold", color: "var(--primary)" }}>{selectedIds.size}</span> selected</> : `${data.length} total orders`}
+              </span>
+            ) : (
+              <><span style={{ fontWeight: "bold", color: "var(--primary)" }}>{selectedIds.size}</span> selected</>
+            )}
           </div>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {activeTab === "ordered" && (
@@ -409,7 +446,7 @@ export default function ReportsPage() {
                 <button 
                   className="btn btn-secondary" 
                   style={{ fontSize: "0.85rem", padding: "0.5rem" }}
-                  onClick={() => handleGeneratePDF("download")}
+                  onClick={() => handleGeneratePDF("download", data)}
                   disabled={loading}
                 >
                   Download PDF
@@ -417,7 +454,7 @@ export default function ReportsPage() {
                 <button 
                   className="btn btn-secondary" 
                   style={{ fontSize: "0.85rem", padding: "0.5rem" }}
-                  onClick={() => handleGeneratePDF("print")}
+                  onClick={() => handleGeneratePDF("print", data)}
                   disabled={loading}
                 >
                   Print
@@ -428,9 +465,9 @@ export default function ReportsPage() {
               className="btn btn-primary" 
               style={{ backgroundColor: activeTab === "ordered" ? "var(--success)" : "var(--primary)" }}
               onClick={activeTab === "pending" ? handlePlaceOrders : handleArriveOrders}
-              disabled={loading}
+              disabled={loading || (activeTab === "ordered" && selectedIds.size === 0)}
             >
-              {activeTab === "pending" ? "Place Orders" : "Mark Arrived (Bulk)"}
+              {loading ? "Processing..." : activeTab === "pending" ? "Place Orders" : "Arrive Selected"}
             </button>
           </div>
         </div>

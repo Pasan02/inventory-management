@@ -305,15 +305,26 @@ namespace inventory_management.ViewModels
                     .Where(o => row.OrderIds.Contains(o.Id))
                     .ToListAsync();
 
+                var now = DateTime.UtcNow;
                 foreach (var order in dbOrders)
                 {
                     order.Status = "Ordered";
-                    order.OrderedAt = DateTime.UtcNow;
+                    order.OrderedAt = now;
                 }
+                row.OrderedAt = now; // Update VM for PDF generation
 
                 await _context.SaveChangesAsync();
                 await LoadReports();
-                StatusMessage = "Order placed successfully.";
+
+                // Print silently
+                var tempFile = System.IO.Path.GetTempFileName() + ".pdf";
+                bool success = await _pdfService.GenerateOrderPdfAsync(tempFile, new List<ReportOrderRow> { row });
+                if (success)
+                {
+                    await _pdfService.PrintOrderPdfSilentlyAsync(tempFile);
+                }
+
+                StatusMessage = "Order placed and printed successfully.";
             }
             catch (Exception ex)
             {
@@ -340,15 +351,30 @@ namespace inventory_management.ViewModels
                     .Where(o => allOrderIds.Contains(o.Id))
                     .ToListAsync();
 
+                var now = DateTime.UtcNow;
                 foreach (var order in dbOrders)
                 {
                     order.Status = "Ordered";
-                    order.OrderedAt = DateTime.UtcNow;
+                    order.OrderedAt = now;
+                }
+
+                foreach (var r in selectedRows)
+                {
+                    r.OrderedAt = now; // Update VM for PDF generation
                 }
 
                 await _context.SaveChangesAsync();
                 await LoadReports();
-                StatusMessage = "Selected orders placed successfully.";
+
+                // Print silently
+                var tempFile = System.IO.Path.GetTempFileName() + ".pdf";
+                bool success = await _pdfService.GenerateOrderPdfAsync(tempFile, selectedRows);
+                if (success)
+                {
+                    await _pdfService.PrintOrderPdfSilentlyAsync(tempFile);
+                }
+
+                StatusMessage = "Selected orders placed and printed successfully.";
             }
             catch (Exception ex)
             {
@@ -395,10 +421,10 @@ namespace inventory_management.ViewModels
         [RelayCommand]
         private async Task DownloadSelectedOrdersPdf()
         {
-            var selectedRows = OrderedItems.Where(r => r.IsSelected).ToList();
-            if (!selectedRows.Any())
+            var rowsToPrint = OrderedItems.ToList();
+            if (!rowsToPrint.Any())
             {
-                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Please select at least one item.", "No Items Selected", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "No ordered items to download.", "No Items", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
 
@@ -413,7 +439,7 @@ namespace inventory_management.ViewModels
             if (dialog.ShowDialog() == true)
             {
                 StatusMessage = "Generating PDF...";
-                bool success = await _pdfService.GenerateOrderPdfAsync(dialog.FileName, selectedRows);
+                bool success = await _pdfService.GenerateOrderPdfAsync(dialog.FileName, rowsToPrint);
                 if (success)
                 {
                     StatusMessage = "PDF generated successfully.";
@@ -445,17 +471,17 @@ namespace inventory_management.ViewModels
         [RelayCommand]
         private async Task PrintSelectedOrders()
         {
-            var selectedRows = OrderedItems.Where(r => r.IsSelected).ToList();
-            if (!selectedRows.Any())
+            var rowsToPrint = OrderedItems.ToList();
+            if (!rowsToPrint.Any())
             {
-                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Please select at least one item.", "No Items Selected", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "No ordered items to print.", "No Items", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
 
             StatusMessage = "Printing PDF silently...";
             var tempFile = System.IO.Path.GetTempFileName() + ".pdf";
             
-            bool success = await _pdfService.GenerateOrderPdfAsync(tempFile, selectedRows);
+            bool success = await _pdfService.GenerateOrderPdfAsync(tempFile, rowsToPrint);
             if (success)
             {
                 bool printSuccess = await _pdfService.PrintOrderPdfSilentlyAsync(tempFile);
