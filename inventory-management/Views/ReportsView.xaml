@@ -141,6 +141,24 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20,10,0,10">
+                        <Button Content="Download PDF" 
+                                Command="{Binding DownloadSelectedOrdersPdfCommand}" 
+                                Height="36" 
+                                Padding="15,0" 
+                                FontSize="14"
+                                Background="#F3F4F6" 
+                                Foreground="Black" 
+                                FontWeight="Bold"
+                                Margin="0,0,10,0" />
+                        <Button Content="Print Report" 
+                                Command="{Binding PrintSelectedOrdersCommand}" 
+                                Height="36" 
+                                Padding="15,0" 
+                                FontSize="14"
+                                Background="#F3F4F6" 
+                                Foreground="Black" 
+                                FontWeight="Bold"
+                                Margin="0,0,10,0" />
                         <Button Content="Mark Selected as Arrived" 
                                 Command="{Binding ArriveSelectedOrdersCommand}" 
                                 Height="36" 

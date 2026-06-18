@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using PdfSharp;
-using PdfSharp.Drawing;
-using PdfSharp.Pdf;
+using PdfSharpCore;
+using PdfSharpCore.Drawing;
+using PdfSharpCore.Pdf;
 using inventory_management.ViewModels;
+using PdfiumViewer;
+using System.Drawing.Printing;
 
 namespace inventory_management.Services
 {
@@ -19,7 +21,7 @@ namespace inventory_management.Services
                 try
                 {
                     // Create document
-                    var document = new PdfDocument();
+                    var document = new PdfSharpCore.Pdf.PdfDocument();
                     document.Info.Title = "Purchase Order Slip";
                     document.Info.Author = "Alpine Auto A/C Inventory System";
                     document.Info.Subject = "Purchase Order generated when items were moved to Ordered status";
@@ -36,11 +38,11 @@ namespace inventory_management.Services
                     string[] headers = { "Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed" };
 
                     // Fonts (Standard WPF/Segoe UI)
-                    var fontTitle = new XFont("Segoe UI", 18, XFontStyleEx.Bold);
-                    var fontHeader = new XFont("Segoe UI", 9, XFontStyleEx.Bold);
-                    var fontBody = new XFont("Segoe UI", 9, XFontStyleEx.Regular);
-                    var fontFooter = new XFont("Segoe UI", 8, XFontStyleEx.Italic);
-                    var fontSubtitle = new XFont("Segoe UI", 11, XFontStyleEx.Regular);
+                    var fontTitle = new XFont("Segoe UI", 18, XFontStyle.Bold);
+                    var fontHeader = new XFont("Segoe UI", 9, XFontStyle.Bold);
+                    var fontBody = new XFont("Segoe UI", 9, XFontStyle.Regular);
+                    var fontFooter = new XFont("Segoe UI", 8, XFontStyle.Italic);
+                    var fontSubtitle = new XFont("Segoe UI", 11, XFontStyle.Regular);
 
                     int totalQuantity = items.Sum(i => i.Quantity);
                     int pageNumber = 1;
@@ -214,6 +216,34 @@ namespace inventory_management.Services
                 len--;
             }
             return suffix;
+        }
+
+        public Task<bool> PrintOrderPdfSilentlyAsync(string filePath)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    if (!File.Exists(filePath)) return false;
+
+                    using (var document = PdfiumViewer.PdfDocument.Load(filePath))
+                    {
+                        using (var printDocument = document.CreatePrintDocument())
+                        {
+                            printDocument.PrinterSettings.PrintToFile = false;
+                            // Use StandardPrintController to avoid the "Printing..." popup dialog
+                            printDocument.PrintController = new StandardPrintController(); 
+                            printDocument.Print();
+                        }
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error printing PDF silently: {ex.Message}");
+                    return false;
+                }
+            });
         }
     }
 }

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Tab = "pending" | "ordered" | "snapshot" | "low-stock" | "activity";
 
@@ -126,6 +128,74 @@ export default function ReportsPage() {
     } catch (err: any) {
       alert("Failed to arrive orders: " + err.message);
       setLoading(false);
+    }
+  };
+
+  const handleGeneratePDF = (action: "download" | "print") => {
+    const selectedItems = data.filter(d => selectedIds.has(d.orderIds[0]));
+    if (selectedItems.length === 0) return;
+    
+    try {
+        const doc = new jsPDF();
+        
+        // Title block
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(30, 58, 138); // Navy
+        doc.text("ALPINE AUTO A/C", 14, 20);
+        
+        doc.setFontSize(22);
+        doc.setTextColor(0, 0, 0);
+        doc.text("PURCHASE ORDER SLIP", 14, 30);
+        
+        // Date and Time (Local)
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(100, 116, 139);
+        const dateStr = new Date().toLocaleString();
+        doc.text(`Placed Date/Time: ${dateStr}`, 14, 40);
+        
+        // Horizontal line separator
+        doc.setDrawColor(226, 232, 240);
+        doc.setLineWidth(0.5);
+        doc.line(14, 46, 196, 46);
+        
+        // Headers and Rows mapping matching WPF PDF exactly
+        const headers = [["Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed"]];
+        const rows = selectedItems.map(item => [
+            item.partType || "N/A",
+            item.brand || "N/A",
+            item.manufacturer || "N/A",
+            item.model || "N/A",
+            item.barcode || "N/A",
+            `${item.quantity || item.totalQuantity || 0}`,
+            item.createdAt ? new Date(item.createdAt).toLocaleString() : "N/A"
+        ]);
+        
+        // Draw Table
+        autoTable(doc, {
+            startY: 50,
+            head: headers,
+            body: rows,
+            theme: "grid",
+            headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: "bold" },
+            styles: { fontSize: 9, cellPadding: 4, valign: "middle" },
+            columnStyles: {
+                5: { halign: "center" }
+            }
+        });
+        
+        if (action === "download") {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            doc.save(`Purchase_Order_${timestamp}.pdf`);
+            alert("PDF Order slip generated and downloaded successfully!");
+        } else if (action === "print") {
+            doc.autoPrint();
+            window.open(doc.output('bloburl'), '_blank');
+        }
+    } catch (e: any) {
+        console.error("PDF generation error", e);
+        alert("Error generating PDF: " + e.message);
     }
   };
 
@@ -333,14 +403,36 @@ export default function ReportsPage() {
           <div>
             <span style={{ fontWeight: "bold", color: "var(--primary)" }}>{selectedIds.size}</span> selected
           </div>
-          <button 
-            className="btn btn-primary" 
-            style={{ backgroundColor: activeTab === "ordered" ? "var(--success)" : "var(--primary)" }}
-            onClick={activeTab === "pending" ? handlePlaceOrders : handleArriveOrders}
-            disabled={loading}
-          >
-            {activeTab === "pending" ? "Place Orders" : "Mark Arrived (Bulk)"}
-          </button>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            {activeTab === "ordered" && (
+              <>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ fontSize: "0.85rem", padding: "0.5rem" }}
+                  onClick={() => handleGeneratePDF("download")}
+                  disabled={loading}
+                >
+                  Download PDF
+                </button>
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ fontSize: "0.85rem", padding: "0.5rem" }}
+                  onClick={() => handleGeneratePDF("print")}
+                  disabled={loading}
+                >
+                  Print
+                </button>
+              </>
+            )}
+            <button 
+              className="btn btn-primary" 
+              style={{ backgroundColor: activeTab === "ordered" ? "var(--success)" : "var(--primary)" }}
+              onClick={activeTab === "pending" ? handlePlaceOrders : handleArriveOrders}
+              disabled={loading}
+            >
+              {activeTab === "pending" ? "Place Orders" : "Mark Arrived (Bulk)"}
+            </button>
+          </div>
         </div>
       )}
     </div>

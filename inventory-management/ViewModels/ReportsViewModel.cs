@@ -16,6 +16,7 @@ namespace inventory_management.ViewModels
     {
         private readonly InventoryDbContext _context;
         private readonly IDatabaseAvailabilityService _availabilityService;
+        private readonly IPdfService _pdfService;
 
         public ObservableCollection<ReportItemRow> StockSnapshot { get; } = new();
         public ObservableCollection<ReportItemRow> LowStockItems { get; } = new();
@@ -62,10 +63,11 @@ namespace inventory_management.ViewModels
             }
         }
 
-        public ReportsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService)
+        public ReportsViewModel(InventoryDbContext context, IDatabaseAvailabilityService availabilityService, IPdfService pdfService)
         {
             _context = context;
             _availabilityService = availabilityService;
+            _pdfService = pdfService;
             _ = LoadReports();
         }
 
@@ -387,6 +389,91 @@ namespace inventory_management.ViewModels
             {
                 System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, $"Failed to mark selected items as arrived: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private async Task DownloadSelectedOrdersPdf()
+        {
+            var selectedRows = OrderedItems.Where(r => r.IsSelected).ToList();
+            if (!selectedRows.Any())
+            {
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Please select at least one item.", "No Items Selected", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                DefaultExt = ".pdf",
+                Filter = "PDF documents (*.pdf)|*.pdf",
+                Title = "Save Purchase Order PDF",
+                FileName = $"Purchase_Order_{DateTime.Now:yyyyMMdd_HHmmss}.pdf"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                StatusMessage = "Generating PDF...";
+                bool success = await _pdfService.GenerateOrderPdfAsync(dialog.FileName, selectedRows);
+                if (success)
+                {
+                    StatusMessage = "PDF generated successfully.";
+                    try
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = dialog.FileName,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow,
+                            $"PDF saved successfully, but failed to open it automatically: {ex.Message}", 
+                            "Info", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    }
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow,
+                        "Failed to generate PDF document.", 
+                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    StatusMessage = "Error generating PDF.";
+                }
+            }
+        }
+
+        [RelayCommand]
+        private async Task PrintSelectedOrders()
+        {
+            var selectedRows = OrderedItems.Where(r => r.IsSelected).ToList();
+            if (!selectedRows.Any())
+            {
+                System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, "Please select at least one item.", "No Items Selected", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            StatusMessage = "Printing PDF silently...";
+            var tempFile = System.IO.Path.GetTempFileName() + ".pdf";
+            
+            bool success = await _pdfService.GenerateOrderPdfAsync(tempFile, selectedRows);
+            if (success)
+            {
+                bool printSuccess = await _pdfService.PrintOrderPdfSilentlyAsync(tempFile);
+                if (printSuccess)
+                {
+                    StatusMessage = "PDF sent to printer.";
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow,
+                        "Failed to print the document silently. Ensure a default printer is configured.", 
+                        "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    StatusMessage = "Error printing PDF.";
+                }
+            }
+            else
+            {
+                StatusMessage = "Error generating PDF for print.";
             }
         }
 
