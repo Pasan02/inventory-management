@@ -29,63 +29,95 @@ namespace inventory_management.Services
                     // Group items by OrderedAt
                     var groupedItems = items.GroupBy(i => i.OrderedAt?.ToString("yyyy-MM-dd HH:mm") ?? DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm")).ToList();
 
+                    // Fonts (Standard WPF/Segoe UI)
+                    var fontTitle = new XFont("Segoe UI", 18, XFontStyle.Bold);
+                    var fontHeader = new XFont("Segoe UI", 9, XFontStyle.Bold);
+                    var fontBody = new XFont("Segoe UI", 9, XFontStyle.Regular);
+                    var fontFooter = new XFont("Segoe UI", 8, XFontStyle.Italic);
+                    var fontSubtitle = new XFont("Segoe UI", 11, XFontStyle.Regular);
+
+                    int pageNumber = 1;
+                    double margin = 40;
+                    var page = document.AddPage();
+                    page.Size = PageSize.A4;
+                    XGraphics gfx = XGraphics.FromPdfPage(page);
+                    double pageWidth = page.Width.Point;
+                    double printableWidth = pageWidth - 2 * margin;
+                    double bottomMargin = page.Height.Point - margin;
+                    double currentY = margin;
+
+                    // 1. Draw top accent bar on first page
+                    gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
+
+                    // 2. Draw page header text
+                    gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
+
+                    string printedOnText = $"Printed on: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}";
+                    gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
+
+                    currentY += 20;
+                    bool isFirstGroup = true;
+
                     foreach (var group in groupedItems)
                     {
                         var groupItems = group.ToList();
                         string orderTimeText = group.First().OrderedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-                        // Create an empty page
-                        var page = document.AddPage();
-                        page.Size = PageSize.A4;
-
-                        // Get an XGraphics object for drawing
-                        XGraphics gfx = XGraphics.FromPdfPage(page);
-
-                        // Layout parameters
-                        double margin = 40;
-                        double pageWidth = page.Width.Point;
-                        double printableWidth = pageWidth - 2 * margin;
-                        double bottomMargin = page.Height.Point - margin;
-
-                        // Fonts (Standard WPF/Segoe UI)
-                        var fontTitle = new XFont("Segoe UI", 18, XFontStyle.Bold);
-                        var fontHeader = new XFont("Segoe UI", 9, XFontStyle.Bold);
-                        var fontBody = new XFont("Segoe UI", 9, XFontStyle.Regular);
-                        var fontFooter = new XFont("Segoe UI", 8, XFontStyle.Italic);
-                        var fontSubtitle = new XFont("Segoe UI", 11, XFontStyle.Regular);
-
                         int totalQuantity = groupItems.Sum(i => i.Quantity);
-                        int pageNumber = 1;
 
-                        // 1. Draw top accent bar
-                        gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
+                        // Check if we need a new page for the group header (need about 120 height)
+                        if (currentY + 120 > bottomMargin)
+                        {
+                            pageNumber++;
+                            page = document.AddPage();
+                            page.Size = PageSize.A4;
+                            gfx = XGraphics.FromPdfPage(page);
 
-                        // 2. Draw page header text
-                        gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
+                            gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
+                            gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
+                            gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
+
+                            currentY = margin + 20;
+                            isFirstGroup = false; // Prevent separator on new page
+                        }
+                        else if (!isFirstGroup)
+                        {
+                            currentY += 15;
+                            gfx.DrawLine(new XPen(XColor.FromArgb(148, 163, 184), 1.5) { DashStyle = XDashStyle.Dash }, margin, currentY, pageWidth - margin, currentY);
+                            currentY += 15;
+                        }
 
                         // 3. Draw Title and Info
-                        gfx.DrawString("ALPINE AUTO A/C", fontHeader, XBrushes.Navy, new XPoint(margin, margin + 20));
-                        gfx.DrawString("PURCHASE ORDER SLIP", fontTitle, XBrushes.Black, new XRect(margin, margin + 25, printableWidth, 30), XStringFormats.TopLeft);
+                        gfx.DrawString("ALPINE AUTO A/C", fontHeader, XBrushes.Navy, new XPoint(margin, currentY));
+                        gfx.DrawString("PURCHASE ORDER SLIP", fontTitle, XBrushes.Black, new XRect(margin, currentY + 5, printableWidth, 30), XStringFormats.TopLeft);
 
                         string dateText = $"Placed Date/Time: {orderTimeText}";
                         string summaryText = $"Total Items ordered: {groupItems.Count}  |  Total Qty: {totalQuantity}";
-                        gfx.DrawString(dateText, fontSubtitle, XBrushes.DimGray, new XPoint(margin, margin + 65));
-                        gfx.DrawString(summaryText, fontSubtitle, XBrushes.DimGray, new XPoint(margin, margin + 83));
-                        
-                        // Print footer with current print time
-                        string printedOnText = $"Printed on: {DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")}";
-                        gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
+                        gfx.DrawString(dateText, fontSubtitle, XBrushes.DimGray, new XPoint(margin, currentY + 45));
+                        gfx.DrawString(summaryText, fontSubtitle, XBrushes.DimGray, new XPoint(margin, currentY + 63));
 
-                        // 4. Draw a divider
-                        gfx.DrawLine(XPens.LightGray, margin, margin + 100, pageWidth - margin, margin + 100);
+                        currentY += 80;
 
-                        // 5. Draw table headers on first page
-                        double currentY = margin + 115;
+                        // 5. Draw table headers
                         double headerHeight = 22;
+                        if (currentY + headerHeight > bottomMargin)
+                        {
+                            pageNumber++;
+                            page = document.AddPage();
+                            page.Size = PageSize.A4;
+                            gfx = XGraphics.FromPdfPage(page);
+
+                            gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
+                            gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
+                            gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
+                            
+                            gfx.DrawString("PURCHASE ORDER SLIP (Continued)", fontHeader, XBrushes.DimGray, new XPoint(margin, margin + 15));
+                            currentY = margin + 35;
+                        }
+
                         gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, currentY, printableWidth, headerHeight);
 
                         string[] headers = { "Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed" };
-                        double[] colWidths = { 60, 60, 80, 80, 80, 40, 130 }; // Adjusted sizes
+                        double[] colWidths = { 60, 60, 80, 80, 80, 40, 130 };
 
                         double headerX = margin;
                         for (int i = 0; i < headers.Length; i++)
@@ -115,24 +147,17 @@ namespace inventory_management.Services
                             // Check if we need to paginate
                             if (currentY + rowHeight > bottomMargin)
                             {
-                                // Add a new page
                                 pageNumber++;
                                 page = document.AddPage();
                                 page.Size = PageSize.A4;
                                 gfx = XGraphics.FromPdfPage(page);
 
-                                // Draw top accent bar on new page
                                 gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
-
-                                // Page header text and page number
                                 gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
                                 gfx.DrawString("PURCHASE ORDER SLIP (Continued)", fontHeader, XBrushes.DimGray, new XPoint(margin, margin + 15));
-                                
-                                // Print footer with current print time on new page too
                                 gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
 
-                                // Re-draw table headers
-                                currentY = margin + 25;
+                                currentY = margin + 35;
                                 gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, currentY, printableWidth, headerHeight);
 
                                 double nextHeaderX = margin;
@@ -155,13 +180,11 @@ namespace inventory_management.Services
                                 currentY += headerHeight;
                             }
 
-                            // Zebra striping for row background
                             if (rowIndex % 2 == 1)
                             {
                                 gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(248, 250, 252)), margin, currentY, printableWidth, rowHeight);
                             }
 
-                            // Draw cells
                             double cellX = margin;
                             string[] cellValues = {
                                 item.PartType,
@@ -178,7 +201,7 @@ namespace inventory_management.Services
                                 var format = new XStringFormat { LineAlignment = XLineAlignment.Center };
                                 string truncatedText = TruncateText(gfx, cellValues[i], fontBody, colWidths[i] - 10);
 
-                                if (i == 5) // Qty column
+                                if (i == 5)
                                 {
                                     format.Alignment = XStringAlignment.Center;
                                     gfx.DrawString(truncatedText, fontBody, XBrushes.Black, new XRect(cellX, currentY, colWidths[i], rowHeight), format);
@@ -191,12 +214,13 @@ namespace inventory_management.Services
                                 cellX += colWidths[i];
                             }
 
-                            // Draw bottom border line for row
                             gfx.DrawLine(new XPen(XColor.FromArgb(226, 232, 240), 0.5), margin, currentY + rowHeight, pageWidth - margin, currentY + rowHeight);
 
                             currentY += rowHeight;
                             rowIndex++;
                         }
+                        
+                        isFirstGroup = false;
                     }
 
                     // Save document

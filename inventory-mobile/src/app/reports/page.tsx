@@ -155,40 +155,55 @@ export default function ReportsPage() {
             return acc;
         }, {} as Record<string, any[]>);
 
-        let isFirstPage = true;
+        let isFirstGroup = true;
+        let finalY = 10;
+        const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
 
         for (const [key, groupItems] of Object.entries(groupedItems) as [string, any[]][]) {
-            if (!isFirstPage) {
-                doc.addPage();
-            }
-            isFirstPage = false;
-
             const orderTimeText = groupItems[0].orderedAt ? new Date(groupItems[0].orderedAt).toLocaleString() : new Date().toLocaleString();
+
+            if (!isFirstGroup) {
+                if (finalY + 40 > pageHeight - 20) {
+                    doc.addPage();
+                    finalY = 10;
+                } else {
+                    finalY += 10;
+                    // Draw separator
+                    doc.setDrawColor(148, 163, 184);
+                    doc.setLineWidth(0.5);
+                    doc.setLineDashPattern([2, 2], 0);
+                    doc.line(14, finalY, 196, finalY);
+                    doc.setLineDashPattern([], 0);
+                    finalY += 10;
+                }
+            } else {
+                finalY = 10;
+            }
 
             // Title block
             doc.setFont("helvetica", "bold");
             doc.setFontSize(18);
             doc.setTextColor(30, 58, 138); // Navy
-            doc.text("ALPINE AUTO A/C", 14, 20);
+            doc.text("ALPINE AUTO A/C", 14, finalY + 10);
             
             doc.setFontSize(22);
             doc.setTextColor(0, 0, 0);
-            doc.text("PURCHASE ORDER SLIP", 14, 30);
+            doc.text("PURCHASE ORDER SLIP", 14, finalY + 20);
             
             // Date and Time (Local)
             doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
             doc.setTextColor(100, 116, 139);
-            doc.text(`Placed Date/Time: ${orderTimeText}`, 14, 40);
+            doc.text(`Placed Date/Time: ${orderTimeText}`, 14, finalY + 30);
 
             // Print footer
             const currentPrintTime = new Date().toLocaleString();
-            doc.text(`Printed on: ${currentPrintTime}`, 14, 285);
+            doc.text(`Printed on: ${currentPrintTime}`, 14, pageHeight - 10);
             
             // Horizontal line separator
             doc.setDrawColor(226, 232, 240);
             doc.setLineWidth(0.5);
-            doc.line(14, 46, 196, 46);
+            doc.line(14, finalY + 36, 196, finalY + 36);
             
             // Headers and Rows mapping matching WPF PDF exactly
             const headers = [["Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed"]];
@@ -204,7 +219,7 @@ export default function ReportsPage() {
             
             // Draw Table
             autoTable(doc, {
-                startY: 50,
+                startY: finalY + 40,
                 head: headers,
                 body: rows,
                 theme: "grid",
@@ -214,6 +229,9 @@ export default function ReportsPage() {
                     5: { halign: "center" }
                 }
             });
+
+            finalY = (doc as any).lastAutoTable.finalY;
+            isFirstGroup = false;
         }
         
         if (action === "download") {
