@@ -12,10 +12,6 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
 
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<HTMLDivElement>(null);
-  const [zoomSupported, setZoomSupported] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [minZoom, setMinZoom] = useState(1);
-  const [maxZoom, setMaxZoom] = useState(3);
 
   useEffect(() => {
     let isScanning = false;
@@ -61,27 +57,6 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
           }
           Quagga.start();
           isScanning = true;
-
-          // Check if device supports zoom
-          setTimeout(() => {
-            try {
-              const stream = Quagga.CameraAccess.getActiveStream();
-              if (stream) {
-                const track = stream.getVideoTracks()[0];
-                if (typeof track.getCapabilities === "function") {
-                  const capabilities = track.getCapabilities();
-                  if (capabilities && (capabilities as any).zoom) {
-                    setZoomSupported(true);
-                    setMinZoom((capabilities as any).zoom.min || 1);
-                    setMaxZoom((capabilities as any).zoom.max || 5);
-                    setZoom((capabilities as any).zoom.min || 1);
-                  }
-                }
-              }
-            } catch (e) {
-              console.log("Zoom not supported on this device", e);
-            }
-          }, 1000);
         }
       );
 
@@ -123,20 +98,6 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
     }
   }, [onResult]);
 
-  const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newZoom = parseFloat(e.target.value);
-    setZoom(newZoom);
-    try {
-      const stream = Quagga.CameraAccess.getActiveStream();
-      if (stream) {
-        const track = stream.getVideoTracks()[0];
-        track.applyConstraints({ advanced: [{ zoom: newZoom } as any] });
-      }
-    } catch (err) {
-      console.log("Failed to apply zoom constraint", err);
-    }
-  };
-
   return (
     <div style={{
       position: "fixed",
@@ -176,22 +137,6 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
                 }
               `}</style>
             </div>
-            
-            {zoomSupported && (
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0.5rem", background: "var(--background)", borderRadius: "8px" }}>
-                <span style={{ fontSize: "0.9rem", fontWeight: "bold" }}>Zoom:</span>
-                <input 
-                  type="range" 
-                  min={minZoom} 
-                  max={maxZoom} 
-                  step="0.1" 
-                  value={zoom} 
-                  onChange={handleZoomChange}
-                  style={{ flex: 1, accentColor: "var(--primary)" }}
-                />
-                <span style={{ fontSize: "0.9rem", minWidth: "30px", textAlign: "right" }}>{zoom.toFixed(1)}x</span>
-              </div>
-            )}
           </div>
         )}
       </div>
