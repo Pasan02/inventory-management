@@ -9,8 +9,13 @@ interface BarcodeScannerProps {
 }
 
 export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProps) {
+
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<HTMLDivElement>(null);
+  const [zoomSupported, setZoomSupported] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [minZoom, setMinZoom] = useState(1);
+  const [maxZoom, setMaxZoom] = useState(3);
 
   useEffect(() => {
     let isScanning = false;
@@ -56,6 +61,27 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
           }
           Quagga.start();
           isScanning = true;
+
+          // Check if device supports zoom
+          setTimeout(() => {
+            try {
+              const stream = Quagga.CameraAccess.getActiveStream();
+              if (stream) {
+                const track = stream.getVideoTracks()[0];
+                if (typeof track.getCapabilities === "function") {
+                  const capabilities = track.getCapabilities();
+                  if (capabilities && (capabilities as any).zoom) {
+                    setZoomSupported(true);
+                    setMinZoom((capabilities as any).zoom.min || 1);
+                    setMaxZoom((capabilities as any).zoom.max || 5);
+                    setZoom((capabilities as any).zoom.min || 1);
+                  }
+                }
+              }
+            } catch (e) {
+              console.log("Zoom not supported on this device", e);
+            }
+          }, 1000);
         }
       );
 
@@ -66,8 +92,6 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
         if (result && result.codeResult && result.codeResult.code) {
           let code = result.codeResult.code;
           
-          // Auto-correction: If it's exactly 12 characters and starts with ITM, 
-          // force the 4th character to be a hyphen (fixes ITM% misreads)
           if (code.length === 12 && code.startsWith("ITM")) {
             code = "ITM-" + code.substring(4);
           }
@@ -75,13 +99,11 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
           counts[code] = (counts[code] || 0) + 1;
           totalReads++;
 
-          // Clear buffer if we get too many reads without a consensus
           if (totalReads > 20) {
             counts = {};
             totalReads = 0;
           }
           
-          // Require 3 consistent reads to eliminate transient noise/glare misreads
           if (counts[code] >= 3) {
             onResult(code);
             isScanning = false;
@@ -100,6 +122,20 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
       };
     }
   }, [onResult]);
+
+  const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newZoom = parseFloat(e.target.value);
+    setZoom(newZoom);
+    try {
+      const stream = Quagga.CameraAccess.getActiveStream();
+      if (stream) {
+        const track = stream.getVideoTracks()[0];
+        track.applyConstraints({ advanced: [{ zoom: newZoom } as any] });
+      }
+    } catch (err) {
+      console.log("Failed to apply zoom constraint", err);
+    }
+  };
 
   return (
     <div style={{
@@ -122,22 +158,40 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
         {error ? (
           <div style={{ color: "var(--danger)", padding: "1rem", textAlign: "center" }}>{error}</div>
         ) : (
-          <div style={{ width: "100%", overflow: "hidden", borderRadius: "4px", background: "#000", position: "relative" }}>
-            <div ref={scannerRef} className="quagga-container" style={{ width: "100%" }} />
-            <style jsx>{`
-              .quagga-container :global(video) {
-                width: 100% !important;
-                height: auto !important;
-                display: block;
-              }
-              .quagga-container :global(canvas) {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-              }
-            `}</style>
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ width: "100%", overflow: "hidden", borderRadius: "4px", background: "#000", position: "relative" }}>
+              <div ref={scannerRef} className="quagga-container" style={{ width: "100%" }} />
+              <style jsx>{`
+                .quagga-container :global(video) {
+                  width: 100% !important;
+                  height: auto !important;
+                  display: block;
+                }
+                .quagga-container :global(canvas) {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  width: 100%;
+                  height: 100%;
+                }
+              `}</style>
+            </div>
+            
+            {zoomSupported && (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0.5rem", background: "var(--background)", borderRadius: "8px" }}>
+                <span style={{ fontSize: "0.9rem", fontWeight: "bold" }}>Zoom:</span>
+                <input 
+                  type="range" 
+                  min={minZoom} 
+                  max={maxZoom} 
+                  step="0.1" 
+                  value={zoom} 
+                  onChange={handleZoomChange}
+                  style={{ flex: 1, accentColor: "var(--primary)" }}
+                />
+                <span style={{ fontSize: "0.9rem", minWidth: "30px", textAlign: "right" }}>{zoom.toFixed(1)}x</span>
+              </div>
+            )}
           </div>
         )}
       </div>

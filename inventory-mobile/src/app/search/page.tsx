@@ -379,7 +379,7 @@ export default function SearchPage() {
 
       {showScanner && (
         <BarcodeScanner 
-          onResult={(result) => {
+          onResult={(result: string) => {
             setQuickBarcode(result);
             setShowScanner(false);
             handleSelectItem({ barcode: result });

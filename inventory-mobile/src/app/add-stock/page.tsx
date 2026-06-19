@@ -283,7 +283,7 @@ function AddStockContent() {
 
       {showScanner && (
         <BarcodeScanner 
-          onResult={(result) => {
+          onResult={(result: string) => {
             setBarcode(result);
             setShowScanner(false);
             handleLookup(result);
