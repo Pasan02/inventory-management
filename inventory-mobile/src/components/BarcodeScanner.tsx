@@ -21,6 +21,7 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
       fps: 10, 
       qrbox: { width: 250, height: 150 }, 
       aspectRatio: 1.0,
+      useBarCodeDetectorIfSupported: true,
       formatsToSupport: [
         Html5QrcodeSupportedFormats.CODE_128,
         Html5QrcodeSupportedFormats.CODE_39,
