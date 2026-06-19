@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from "@zxing/library";
+import Quagga from "@ericblade/quagga2";
 
 interface BarcodeScannerProps {
   onResult: (result: string) => void;
@@ -10,50 +10,70 @@ interface BarcodeScannerProps {
 
 export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProps) {
   const [error, setError] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const scannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Configure scanner hints for better accuracy and support for Code 128 Subset C
-    const hints = new Map();
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-      BarcodeFormat.CODE_128,
-      BarcodeFormat.CODE_39,
-      BarcodeFormat.UPC_A,
-      BarcodeFormat.UPC_E,
-      BarcodeFormat.EAN_13,
-      BarcodeFormat.EAN_8
-    ]);
-    hints.set(DecodeHintType.TRY_HARDER, true);
+    let isScanning = false;
 
-    const codeReader = new BrowserMultiFormatReader(hints);
-    codeReaderRef.current = codeReader;
-
-    if (videoRef.current) {
-      codeReader.decodeFromConstraints(
-        { 
-          video: { 
-            facingMode: "environment",
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          } 
+    if (scannerRef.current) {
+      Quagga.init(
+        {
+          inputStream: {
+            type: "LiveStream",
+            target: scannerRef.current,
+            constraints: {
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              facingMode: "environment",
+            },
+            area: {
+              top: "10%",
+              right: "5%",
+              left: "5%",
+              bottom: "10%"
+            }
+          },
+          locator: {
+            patchSize: "medium",
+            halfSample: true,
+          },
+          numOfWorkers: typeof navigator !== 'undefined' && navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 2,
+          decoder: {
+            readers: [
+              "code_128_reader",
+              "ean_reader",
+              "upc_reader",
+              "code_39_reader"
+            ],
+            multiple: false
+          },
+          locate: true
         },
-        videoRef.current,
-        (result, err) => {
-          if (result) {
-            onResult(result.getText());
+        (err) => {
+          if (err) {
+            setError(`Camera access denied or unavailable: ${err.message || err}`);
+            return;
           }
+          Quagga.start();
+          isScanning = true;
         }
-      ).catch((e: any) => {
-        setError(`Camera access denied or unavailable: ${e.message}`);
-      });
-    }
+      );
 
-    return () => {
-      if (codeReaderRef.current) {
-        codeReaderRef.current.reset();
-      }
-    };
+      const handleDetected = (result: any) => {
+        if (result && result.codeResult && result.codeResult.code) {
+          onResult(result.codeResult.code);
+        }
+      };
+
+      Quagga.onDetected(handleDetected);
+
+      return () => {
+        if (isScanning) {
+          Quagga.stop();
+          Quagga.offDetected(handleDetected);
+        }
+      };
+    }
   }, [onResult]);
 
   return (
@@ -77,8 +97,22 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
         {error ? (
           <div style={{ color: "var(--danger)", padding: "1rem", textAlign: "center" }}>{error}</div>
         ) : (
-          <div style={{ width: "100%", overflow: "hidden", borderRadius: "4px", background: "#000" }}>
-            <video ref={videoRef} style={{ width: "100%", height: "auto", display: "block" }} />
+          <div style={{ width: "100%", overflow: "hidden", borderRadius: "4px", background: "#000", position: "relative" }}>
+            <div ref={scannerRef} className="quagga-container" style={{ width: "100%" }} />
+            <style jsx>{`
+              .quagga-container :global(video) {
+                width: 100% !important;
+                height: auto !important;
+                display: block;
+              }
+              .quagga-container :global(canvas) {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+              }
+            `}</style>
           </div>
         )}
       </div>
