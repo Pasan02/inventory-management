@@ -46,9 +46,6 @@ namespace inventory_management.Services
                     double bottomMargin = page.Height.Point - margin;
                     double currentY = margin;
 
-                    // 1. Draw top accent bar on first page
-                    gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
-
                     // 2. Draw page header text
                     gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
 
@@ -56,6 +53,12 @@ namespace inventory_management.Services
                     gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
 
                     currentY += 20;
+
+                    // Draw Title and Info on first page
+                    gfx.DrawString("ALPINE AUTO A/C", fontHeader, XBrushes.Black, new XPoint(margin, currentY));
+                    gfx.DrawString("PURCHASE ORDER SLIP", fontTitle, XBrushes.Black, new XRect(margin, currentY + 5, printableWidth, 30), XStringFormats.TopLeft);
+                    currentY += 40;
+
                     bool isFirstGroup = true;
 
                     foreach (var group in groupedItems)
@@ -64,19 +67,23 @@ namespace inventory_management.Services
                         string orderTimeText = group.First().OrderedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                         int totalQuantity = groupItems.Sum(i => i.Quantity);
 
-                        // Check if we need a new page for the group header (need about 120 height)
-                        if (currentY + 120 > bottomMargin)
+                        // Check if we need a new page for the group header (need about 80 height)
+                        if (currentY + 80 > bottomMargin)
                         {
                             pageNumber++;
                             page = document.AddPage();
                             page.Size = PageSize.A4;
                             gfx = XGraphics.FromPdfPage(page);
 
-                            gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
                             gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
                             gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
 
                             currentY = margin + 20;
+
+                            gfx.DrawString("ALPINE AUTO A/C", fontHeader, XBrushes.Black, new XPoint(margin, currentY));
+                            gfx.DrawString("PURCHASE ORDER SLIP (Continued)", fontTitle, XBrushes.Black, new XRect(margin, currentY + 5, printableWidth, 30), XStringFormats.TopLeft);
+                            currentY += 40;
+
                             isFirstGroup = false; // Prevent separator on new page
                         }
                         else if (!isFirstGroup)
@@ -86,16 +93,12 @@ namespace inventory_management.Services
                             currentY += 15;
                         }
 
-                        // 3. Draw Title and Info
-                        gfx.DrawString("ALPINE AUTO A/C", fontHeader, XBrushes.Navy, new XPoint(margin, currentY));
-                        gfx.DrawString("PURCHASE ORDER SLIP", fontTitle, XBrushes.Black, new XRect(margin, currentY + 5, printableWidth, 30), XStringFormats.TopLeft);
-
                         string dateText = $"Placed Date/Time: {orderTimeText}";
                         string summaryText = $"Total Items ordered: {groupItems.Count}  |  Total Qty: {totalQuantity}";
-                        gfx.DrawString(dateText, fontSubtitle, XBrushes.DimGray, new XPoint(margin, currentY + 45));
-                        gfx.DrawString(summaryText, fontSubtitle, XBrushes.DimGray, new XPoint(margin, currentY + 63));
+                        gfx.DrawString(dateText, fontSubtitle, XBrushes.Black, new XPoint(margin, currentY + 5));
+                        gfx.DrawString(summaryText, fontSubtitle, XBrushes.Black, new XPoint(margin, currentY + 23));
 
-                        currentY += 80;
+                        currentY += 40;
 
                         // 5. Draw table headers
                         double headerHeight = 22;
@@ -106,15 +109,15 @@ namespace inventory_management.Services
                             page.Size = PageSize.A4;
                             gfx = XGraphics.FromPdfPage(page);
 
-                            gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
                             gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
                             gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
                             
-                            gfx.DrawString("PURCHASE ORDER SLIP (Continued)", fontHeader, XBrushes.DimGray, new XPoint(margin, margin + 15));
-                            currentY = margin + 35;
-                        }
+                            currentY = margin + 20;
 
-                        gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, currentY, printableWidth, headerHeight);
+                            gfx.DrawString("ALPINE AUTO A/C", fontHeader, XBrushes.Black, new XPoint(margin, currentY));
+                            gfx.DrawString("PURCHASE ORDER SLIP (Continued)", fontTitle, XBrushes.Black, new XRect(margin, currentY + 5, printableWidth, 30), XStringFormats.TopLeft);
+                            currentY += 40;
+                        }
 
                         string[] headers = { "Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed" };
                         double[] colWidths = { 60, 60, 80, 80, 80, 40, 130 };
@@ -122,16 +125,18 @@ namespace inventory_management.Services
                         double headerX = margin;
                         for (int i = 0; i < headers.Length; i++)
                         {
+                            gfx.DrawRectangle(new XPen(XColor.FromArgb(0, 0, 0), 0.5), headerX, currentY, colWidths[i], headerHeight);
+
                             var format = new XStringFormat { LineAlignment = XLineAlignment.Center };
                             if (headers[i] == "Qty")
                             {
                                 format.Alignment = XStringAlignment.Center;
-                                gfx.DrawString(headers[i], fontHeader, XBrushes.White, new XRect(headerX, currentY, colWidths[i], headerHeight), format);
+                                gfx.DrawString(headers[i], fontHeader, XBrushes.Black, new XRect(headerX, currentY, colWidths[i], headerHeight), format);
                             }
                             else
                             {
                                 format.Alignment = XStringAlignment.Near;
-                                gfx.DrawString(headers[i], fontHeader, XBrushes.White, new XRect(headerX + 5, currentY, colWidths[i] - 10, headerHeight), format);
+                                gfx.DrawString(headers[i], fontHeader, XBrushes.Black, new XRect(headerX + 5, currentY, colWidths[i] - 10, headerHeight), format);
                             }
                             headerX += colWidths[i];
                         }
@@ -140,7 +145,6 @@ namespace inventory_management.Services
 
                         // 6. Draw Table Rows
                         double rowHeight = 20;
-                        int rowIndex = 0;
 
                         foreach (var item in groupItems)
                         {
@@ -152,37 +156,35 @@ namespace inventory_management.Services
                                 page.Size = PageSize.A4;
                                 gfx = XGraphics.FromPdfPage(page);
 
-                                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, margin, printableWidth, 4);
                                 gfx.DrawString($"Page {pageNumber}", fontFooter, XBrushes.DimGray, new XPoint(pageWidth - margin, margin - 5), new XStringFormat { Alignment = XStringAlignment.Far });
-                                gfx.DrawString("PURCHASE ORDER SLIP (Continued)", fontHeader, XBrushes.DimGray, new XPoint(margin, margin + 15));
                                 gfx.DrawString(printedOnText, fontFooter, XBrushes.LightGray, new XPoint(margin, bottomMargin + 10));
 
-                                currentY = margin + 35;
-                                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(30, 58, 138)), margin, currentY, printableWidth, headerHeight);
+                                currentY = margin + 20;
+
+                                gfx.DrawString("ALPINE AUTO A/C", fontHeader, XBrushes.Black, new XPoint(margin, currentY));
+                                gfx.DrawString("PURCHASE ORDER SLIP (Continued)", fontTitle, XBrushes.Black, new XRect(margin, currentY + 5, printableWidth, 30), XStringFormats.TopLeft);
+                                currentY += 40;
 
                                 double nextHeaderX = margin;
                                 for (int i = 0; i < headers.Length; i++)
                                 {
+                                    gfx.DrawRectangle(new XPen(XColor.FromArgb(0, 0, 0), 0.5), nextHeaderX, currentY, colWidths[i], headerHeight);
+
                                     var format = new XStringFormat { LineAlignment = XLineAlignment.Center };
                                     if (headers[i] == "Qty")
                                     {
                                         format.Alignment = XStringAlignment.Center;
-                                        gfx.DrawString(headers[i], fontHeader, XBrushes.White, new XRect(nextHeaderX, currentY, colWidths[i], headerHeight), format);
+                                        gfx.DrawString(headers[i], fontHeader, XBrushes.Black, new XRect(nextHeaderX, currentY, colWidths[i], headerHeight), format);
                                     }
                                     else
                                     {
                                         format.Alignment = XStringAlignment.Near;
-                                        gfx.DrawString(headers[i], fontHeader, XBrushes.White, new XRect(nextHeaderX + 5, currentY, colWidths[i] - 10, headerHeight), format);
+                                        gfx.DrawString(headers[i], fontHeader, XBrushes.Black, new XRect(nextHeaderX + 5, currentY, colWidths[i] - 10, headerHeight), format);
                                     }
                                     nextHeaderX += colWidths[i];
                                 }
 
                                 currentY += headerHeight;
-                            }
-
-                            if (rowIndex % 2 == 1)
-                            {
-                                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(248, 250, 252)), margin, currentY, printableWidth, rowHeight);
                             }
 
                             double cellX = margin;
@@ -198,6 +200,8 @@ namespace inventory_management.Services
 
                             for (int i = 0; i < cellValues.Length; i++)
                             {
+                                gfx.DrawRectangle(new XPen(XColor.FromArgb(0, 0, 0), 0.5), cellX, currentY, colWidths[i], rowHeight);
+
                                 var format = new XStringFormat { LineAlignment = XLineAlignment.Center };
                                 string truncatedText = TruncateText(gfx, cellValues[i], fontBody, colWidths[i] - 10);
 
@@ -214,10 +218,7 @@ namespace inventory_management.Services
                                 cellX += colWidths[i];
                             }
 
-                            gfx.DrawLine(new XPen(XColor.FromArgb(226, 232, 240), 0.5), margin, currentY + rowHeight, pageWidth - margin, currentY + rowHeight);
-
                             currentY += rowHeight;
-                            rowIndex++;
                         }
                         
                         isFirstGroup = false;

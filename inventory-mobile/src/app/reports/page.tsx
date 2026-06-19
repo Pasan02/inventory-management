@@ -180,30 +180,35 @@ export default function ReportsPage() {
                 finalY = 10;
             }
 
-            // Title block
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(18);
-            doc.setTextColor(30, 58, 138); // Navy
-            doc.text("ALPINE AUTO A/C", 14, finalY + 10);
-            
-            doc.setFontSize(22);
-            doc.setTextColor(0, 0, 0);
-            doc.text("PURCHASE ORDER SLIP", 14, finalY + 20);
+            if (finalY === 10) {
+                // Title block
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(18);
+                doc.setTextColor(0, 0, 0); // Black
+                doc.text("ALPINE AUTO A/C", 14, finalY + 10);
+                
+                doc.setFontSize(22);
+                doc.text("PURCHASE ORDER SLIP", 14, finalY + 20);
+                
+                finalY += 30;
+            } else {
+                finalY += 10;
+            }
             
             // Date and Time (Local)
             doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
-            doc.setTextColor(100, 116, 139);
-            doc.text(`Placed Date/Time: ${orderTimeText}`, 14, finalY + 30);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Placed Date/Time: ${orderTimeText}`, 14, finalY);
 
             // Print footer
             const currentPrintTime = new Date().toLocaleString();
             doc.text(`Printed on: ${currentPrintTime}`, 14, pageHeight - 10);
             
             // Horizontal line separator
-            doc.setDrawColor(226, 232, 240);
+            doc.setDrawColor(0, 0, 0);
             doc.setLineWidth(0.5);
-            doc.line(14, finalY + 36, 196, finalY + 36);
+            doc.line(14, finalY + 6, 196, finalY + 6);
             
             // Headers and Rows mapping matching WPF PDF exactly
             const headers = [["Type", "Brand", "Manufacturer", "Model", "Barcode", "Qty", "Date Removed"]];
@@ -219,12 +224,13 @@ export default function ReportsPage() {
             
             // Draw Table
             autoTable(doc, {
-                startY: finalY + 40,
+                startY: finalY + 10,
                 head: headers,
                 body: rows,
                 theme: "grid",
-                headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: "bold" },
-                styles: { fontSize: 9, cellPadding: 4, valign: "middle" },
+                headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: "bold", lineWidth: 0.1, lineColor: [0, 0, 0] },
+                styles: { fontSize: 9, cellPadding: 4, valign: "middle", textColor: [0, 0, 0], lineWidth: 0.1, lineColor: [0, 0, 0] },
+                margin: { top: 20 },
                 columnStyles: {
                     5: { halign: "center" }
                 }
