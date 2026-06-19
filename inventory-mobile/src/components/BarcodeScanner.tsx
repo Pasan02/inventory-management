@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from "@zxing/library";
 
 interface BarcodeScannerProps {
   onResult: (result: string) => void;
@@ -10,51 +10,38 @@ interface BarcodeScannerProps {
 
 export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProps) {
   const [error, setError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
-    // Initialize scanner
-    const html5Qrcode = new Html5Qrcode("reader");
-    scannerRef.current = html5Qrcode;
+    // Configure scanner hints for better accuracy and support for Code 128 Subset C
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8
+    ]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
 
-    const config = { 
-      fps: 10, 
-      qrbox: { width: 250, height: 150 }, 
-      aspectRatio: 1.0,
-      useBarCodeDetectorIfSupported: true,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8
-      ]
-    };
-    
-    html5Qrcode.start(
-      { facingMode: "environment" },
-      config,
-      (decodedText) => {
-        // Success callback
-        html5Qrcode.stop().then(() => {
-          onResult(decodedText);
-        }).catch(err => {
-          console.error("Failed to stop scanner", err);
-          onResult(decodedText);
-        });
-      },
-      (errorMessage) => {
-        // Warning/Ignored callbacks (e.g. no barcode detected in frame)
-        // We do not set error state here to avoid flickering.
-      }
-    ).catch(err => {
-      setError(`Camera access denied or unavailable: ${err}`);
-    });
+    const codeReader = new BrowserMultiFormatReader(hints);
+    codeReaderRef.current = codeReader;
+
+    if (videoRef.current) {
+      codeReader.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
+        if (result) {
+          onResult(result.getText());
+        }
+      }).catch((e: any) => {
+        setError(`Camera access denied or unavailable: ${e.message}`);
+      });
+    }
 
     return () => {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(console.error);
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
       }
     };
   }, [onResult]);
@@ -80,7 +67,9 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
         {error ? (
           <div style={{ color: "var(--danger)", padding: "1rem", textAlign: "center" }}>{error}</div>
         ) : (
-          <div id="reader" style={{ width: "100%" }}></div>
+          <div style={{ width: "100%", overflow: "hidden", borderRadius: "4px", background: "#000" }}>
+            <video ref={videoRef} style={{ width: "100%", height: "auto", display: "block" }} />
+          </div>
         )}
       </div>
     </div>
