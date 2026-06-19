@@ -28,8 +28,6 @@ export default function SearchPage() {
   // Filter state
   const [filterText, setFilterText] = useState("");
   const [includeOos, setIncludeOos] = useState(false);
-  const [quickBarcode, setQuickBarcode] = useState("");
-  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     fetchParts();
@@ -182,14 +180,6 @@ export default function SearchPage() {
       <div className="glass-panel" style={{ padding: "1.25rem", marginBottom: "1rem" }}>
         {step === "PARTS" && (
           <>
-            <div className="input-group" style={{ marginBottom: "1.5rem" }}>
-              <label style={{ fontSize: "0.95rem", fontWeight: "600", color: "var(--text-secondary)", display: "block", marginBottom: "0.5rem" }}>Quick Barcode Scan / Lookup</label>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <input type="text" className="input-control" style={{ flex: 1 }} placeholder="Enter barcode..." value={quickBarcode} onChange={e => setQuickBarcode(e.target.value)} onKeyDown={e => { if(e.key === "Enter") handleSelectItem({ barcode: quickBarcode }); }} />
-                <button className="btn btn-secondary" onClick={() => setShowScanner(true)}>📷</button>
-                <button className="btn btn-primary" onClick={() => handleSelectItem({ barcode: quickBarcode })}>Lookup</button>
-              </div>
-            </div>
             <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "var(--text-primary)", marginBottom: "1rem" }}>Select Part Type</h2>
           </>
         )}
@@ -279,7 +269,7 @@ export default function SearchPage() {
                     {m.imageUrl && <img src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${m.imageUrl}`} alt={m.name} style={{ width: "48px", height: "48px", objectFit: "cover", borderRadius: "4px", border: "1px solid var(--border)" }} />}
                     <div>
                       <span style={{ display: "block", fontWeight: 600, fontSize: "1.1rem" }}>{m.name}</span>
-                      <span style={{ display: "block", fontSize: "0.85rem", opacity: 0.7 }}>Years: {m.yearRange}</span>
+                      <span style={{ display: "block", fontSize: "0.85rem", opacity: 0.7 }}>Rack: {m.rackLocation}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
@@ -376,17 +366,6 @@ export default function SearchPage() {
           </div>
         )}
       </div>
-
-      {showScanner && (
-        <BarcodeScanner 
-          onResult={(result: string) => {
-            setQuickBarcode(result);
-            setShowScanner(false);
-            handleSelectItem({ barcode: result });
-          }}
-          onClose={() => setShowScanner(false)}
-        />
-      )}
     </div>
   );
 }

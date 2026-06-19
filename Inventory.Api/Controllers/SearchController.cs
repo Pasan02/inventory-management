@@ -90,16 +90,17 @@ namespace Inventory.Api.Controllers
                 .Where(i => i.PartTypeId == partTypeId && i.VehicleModel.VehicleManufacturerId == manufacturerId && i.VehicleModelId != 0)
                 .Include(i => i.VehicleModel)
                 .Include(i => i.Stock)
+                .Include(i => i.Rack)
                 .AsNoTracking()
-                .GroupBy(i => new { i.VehicleModelId, Name = i.VehicleModel != null ? i.VehicleModel.Name : null, YearRange = i.VehicleModel != null ? i.VehicleModel.YearRange : null })
+                .GroupBy(i => new { i.VehicleModelId, Name = i.VehicleModel != null ? i.VehicleModel.Name : null })
                 .Select(g => new
                 {
                     ModelId = g.Key.VehicleModelId,
                     Name = g.Key.Name ?? "Universal / Generic",
-                    YearRange = g.Key.YearRange ?? "-",
                     ItemCount = g.Count(),
                     Quantity = g.Sum(i => i.Stock != null ? i.Stock.Quantity : 0),
-                    ImagePath = g.Max(i => i.ImagePath) // Max is safe for strings in GroupBy
+                    ImagePath = g.Max(i => i.ImagePath), // Max is safe for strings in GroupBy
+                    RackLocation = g.Max(i => i.Rack != null ? i.Rack.LocationCode : "Unassigned")
                 })
                 .OrderBy(r => r.Name)
                 .ToListAsync();
@@ -108,9 +109,9 @@ namespace Inventory.Api.Controllers
             {
                 m.ModelId,
                 m.Name,
-                m.YearRange,
                 m.ItemCount,
                 m.Quantity,
+                m.RackLocation,
                 ImageUrl = m.ImagePath != null ? $"/api/search/images?path={Uri.EscapeDataString(m.ImagePath)}" : null
             }).ToList();
 
@@ -251,7 +252,6 @@ namespace Inventory.Api.Controllers
             var items = await _context.Items
                 .Where(i => 
                     i.Barcode.ToLower().Contains(term) ||
-                    i.Description.ToLower().Contains(term) ||
                     i.PartType.Name.ToLower().Contains(term) ||
                     i.PartBrand.Name.ToLower().Contains(term) ||
                     i.VehicleModel.Name.ToLower().Contains(term) ||

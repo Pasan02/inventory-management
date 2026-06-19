@@ -15,6 +15,7 @@ function AddStockContent() {
   const [quantity, setQuantity] = useState(initialQuantity);
   const [orderIds, setOrderIds] = useState(initialOrderIds);
   const [pcode, setPcode] = useState("");
+  const [printQuantity, setPrintQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -180,12 +181,12 @@ function AddStockContent() {
   const handlePrintBarcode = async () => {
     if (!item) return;
     try {
-      const response = await fetchWithAuth("/api/print/barcode", {
+      await fetchWithAuth("/api/print/barcode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ barcode: item.barcode, copies: 1 })
+        body: JSON.stringify({ barcode: item.barcode, copies: printQuantity })
       });
-      alert("Print job sent to local printer successfully!");
+      alert(`Print job for ${printQuantity} label(s) sent to local printer successfully!`);
     } catch (e) {
       alert("Error printing: " + (e as Error).message);
     }
@@ -280,9 +281,9 @@ function AddStockContent() {
 
       {item && (
         <form onSubmit={handleAddStock} className="glass-panel animate-slide-up" style={{ padding: "1.5rem", border: "1px solid var(--border)", background: "var(--surface)", borderRadius: "var(--radius-lg)" }}>
-          <h2 style={{ fontSize: "1.25rem", color: "var(--primary)", marginBottom: "0.25rem" }}>{item.description}</h2>
+          <h2 style={{ fontSize: "1.25rem", color: "var(--primary)", marginBottom: "0.25rem" }}>{item?.vehicleModel?.manufacturer?.name} {item?.vehicleModel?.name}</h2>
           <p style={{ color: "var(--text-secondary)", marginBottom: "0.25rem", fontSize: "0.95rem" }}>{item?.partType?.name} - {item?.partBrand?.name}</p>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem", fontSize: "0.95rem" }}>{item?.vehicleModel?.manufacturer?.name} {item?.vehicleModel?.name}</p>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem", fontSize: "0.95rem" }}>{item.description}</p>
           
           <div style={{ display: "flex", justifyContent: "space-between", background: "var(--bg-main)", border: "1px solid var(--border)", padding: "1rem", borderRadius: "var(--radius-md)", marginBottom: "1.5rem" }}>
             <div>
@@ -300,14 +301,7 @@ function AddStockContent() {
             <span className="data-value">{item.barcode}</span>
           </div>
 
-          <button 
-            type="button" 
-            className="btn btn-secondary" 
-            style={{ width: "100%", marginTop: "0.5rem", fontSize: "0.9rem", padding: "0.6rem" }} 
-            onClick={handlePrintBarcode}
-          >
-            🖨️ Print Barcode Label
-          </button>
+
 
           <div style={{ marginTop: "1.5rem" }}>
             <div className="input-group">
@@ -323,7 +317,7 @@ function AddStockContent() {
             </div>
             
             <div className="input-group">
-              <label>Pcode (Secret Price Code)</label>
+              <label>Pcode</label>
               <input 
                 type="text" 
                 className="input-control" 
@@ -337,6 +331,32 @@ function AddStockContent() {
             </button>
           </div>
         </form>
+      )}
+
+      {item && (
+        <div className="glass-panel animate-slide-up" style={{ marginTop: "1.5rem", padding: "1.5rem", border: "1px solid var(--border)", background: "var(--surface)", borderRadius: "var(--radius-lg)" }}>
+          <h3 style={{ fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "1rem", marginTop: 0 }}>Print Labels</h3>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end" }}>
+            <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label>Quantity</label>
+              <input 
+                type="number" 
+                className="input-control" 
+                value={printQuantity}
+                onChange={(e) => setPrintQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                min="1"
+              />
+            </div>
+            <button 
+              type="button" 
+              className="btn btn-secondary" 
+              style={{ flex: 2, padding: "0.75rem", fontSize: "0.95rem" }} 
+              onClick={handlePrintBarcode}
+            >
+              🖨️ Print Barcode
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -451,25 +451,25 @@ export default function ReportsPage() {
           boxShadow: "0 -4px 20px rgba(0,0,0,0.5)",
           border: "1px solid var(--border)",
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          flexDirection: "column",
+          gap: "0.75rem",
           zIndex: 50
         }}>
-          <div>
+          <div style={{ textAlign: "center" }}>
             {activeTab === "ordered" ? (
               <span style={{ fontSize: "0.85rem", color: "var(--text-dim)" }}>
                 {selectedIds.size > 0 ? <><span style={{ fontWeight: "bold", color: "var(--primary)" }}>{selectedIds.size}</span> selected</> : `${data.length} total orders`}
               </span>
             ) : (
-              <><span style={{ fontWeight: "bold", color: "var(--primary)" }}>{selectedIds.size}</span> selected</>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-dim)" }}><span style={{ fontWeight: "bold", color: "var(--primary)" }}>{selectedIds.size}</span> selected</span>
             )}
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem", width: "100%" }}>
             {activeTab === "ordered" && (
               <>
                 <button 
                   className="btn btn-secondary" 
-                  style={{ fontSize: "0.85rem", padding: "0.5rem" }}
+                  style={{ flex: 1, fontSize: "0.85rem", padding: "0.5rem" }}
                   onClick={() => handleGeneratePDF("download", data)}
                   disabled={loading}
                 >
@@ -477,7 +477,7 @@ export default function ReportsPage() {
                 </button>
                 <button 
                   className="btn btn-secondary" 
-                  style={{ fontSize: "0.85rem", padding: "0.5rem" }}
+                  style={{ flex: 1, fontSize: "0.85rem", padding: "0.5rem" }}
                   onClick={() => handleGeneratePDF("print", data)}
                   disabled={loading}
                 >
@@ -487,7 +487,7 @@ export default function ReportsPage() {
             )}
             <button 
               className="btn btn-primary" 
-              style={{ backgroundColor: activeTab === "ordered" ? "var(--success)" : "var(--primary)" }}
+              style={{ flex: 1, backgroundColor: activeTab === "ordered" ? "var(--success)" : "var(--primary)" }}
               onClick={activeTab === "pending" ? handlePlaceOrders : handleArriveOrders}
               disabled={loading || (activeTab === "ordered" && selectedIds.size === 0)}
             >

@@ -187,9 +187,9 @@ function RemoveStockContent() {
 
       {item && (
         <form onSubmit={handleRemoveStock} className="glass-panel animate-slide-up" style={{ padding: "1.5rem", border: "1px solid var(--border)", borderTop: "4px solid var(--danger)", background: "var(--surface)", borderRadius: "var(--radius-lg)" }}>
-          <h2 style={{ fontSize: "1.25rem", color: "var(--primary)", marginBottom: "0.25rem" }}>{item.description}</h2>
+          <h2 style={{ fontSize: "1.25rem", color: "var(--primary)", marginBottom: "0.25rem" }}>{item?.vehicleModel?.manufacturer?.name} {item?.vehicleModel?.name}</h2>
           <p style={{ color: "var(--text-secondary)", marginBottom: "0.25rem", fontSize: "0.95rem" }}>{item?.partType?.name} - {item?.partBrand?.name}</p>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem", fontSize: "0.95rem" }}>{item?.vehicleModel?.manufacturer?.name} {item?.vehicleModel?.name}</p>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem", fontSize: "0.95rem" }}>{item.description}</p>
           
           <div style={{ display: "flex", justifyContent: "space-between", background: "var(--bg-main)", border: "1px solid var(--border)", padding: "1rem", borderRadius: "var(--radius-md)", marginBottom: "1.5rem" }}>
             <div>
@@ -205,6 +205,14 @@ function RemoveStockContent() {
           <div className="data-row">
             <span className="data-label">Barcode</span>
             <span className="data-value">{item.barcode}</span>
+          </div>
+          <div className="data-row">
+            <span className="data-label">Pcode</span>
+            <span className="data-value">{item.secretPriceCode || "-"}</span>
+          </div>
+          <div className="data-row">
+            <span className="data-label">Registered Date</span>
+            <span className="data-value">{item.registeredDate ? new Date(item.registeredDate).toLocaleDateString() : "-"}</span>
           </div>
 
           <div style={{ marginTop: "1.5rem" }}>

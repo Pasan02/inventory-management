@@ -118,7 +118,9 @@ export default function DashboardPage() {
             style={{ 
               padding: "0", 
               overflow: "hidden",
-              cursor: "pointer"
+              cursor: "pointer",
+              userSelect: "none",
+              WebkitUserSelect: "none"
             }}
             onClick={() => {
               if (item.action) item.action();
