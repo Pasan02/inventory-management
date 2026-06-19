@@ -59,9 +59,34 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
         }
       );
 
+      let counts: Record<string, number> = {};
+      let totalReads = 0;
+
       const handleDetected = (result: any) => {
         if (result && result.codeResult && result.codeResult.code) {
-          onResult(result.codeResult.code);
+          let code = result.codeResult.code;
+          
+          // Auto-correction: If it's exactly 12 characters and starts with ITM, 
+          // force the 4th character to be a hyphen (fixes ITM% misreads)
+          if (code.length === 12 && code.startsWith("ITM")) {
+            code = "ITM-" + code.substring(4);
+          }
+
+          counts[code] = (counts[code] || 0) + 1;
+          totalReads++;
+
+          // Clear buffer if we get too many reads without a consensus
+          if (totalReads > 20) {
+            counts = {};
+            totalReads = 0;
+          }
+          
+          // Require 3 consistent reads to eliminate transient noise/glare misreads
+          if (counts[code] >= 3) {
+            onResult(code);
+            isScanning = false;
+            Quagga.stop();
+          }
         }
       };
 
