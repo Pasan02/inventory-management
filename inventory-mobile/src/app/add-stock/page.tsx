@@ -46,6 +46,7 @@ function AddStockContent() {
     const token = localStorage.getItem("token");
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
     const res = await fetch(`${apiUrl}${path}`, {
+      cache: "no-store",
       ...options,
       headers: { 
         ...options.headers,

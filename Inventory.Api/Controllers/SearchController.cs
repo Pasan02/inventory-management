@@ -246,12 +246,27 @@ namespace Inventory.Api.Controllers
         [HttpGet("autocomplete/{query}")]
         public async Task<IActionResult> Autocomplete(string query)
         {
-            query = query.ToLower();
+            var term = query.Trim().ToLower();
+            
             var items = await _context.Items
-                .Where(i => EF.Functions.ILike(i.Barcode, $"%{query}%") || EF.Functions.ILike(i.Description, $"%{query}%"))
+                .Where(i => 
+                    i.Barcode.ToLower().Contains(term) ||
+                    i.Description.ToLower().Contains(term) ||
+                    i.PartType.Name.ToLower().Contains(term) ||
+                    i.PartBrand.Name.ToLower().Contains(term) ||
+                    i.VehicleModel.Name.ToLower().Contains(term) ||
+                    i.VehicleModel.Manufacturer.Name.ToLower().Contains(term) ||
+                    i.CompatibleModels.Any(cm => 
+                        (cm.Model != null && cm.Model.ToLower().Contains(term)) ||
+                        (cm.Manufacturer != null && cm.Manufacturer.ToLower().Contains(term)) ||
+                        (cm.Brand != null && cm.Brand.ToLower().Contains(term)) ||
+                        (cm.CountryOfOrigin != null && cm.CountryOfOrigin.ToLower().Contains(term)) ||
+                        (cm.YearRange != null && cm.YearRange.ToLower().Contains(term))))
+                .OrderByDescending(i => i.RegisteredDate)
                 .Take(20)
                 .Select(i => new { barcode = i.Barcode, description = i.Description })
                 .ToListAsync();
+                
             return Ok(items);
         }
     }
