@@ -34,8 +34,8 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
             }
           },
           locator: {
-            patchSize: "medium",
-            halfSample: true,
+            patchSize: "large",
+            halfSample: false,
           },
           numOfWorkers: typeof navigator !== 'undefined' && navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 2,
           decoder: {

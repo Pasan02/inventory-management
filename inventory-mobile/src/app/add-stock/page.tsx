@@ -99,7 +99,24 @@ function AddStockContent() {
     if (!lookupBarcode.trim()) return;
     setLoading(true); setError(null); setSuccess(null);
     try {
-      const data = await fetchWithAuth(`/api/stock/search/${encodeURIComponent(lookupBarcode)}`);
+      let data;
+      try {
+        data = await fetchWithAuth(`/api/stock/search/${encodeURIComponent(lookupBarcode)}`);
+      } catch (err: any) {
+        // Smart Fallback for Thermal Printer Ink Bleed
+        // If it looks like ITM-00000426 instead of 00000026
+        if (lookupBarcode.startsWith("ITM-") && lookupBarcode.length === 12 && lookupBarcode[9] === '4') {
+          const correctedBarcode = lookupBarcode.substring(0, 9) + '0' + lookupBarcode.substring(10);
+          try {
+            data = await fetchWithAuth(`/api/stock/search/${encodeURIComponent(correctedBarcode)}`);
+            setBarcode(correctedBarcode);
+          } catch (fallbackErr) {
+            throw err; // throw original error if fallback fails
+          }
+        } else {
+          throw err;
+        }
+      }
       setItem(data);
       setPcode(data.secretPriceCode || "");
     } catch (err: any) {
