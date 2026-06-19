@@ -78,23 +78,7 @@ function RemoveStockContent() {
     if (!lookupBarcode.trim()) return;
     setLoading(true); setError(null); setSuccess(null);
     try {
-      let data;
-      try {
-        data = await fetchWithAuth(`/api/stock/search/${encodeURIComponent(lookupBarcode)}`);
-      } catch (err: any) {
-        // Smart Fallback for Thermal Printer Ink Bleed
-        if (lookupBarcode.startsWith("ITM-") && lookupBarcode.length === 12 && lookupBarcode[9] === '4') {
-          const correctedBarcode = lookupBarcode.substring(0, 9) + '0' + lookupBarcode.substring(10);
-          try {
-            data = await fetchWithAuth(`/api/stock/search/${encodeURIComponent(correctedBarcode)}`);
-            setBarcode(correctedBarcode);
-          } catch (fallbackErr) {
-            throw err; // throw original error if fallback fails
-          }
-        } else {
-          throw err;
-        }
-      }
+      const data = await fetchWithAuth(`/api/stock/search/${encodeURIComponent(lookupBarcode)}`);
       setItem(data);
     } catch (err: any) {
       setError(err.message);
