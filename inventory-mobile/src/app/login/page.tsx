@@ -46,6 +46,7 @@ export default function LoginPage() {
     <div className={styles.container}>
       <div className={`glass-panel ${styles.loginCard} animate-slide-up`}>
         <div className={styles.header}>
+          <img src="/logo.jpeg" alt="Alpine Auto A/C Logo" style={{ width: "120px", height: "auto", borderRadius: "var(--radius-md)", marginBottom: "1rem", display: "inline-block" }} />
           <h1 className={styles.title}>Alpine Auto A/C</h1>
         </div>
 

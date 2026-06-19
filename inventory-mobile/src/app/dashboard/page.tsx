@@ -100,9 +100,12 @@ export default function DashboardPage() {
   return (
     <div className="container" style={{ paddingBottom: "5rem" }}>
       <div className="glass-panel" style={{ marginTop: "1.5rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.5rem" }}>
-        <div>
-          <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--primary)", marginBottom: "0.25rem" }}>Alpine Auto A/C</h2>
-          <p style={{ fontSize: "1rem", color: "var(--text-secondary)" }}>Welcome, {userName}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <img src="/logo.jpeg" alt="Logo" style={{ width: "50px", height: "50px", borderRadius: "8px", objectFit: "cover" }} />
+          <div>
+            <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--primary)", marginBottom: "0" }}>Alpine Auto A/C</h2>
+            <p style={{ fontSize: "0.95rem", color: "var(--text-secondary)", margin: 0 }}>Welcome, {userName}</p>
+          </div>
         </div>
       </div>
 
