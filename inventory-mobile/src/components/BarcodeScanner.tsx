@@ -30,11 +30,21 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
     codeReaderRef.current = codeReader;
 
     if (videoRef.current) {
-      codeReader.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
-        if (result) {
-          onResult(result.getText());
+      codeReader.decodeFromConstraints(
+        { 
+          video: { 
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          } 
+        },
+        videoRef.current,
+        (result, err) => {
+          if (result) {
+            onResult(result.getText());
+          }
         }
-      }).catch((e: any) => {
+      ).catch((e: any) => {
         setError(`Camera access denied or unavailable: ${e.message}`);
       });
     }
