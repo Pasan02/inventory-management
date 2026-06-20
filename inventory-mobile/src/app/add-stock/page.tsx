@@ -12,10 +12,10 @@ function AddStockContent() {
   const initialOrderIds = searchParams?.get("orderIds") || "";
 
   const [barcode, setBarcode] = useState(initialBarcode);
-  const [quantity, setQuantity] = useState(initialQuantity);
+  const [quantity, setQuantity] = useState<number | string>(initialQuantity);
   const [orderIds, setOrderIds] = useState(initialOrderIds);
   const [pcode, setPcode] = useState("");
-  const [printQuantity, setPrintQuantity] = useState(1);
+  const [printQuantity, setPrintQuantity] = useState<number | string>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -310,7 +310,19 @@ function AddStockContent() {
                 type="number" 
                 className="input-control" 
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') setQuantity('');
+                  else {
+                    const num = Number(val);
+                    if (num >= 1) setQuantity(num);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (['-', '+', 'e', 'E', '.'].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
                 min="1"
                 required
               />
@@ -343,7 +355,19 @@ function AddStockContent() {
                 type="number" 
                 className="input-control" 
                 value={printQuantity}
-                onChange={(e) => setPrintQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') setPrintQuantity('');
+                  else {
+                    const num = Number(val);
+                    if (num >= 1) setPrintQuantity(num);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (['-', '+', 'e', 'E', '.'].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
                 min="1"
               />
             </div>

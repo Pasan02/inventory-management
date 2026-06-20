@@ -23,8 +23,8 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
             type: "LiveStream",
             target: scannerRef.current,
             constraints: {
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
+              width: { ideal: 1280, min: 640 },
+              height: { ideal: 720, min: 480 },
               facingMode: "environment",
             },
             area: {
@@ -35,10 +35,10 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
             }
           },
           locator: {
-            patchSize: "large",
-            halfSample: false,
+            patchSize: "medium", // Smaller patch size for faster processing
+            halfSample: true, // Speeds up processing significantly by downsampling
           },
-          numOfWorkers: typeof navigator !== 'undefined' && navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 2,
+          numOfWorkers: 1, // Reduced to 1 to prevent system hanging/freezing on mobile
           decoder: {
             readers: [
               "code_128_reader",
@@ -90,9 +90,28 @@ export default function BarcodeScanner({ onResult, onClose }: BarcodeScannerProp
       Quagga.onDetected(handleDetected);
 
       return () => {
-        if (isScanning) {
-          Quagga.stop();
+        try {
           Quagga.offDetected(handleDetected);
+          Quagga.stop();
+        } catch (e) {
+          // ignore errors during stop
+        }
+        
+        // Force cleanup any remaining video streams to prevent camera freezing
+        if (scannerRef.current) {
+          const videoElements = scannerRef.current.getElementsByTagName('video');
+          if (videoElements.length > 0) {
+            const video = videoElements[0];
+            if (video.srcObject) {
+              const stream = video.srcObject as MediaStream;
+              if (stream.getTracks) {
+                stream.getTracks().forEach(track => {
+                  track.stop();
+                });
+              }
+              video.srcObject = null;
+            }
+          }
         }
       };
     }

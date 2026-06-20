@@ -10,7 +10,7 @@ function RemoveStockContent() {
   const initialBarcode = searchParams?.get("barcode") || "";
 
   const [barcode, setBarcode] = useState(initialBarcode);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number | string>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -222,7 +222,19 @@ function RemoveStockContent() {
                 type="number" 
                 className="input-control" 
                 value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') setQuantity('');
+                  else {
+                    const num = Number(val);
+                    if (num >= 1) setQuantity(num);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (['-', '+', 'e', 'E', '.'].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
                 min="1"
                 required
               />
