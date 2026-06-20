@@ -316,15 +316,7 @@ namespace inventory_management.ViewModels
                 await _context.SaveChangesAsync();
                 await LoadReports();
 
-                // Print silently
-                var tempFile = System.IO.Path.GetTempFileName() + ".pdf";
-                bool success = await _pdfService.GenerateOrderPdfAsync(tempFile, new List<ReportOrderRow> { row });
-                if (success)
-                {
-                    await _pdfService.PrintOrderPdfSilentlyAsync(tempFile);
-                }
-
-                StatusMessage = "Order placed and printed successfully.";
+                StatusMessage = "Order placed successfully.";
             }
             catch (Exception ex)
             {
@@ -366,15 +358,7 @@ namespace inventory_management.ViewModels
                 await _context.SaveChangesAsync();
                 await LoadReports();
 
-                // Print silently
-                var tempFile = System.IO.Path.GetTempFileName() + ".pdf";
-                bool success = await _pdfService.GenerateOrderPdfAsync(tempFile, selectedRows);
-                if (success)
-                {
-                    await _pdfService.PrintOrderPdfSilentlyAsync(tempFile);
-                }
-
-                StatusMessage = "Selected orders placed and printed successfully.";
+                StatusMessage = "Selected orders placed successfully.";
             }
             catch (Exception ex)
             {

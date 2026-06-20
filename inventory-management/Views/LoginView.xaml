@@ -7,6 +7,112 @@
              mc:Ignorable="d">
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        
+        <ControlTemplate x:Key="EyeIconButtonTemplate" TargetType="Button">
+            <Border x:Name="border" Background="Black" CornerRadius="10" SnapsToDevicePixels="True">
+                <Grid>
+                    <Viewbox Width="45" Height="35" Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z" Fill="White"/>
+                        </Canvas>
+                    </Viewbox>
+                    <Viewbox Width="45" Height="35" Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" Fill="White"/>
+                        </Canvas>
+                    </Viewbox>
+                </Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" TargetName="border" Value="0.85"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Opacity" TargetName="border" Value="0.7"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style x:Key="DynamicContainerStyle" TargetType="StackPanel">
+            <Setter Property="Margin" Value="50,60"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsResetMode}" Value="True">
+                    <Setter Property="Margin" Value="20"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DynamicTitleStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,40"/>
+            <Setter Property="FontSize" Value="48"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsResetMode}" Value="True">
+                    <Setter Property="Margin" Value="0,0,0,25"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DynamicLabelStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="FontSize" Value="24"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsResetMode}" Value="True">
+                    <Setter Property="Margin" Value="0,0,0,5"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DynamicGridStyle" TargetType="Grid">
+            <Setter Property="Margin" Value="0,0,0,25"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsResetMode}" Value="True">
+                    <Setter Property="Margin" Value="0,0,0,15"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DynamicTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Height" Value="65"/>
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsResetMode}" Value="True">
+                    <Setter Property="Height" Value="50"/>
+                    <Setter Property="Padding" Value="5,0"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DynamicPasswordBoxStyle" TargetType="PasswordBox" BasedOn="{StaticResource {x:Type PasswordBox}}">
+            <Setter Property="Height" Value="65"/>
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsResetMode}" Value="True">
+                    <Setter Property="Height" Value="50"/>
+                    <Setter Property="Padding" Value="5,0"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DynamicEyeButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="65"/>
+            <Setter Property="Width" Value="70"/>
+            <Setter Property="Margin" Value="15,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template" Value="{StaticResource EyeIconButtonTemplate}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsResetMode}" Value="True">
+                    <Setter Property="Height" Value="50"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -16,37 +122,116 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="1" Width="800" Style="{StaticResource CardBorderStyle}" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <StackPanel Margin="20">
-                <TextBlock Text="Alpine Auto A/C" FontSize="48" FontWeight="Bold" Margin="0,0,0,50" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="800">
+                <StackPanel Style="{StaticResource DynamicContainerStyle}">
+                    <TextBlock Text="Alpine Auto A/C" Style="{StaticResource DynamicTitleStyle}"/>
 
-                <TextBlock Text="Username" Margin="0,0,0,10" FontSize="28"/>
-                <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Height="60" FontSize="28"/>
+                <StackPanel>
+                    <TextBlock Text="Username" Style="{StaticResource DynamicLabelStyle}"/>
+                    <Grid Style="{StaticResource DynamicGridStyle}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource DynamicTextBoxStyle}"/>
+                        <!-- Spacer to match password field widths -->
+                        <Border Grid.Column="1" Width="70" Margin="15,0,0,0"/>
+                    </Grid>
+                </StackPanel>
 
-                <TextBlock Text="Password" Margin="0,0,0,10" FontSize="28"/>
-                <Grid Margin="0,0,0,40">
+                <StackPanel Visibility="{Binding IsResetMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Current Password" Margin="0,0,0,5" FontSize="24"/>
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <PasswordBox x:Name="CurrentPasswordInput" PasswordChanged="OnCurrentPasswordChanged" Height="50" FontSize="24" VerticalContentAlignment="Center" Padding="5,0"
+                             Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+
+                        <TextBox Text="{Binding CurrentPassword, UpdateSourceTrigger=PropertyChanged}" Height="50" FontSize="24" VerticalContentAlignment="Center" Padding="5,0"
+                             Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                             
+                        <Button Grid.Column="1" 
+                                Width="70" 
+                                Height="50" 
+                                Margin="15,0,0,0"  
+                                Click="TogglePasswordVisibility"
+                                Cursor="Hand"
+                                Template="{StaticResource EyeIconButtonTemplate}"/>
+                    </Grid>
+                </StackPanel>
+
+                <TextBlock FontSize="24">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Text" Value="Password"/>
+                            <Setter Property="Margin" Value="0,0,0,10"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsResetMode}" Value="True">
+                                    <Setter Property="Text" Value="New Password"/>
+                                    <Setter Property="Margin" Value="0,0,0,5"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <Grid Style="{StaticResource DynamicGridStyle}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <PasswordBox x:Name="PasswordInput" PasswordChanged="OnPasswordChanged" Height="60" FontSize="28"
+                    <PasswordBox x:Name="PasswordInput" PasswordChanged="OnPasswordChanged" Style="{StaticResource DynamicPasswordBoxStyle}"
                          Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
 
-                    <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Height="60" FontSize="28"
+                    <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource DynamicTextBoxStyle}"
                          Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                     <Button Grid.Column="1" 
-                            Width="80" 
-                            Height="60" 
-                            Margin="20,0,0,15" 
-                            Padding="0" 
                             Click="TogglePasswordVisibility"
-                            Background="Black"
-                            BorderThickness="0"
+                            Style="{StaticResource DynamicEyeButtonStyle}"/>
+                </Grid>
+
+                <StackPanel Visibility="{Binding IsResetMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Confirm Password" Margin="0,0,0,5" FontSize="24"/>
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <PasswordBox x:Name="ConfirmPasswordInput" PasswordChanged="OnConfirmPasswordChanged" Height="50" FontSize="24" VerticalContentAlignment="Center" Padding="5,0"
+                             Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+
+                        <TextBox Text="{Binding ConfirmPassword, UpdateSourceTrigger=PropertyChanged}" Height="50" FontSize="24" VerticalContentAlignment="Center" Padding="5,0"
+                             Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                             
+                        <Button Grid.Column="1" 
+                                Width="70" 
+                                Height="50" 
+                                Margin="15,0,0,0"  
+                                Click="TogglePasswordVisibility"
+                                Cursor="Hand"
+                                Template="{StaticResource EyeIconButtonTemplate}"/>
+                    </Grid>
+                </StackPanel>
+
+                <Grid Margin="0,10,0,0">
+                    <Button Content="Sign In" 
+                            Command="{Binding LoginCommand}" 
+                            Visibility="{Binding IsResetMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
+                            IsDefault="True"
+                            Height="70" 
+                            FontSize="32" 
+                            FontWeight="Bold" 
                             Cursor="Hand">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="Black"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
@@ -56,7 +241,14 @@
                                                     SnapsToDevicePixels="True">
                                                 <ContentPresenter HorizontalAlignment="Center" 
                                                                 VerticalAlignment="Center" 
-                                                                Margin="{TemplateBinding Padding}"/>
+                                                                Margin="{TemplateBinding Padding}">
+                                                    <ContentPresenter.Resources>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </Style>
+                                                    </ContentPresenter.Resources>
+                                                </ContentPresenter>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -65,82 +257,93 @@
                                                 <Trigger Property="IsPressed" Value="True">
                                                     <Setter Property="Opacity" TargetName="border" Value="0.7"/>
                                                 </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" TargetName="border" Value="0.5"/>
+                                                </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>
                             </Style>
                         </Button.Style>
-                        <Grid>
-                            <!-- Eye Icon (visible when password is shown) -->
-                            <Viewbox Width="45" Height="35" Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-                                <Canvas Width="24" Height="24">
-                                    <Path Data="M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z" 
-                                          Fill="White"/>
-                                </Canvas>
-                            </Viewbox>
-                            <!-- Eye Off Icon (visible when password is hidden) -->
-                            <Viewbox Width="45" Height="35" Visibility="{Binding IsPasswordVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
-                                <Canvas Width="24" Height="24">
-                                    <Path Data="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z" 
-                                          Fill="White"/>
-                                </Canvas>
-                            </Viewbox>
-                        </Grid>
+                    </Button>
+
+                    <Button Content="Save New Password" 
+                            Command="{Binding SubmitResetCommand}" 
+                            Visibility="{Binding IsResetMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                            IsDefault="True"
+                            Height="70" 
+                            FontSize="32" 
+                            FontWeight="Bold" 
+                            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Black"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="border" 
+                                                    Background="{TemplateBinding Background}" 
+                                                    CornerRadius="10"
+                                                    SnapsToDevicePixels="True">
+                                                <ContentPresenter HorizontalAlignment="Center" 
+                                                                VerticalAlignment="Center" 
+                                                                Margin="{TemplateBinding Padding}">
+                                                    <ContentPresenter.Resources>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="White"/>
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                        </Style>
+                                                    </ContentPresenter.Resources>
+                                                </ContentPresenter>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Opacity" TargetName="border" Value="0.85"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Opacity" TargetName="border" Value="0.7"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" TargetName="border" Value="0.5"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
                     </Button>
                 </Grid>
 
-                <Button Content="Sign In" 
-                        Command="{Binding LoginCommand}" 
-                        IsDefault="True"
-                        Height="90" 
-                        FontSize="36" 
-                        FontWeight="Bold" 
-                        Margin="0,20,0,0"
-                        Cursor="Hand">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Background" Value="Black"/>
-                            <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="FontWeight" Value="Bold"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="border" 
-                                                Background="{TemplateBinding Background}" 
-                                                CornerRadius="10"
-                                                SnapsToDevicePixels="True">
-                                            <ContentPresenter HorizontalAlignment="Center" 
-                                                            VerticalAlignment="Center" 
-                                                            Margin="{TemplateBinding Padding}">
-                                                <ContentPresenter.Resources>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="White"/>
-                                                        <Setter Property="FontWeight" Value="Bold"/>
-                                                    </Style>
-                                                </ContentPresenter.Resources>
-                                            </ContentPresenter>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Opacity" TargetName="border" Value="0.85"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter Property="Opacity" TargetName="border" Value="0.7"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter Property="Opacity" TargetName="border" Value="0.5"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                    <Button Content="Change Password" 
+                            Command="{Binding ToggleResetModeCommand}" 
+                            Visibility="{Binding IsResetMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
+                            Background="Transparent" BorderThickness="0" Foreground="Black" FontSize="20" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <TextBlock Text="{TemplateBinding Content}" TextDecorations="Underline" Foreground="Black" Background="Transparent" />
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button Content="Back to Login" 
+                            Command="{Binding ToggleResetModeCommand}" 
+                            Visibility="{Binding IsResetMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Background="Transparent" BorderThickness="0" Foreground="Black" FontSize="20" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <TextBlock Text="{TemplateBinding Content}" TextDecorations="Underline" Foreground="Black" Background="Transparent" />
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
                 
                 <!-- Status TextBlock removed as requested -->
-            </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
 </UserControl>

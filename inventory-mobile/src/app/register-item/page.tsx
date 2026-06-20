@@ -34,6 +34,10 @@ export default function RegisterItemPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  // Print state
+  const [generatedBarcodeState, setGeneratedBarcodeState] = useState<string>("");
+  const [printQuantity, setPrintQuantity] = useState<number | string>(1);
+
   // Modals state
   const [showModal, setShowModal] = useState<string | null>(null);
   const [modalInput1, setModalInput1] = useState("");
@@ -111,6 +115,20 @@ export default function RegisterItemPage() {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePrintBarcode = async () => {
+    if (!generatedBarcodeState || !printQuantity) return;
+    try {
+      await fetchWithAuth("/api/print/barcode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barcode: generatedBarcodeState, copies: printQuantity })
+      });
+      alert(`Print job for ${printQuantity} label(s) sent to local printer successfully!`);
+    } catch (e: any) {
+      alert("Error printing: " + (e as Error).message);
     }
   };
 
@@ -216,8 +234,8 @@ export default function RegisterItemPage() {
         });
       }
 
-      alert(`Item Saved Successfully!\nBarcode: ${generatedBarcode}`);
-      router.push("/dashboard");
+      setGeneratedBarcodeState(generatedBarcode);
+      setStep(6);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -461,6 +479,47 @@ export default function RegisterItemPage() {
                {loading ? "Registering..." : "Register Item"}
              </button>
           </div>
+        </div>
+      )}
+
+      {/* STEP 6: Success & Print */}
+      {step === 6 && (
+        <div className="glass-panel slide-in" style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✅</div>
+          <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "var(--primary)" }}>Item Registered!</h2>
+          <p style={{ fontSize: "1.1rem", marginBottom: "2rem" }}>Barcode: <strong>{generatedBarcodeState}</strong></p>
+
+          <div style={{ background: "var(--bg-main)", padding: "1.5rem", borderRadius: "12px", marginBottom: "2rem", textAlign: "left" }}>
+            <h3 style={{ fontSize: "1.1rem", color: "var(--text-primary)", marginBottom: "1rem", marginTop: 0 }}>Print Labels</h3>
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center", marginBottom: "1rem" }}>
+              <label style={{ color: "var(--text-secondary)", flex: 1 }}>Quantity:</label>
+              <input 
+                type="number" 
+                className="input-control" 
+                style={{ width: "80px", textAlign: "center" }}
+                value={printQuantity}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '') setPrintQuantity('');
+                  else {
+                    const num = parseInt(val);
+                    if (num >= 1) setPrintQuantity(num);
+                  }
+                }}
+              />
+            </div>
+            <button 
+              className="btn btn-primary" 
+              style={{ width: "100%", padding: "1rem", fontSize: "1.1rem", fontWeight: "bold" }}
+              onClick={handlePrintBarcode}
+            >
+              🖨️ Print Barcode
+            </button>
+          </div>
+
+          <button className="btn btn-secondary" style={{ width: "100%" }} onClick={() => router.push("/dashboard")}>
+            Back to Dashboard
+          </button>
         </div>
       )}
 

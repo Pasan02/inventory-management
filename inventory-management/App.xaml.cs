@@ -81,8 +81,11 @@ namespace inventory_management
 
                     var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
                     
-                    // Force reset admin password to ensure access
-                    await authService.ForceSetPasswordAsync("admin", "admin123");
+                    // Only create the default admin if no users exist in the database
+                    if (!await dbContext.UserAccounts.AnyAsync())
+                    {
+                        await authService.ForceSetPasswordAsync("admin", "admin123");
+                    }
                 }
                 catch (Exception ex)
                 {

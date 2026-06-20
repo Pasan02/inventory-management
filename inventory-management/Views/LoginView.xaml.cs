@@ -18,6 +18,22 @@ namespace inventory_management.Views
             }
         }
 
+        private void OnConfirmPasswordChanged(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DataContext is LoginViewModel viewModel && sender is PasswordBox passwordBox)
+            {
+                viewModel.ConfirmPassword = passwordBox.Password;
+            }
+        }
+
+        private void OnCurrentPasswordChanged(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (DataContext is LoginViewModel viewModel && sender is PasswordBox passwordBox)
+            {
+                viewModel.CurrentPassword = passwordBox.Password;
+            }
+        }
+
         private void TogglePasswordVisibility(object sender, System.Windows.RoutedEventArgs e)
         {
             if (DataContext is LoginViewModel viewModel)
@@ -26,6 +42,10 @@ namespace inventory_management.Views
                 if (!viewModel.IsPasswordVisible)
                 {
                     PasswordInput.Password = viewModel.Password;
+                    if (ConfirmPasswordInput != null)
+                        ConfirmPasswordInput.Password = viewModel.ConfirmPassword;
+                    if (CurrentPasswordInput != null)
+                        CurrentPasswordInput.Password = viewModel.CurrentPassword;
                 }
             }
         }

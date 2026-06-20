@@ -40,6 +40,27 @@ namespace inventory_management.ViewModels
             set => SetProperty(ref _statusMessage, value);
         }
 
+        private bool _isResetMode;
+        public bool IsResetMode
+        {
+            get => _isResetMode;
+            set => SetProperty(ref _isResetMode, value);
+        }
+
+        private string _confirmPassword = string.Empty;
+        public string ConfirmPassword
+        {
+            get => _confirmPassword;
+            set => SetProperty(ref _confirmPassword, value);
+        }
+
+        private string _currentPassword = string.Empty;
+        public string CurrentPassword
+        {
+            get => _currentPassword;
+            set => SetProperty(ref _currentPassword, value);
+        }
+
         public Action? LoginSucceeded { get; set; }
 
         public LoginViewModel(IAuthenticationService authenticationService)
@@ -94,6 +115,60 @@ namespace inventory_management.ViewModels
                 
                 StatusMessage = result.Message;
                 ModernMessageDialog.ShowError(result.Message, "Login Failed");
+            }
+        }
+
+        [RelayCommand]
+        private void ToggleResetMode()
+        {
+            IsResetMode = !IsResetMode;
+            Password = string.Empty;
+            CurrentPassword = string.Empty;
+            ConfirmPassword = string.Empty;
+            StatusMessage = IsResetMode ? "Enter new credentials." : "Enter credentials.";
+        }
+
+        [RelayCommand]
+        private async Task SubmitReset()
+        {
+            StatusMessage = "Updating password...";
+            
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(CurrentPassword) || string.IsNullOrWhiteSpace(Password))
+            {
+                StatusMessage = "Please provide your Username, Current Password, and New Password.";
+                ModernMessageDialog.ShowError(StatusMessage, "Validation Error");
+                return;
+            }
+
+            if (Password != ConfirmPassword)
+            {
+                StatusMessage = "Passwords do not match.";
+                ModernMessageDialog.ShowError(StatusMessage, "Validation Error");
+                return;
+            }
+
+            var loginResult = await _authenticationService.LoginAsync(Username, CurrentPassword);
+            if (!loginResult.Success)
+            {
+                StatusMessage = "Current username or password is incorrect.";
+                ModernMessageDialog.ShowError(StatusMessage, "Authentication Failed");
+                return;
+            }
+
+            try
+            {
+                await _authenticationService.ForceSetPasswordAsync(Username, Password);
+                StatusMessage = "Password successfully updated. Please sign in.";
+                ModernMessageDialog.ShowSuccess(StatusMessage, "Success");
+                IsResetMode = false;
+                Password = string.Empty;
+                CurrentPassword = string.Empty;
+                ConfirmPassword = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = ex.Message;
+                ModernMessageDialog.ShowError(ex.Message, "Update Failed");
             }
         }
     }
