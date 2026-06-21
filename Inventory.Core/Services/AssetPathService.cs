@@ -6,7 +6,7 @@ namespace inventory_management.Services
     public static class AssetPathService
     {
         public static string BasePath => Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "InventoryManagement",
             "assets");
 
@@ -46,6 +46,24 @@ namespace inventory_management.Services
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Failed to migrate assets: {ex.Message}");
+                }
+            }
+
+            // Migrate assets from old LocalApplicationData path
+            var oldLocalPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "InventoryManagement",
+                "assets");
+                
+            if (Directory.Exists(oldLocalPath) && oldLocalPath != BasePath)
+            {
+                try
+                {
+                    CopyDirectory(oldLocalPath, BasePath);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to migrate assets from LocalApplicationData: {ex.Message}");
                 }
             }
 

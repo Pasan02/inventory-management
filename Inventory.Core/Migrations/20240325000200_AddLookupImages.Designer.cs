@@ -171,7 +171,7 @@ namespace inventory_management.Migrations
                             Id = 1,
                             CreatedUtc = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
-                            PasswordHash = "D6ED7D5BE34EB80E6E4FB95339FD24752634F6FF637FD574395D9C8326B81823",
+                            PasswordHash = "042D0C9E0A2D1DB965D318395E299089255C4E75732E9715E95D176FB920BA36",
                             PasswordSalt = "234857E0303BC7BFC959FA34754C90AB",
                             Username = "admin"
                         });

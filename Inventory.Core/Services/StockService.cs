@@ -386,7 +386,7 @@ namespace inventory_management.Services
 
         private static async Task WriteMirrorLogAsync(StockTransaction transaction, string barcode, int newQuantity)
         {
-            var basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             var logFolder = Path.Combine(basePath, "InventoryManagement", "logs");
             Directory.CreateDirectory(logFolder);
 

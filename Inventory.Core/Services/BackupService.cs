@@ -24,7 +24,7 @@ namespace inventory_management.Services
         {
             _context = context;
             _availabilityService = availabilityService;
-            var basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             _backupFolder = Path.Combine(basePath, "InventoryManagement", "backups");
             _statePath = Path.Combine(_backupFolder, "backup-state.json");
             Directory.CreateDirectory(_backupFolder);

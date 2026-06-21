@@ -44,7 +44,7 @@ namespace inventory_management.Migrations
                 ON CONFLICT DO NOTHING;
 
                 INSERT INTO user_accounts (id, created_utc, is_active, password_hash, password_salt, username)
-                VALUES (1, TIMESTAMP '2024-01-01 00:00:00', TRUE, 'D6ED7D5BE34EB80E6E4FB95339FD24752634F6FF637FD574395D9C8326B81823', '234857E0303BC7BFC959FA34754C90AB', 'admin')
+                VALUES (1, TIMESTAMP '2024-01-01 00:00:00', TRUE, '042D0C9E0A2D1DB965D318395E299089255C4E75732E9715E95D176FB920BA36', '234857E0303BC7BFC959FA34754C90AB', 'admin')
                 ON CONFLICT DO NOTHING;
 
                 INSERT INTO user_login_audits (id, failure_reason, machine_name, success, timestamp, user_account_id)
