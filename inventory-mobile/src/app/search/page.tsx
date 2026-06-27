@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BarcodeScanner from "@/components/BarcodeScanner";
+import { getActiveApiUrl } from "@/lib/apiConfig";
 
 type Step = "PARTS" | "MANUFACTURERS" | "MODELS" | "ITEMS" | "DETAILS";
 
@@ -12,6 +13,7 @@ export default function SearchPage() {
   const [step, setStep] = useState<Step>("PARTS");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiUrl, setApiUrl] = useState<string>("");
 
   // Data state
   const [parts, setParts] = useState<any[]>([]);
@@ -30,13 +32,14 @@ export default function SearchPage() {
   const [includeOos, setIncludeOos] = useState(false);
 
   useEffect(() => {
+    getActiveApiUrl().then(url => setApiUrl(url));
     fetchParts();
   }, []);
 
   const fetchWithAuth = async (path: string, options: any = {}) => {
     const token = localStorage.getItem("token");
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    const res = await fetch(`${apiUrl}${path}`, {
+    const activeUrl = await getActiveApiUrl();
+    const res = await fetch(`${activeUrl}${path}`, {
       ...options,
       headers: {
         ...options.headers,
@@ -232,7 +235,7 @@ export default function SearchPage() {
               <div key={p.partTypeId} style={{ padding: "1rem", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", cursor: "pointer", background: "var(--surface)" }} className="hover-panel" onClick={() => handleSelectPart(p)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    {p.imageUrl && <img src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${p.imageUrl}`} alt={p.name} style={{ width: "48px", height: "48px", objectFit: "contain" }} />}
+                    {p.imageUrl && <img src={`${apiUrl}${p.imageUrl}`} alt={p.name} style={{ width: "48px", height: "48px", objectFit: "contain" }} />}
                     <span style={{ fontWeight: 600, fontSize: "1.1rem" }}>{p.name}</span>
                   </div>
                   <div style={{ textAlign: "right" }}>
@@ -250,7 +253,7 @@ export default function SearchPage() {
               <div key={m.manufacturerId} style={{ padding: "1rem", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", cursor: "pointer", background: "var(--surface)" }} className="hover-panel" onClick={() => handleSelectManufacturer(m)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    {m.logoUrl && <img src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${m.logoUrl}`} alt={m.name} style={{ width: "48px", height: "48px", objectFit: "contain" }} />}
+                    {m.logoUrl && <img src={`${apiUrl}${m.logoUrl}`} alt={m.name} style={{ width: "48px", height: "48px", objectFit: "contain" }} />}
                     <span style={{ fontWeight: 600, fontSize: "1.1rem" }}>{m.name}</span>
                   </div>
                   <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>{m.itemCount} items</span>
@@ -266,7 +269,7 @@ export default function SearchPage() {
               <div key={m.modelId} style={{ padding: "1rem", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", cursor: "pointer", background: "var(--surface)" }} className="hover-panel" onClick={() => handleSelectModel(m)}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    {m.imageUrl && <img src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${m.imageUrl}`} alt={m.name} style={{ width: "48px", height: "48px", objectFit: "cover", borderRadius: "4px", border: "1px solid var(--border)" }} />}
+                    {m.imageUrl && <img src={`${apiUrl}${m.imageUrl}`} alt={m.name} style={{ width: "48px", height: "48px", objectFit: "cover", borderRadius: "4px", border: "1px solid var(--border)" }} />}
                     <div>
                       <span style={{ display: "block", fontWeight: 600, fontSize: "1.1rem" }}>{m.name}</span>
                       <span style={{ display: "block", fontSize: "0.85rem", opacity: 0.7 }}>Rack: {m.rackLocation}</span>

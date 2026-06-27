@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import BarcodeScanner from "@/components/BarcodeScanner";
+import { getActiveApiUrl } from "@/lib/apiConfig";
 
 function AddStockContent() {
   const router = useRouter();
@@ -45,7 +46,7 @@ function AddStockContent() {
 
   const fetchWithAuth = async (path: string, options: any = {}) => {
     const token = localStorage.getItem("token");
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const apiUrl = await getActiveApiUrl();
     const res = await fetch(`${apiUrl}${path}`, {
       cache: "no-store",
       ...options,

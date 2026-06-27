@@ -59,7 +59,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins(
+                      "http://localhost:3000", // For local frontend development
+                      "https://inventory-management-lilac-beta.vercel.app" // Production Vercel domain
+                  )
                   .AllowAnyMethod()
                   .AllowAnyHeader();
         });
@@ -84,5 +87,7 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapGet("/api/health", () => Results.Ok(new { status = "healthy" }));
 
 app.Run();
