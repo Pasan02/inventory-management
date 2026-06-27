@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getActiveApiUrl } from "@/lib/apiConfig";
 import styles from "./page.module.css";
 
 export default function LoginPage() {
@@ -19,7 +18,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const apiUrl = await getActiveApiUrl();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

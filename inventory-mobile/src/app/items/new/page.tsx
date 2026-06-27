@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getActiveApiUrl } from "@/lib/apiConfig";
 
 export default function NewItemPage() {
   const router = useRouter();
@@ -41,7 +40,7 @@ export default function NewItemPage() {
 
   const fetchReferenceData = async (token: string) => {
     try {
-      const apiUrl = await getActiveApiUrl();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const res = await fetch(`${apiUrl}/api/items/reference-data`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -61,7 +60,7 @@ export default function NewItemPage() {
 
   const fetchModels = async (manufacturerId: string) => {
     const token = localStorage.getItem("token");
-    const apiUrl = await getActiveApiUrl();
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
     try {
       const res = await fetch(`${apiUrl}/api/items/models/${manufacturerId}`, {
         headers: { "Authorization": `Bearer ${token}` }
@@ -89,7 +88,7 @@ export default function NewItemPage() {
     setSaving(true);
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = await getActiveApiUrl();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const payload = {
         ...formData,
         partTypeId: parseInt(formData.partTypeId),

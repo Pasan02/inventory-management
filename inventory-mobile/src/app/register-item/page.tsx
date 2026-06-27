@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getActiveApiUrl } from "@/lib/apiConfig";
 
 export default function RegisterItemPage() {
   const router = useRouter();
@@ -67,7 +66,7 @@ export default function RegisterItemPage() {
 
   const fetchWithAuth = async (path: string, options: any = {}) => {
     const token = localStorage.getItem("token");
-    const apiUrl = await getActiveApiUrl();
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
     const res = await fetch(`${apiUrl}${path}`, {
       ...options,
       headers: { 
@@ -227,7 +226,7 @@ export default function RegisterItemPage() {
         formData.append("image", imageFile);
         
         const token = localStorage.getItem("token");
-        const apiUrl = await getActiveApiUrl();
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
         await fetch(`${apiUrl}/api/items/${encodeURIComponent(generatedBarcode)}/image`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${token}` },

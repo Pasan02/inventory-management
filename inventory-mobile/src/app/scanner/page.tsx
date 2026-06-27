@@ -3,7 +3,6 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import { getActiveApiUrl } from "@/lib/apiConfig";
 
 function ScannerContent() {
   const [scanResult, setScanResult] = useState<string | null>(null);
@@ -56,7 +55,7 @@ function ScannerContent() {
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = await getActiveApiUrl();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const res = await fetch(`${apiUrl}/api/stock/barcode/${barcode}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -81,7 +80,7 @@ function ScannerContent() {
     if (!item) return;
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = await getActiveApiUrl();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const res = await fetch(`${apiUrl}/api/stock/${performAction}`, {
         method: "POST",
         headers: { 

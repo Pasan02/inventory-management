@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { getActiveApiUrl } from "@/lib/apiConfig";
 
 type Tab = "pending" | "ordered" | "snapshot" | "low-stock" | "activity";
 
@@ -25,7 +24,7 @@ export default function ReportsPage() {
 
   const fetchWithAuth = async (path: string, options: any = {}) => {
     const token = localStorage.getItem("token");
-    const apiUrl = await getActiveApiUrl();
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
     const res = await fetch(`${apiUrl}${path}`, {
       ...options,
       headers: { 
